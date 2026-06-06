@@ -2,7 +2,23 @@
   "permissions": {
     "allow": [
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
-      "Bash(move copy.md ..\\\\copy.md.bak)"
+      "Bash(move copy.md ..\\\\copy.md.bak)",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Folder Tree\\\\Coding\\\\rct-platform\\\\src\\\\app\\\\signup\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Folder Tree\\\\Coding\\\\rct-platform\\\\src\\\\app\\\\init\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Folder Tree\\\\Coding\\\\rct-platform\\\\src\\\\app\\\\dashboard\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Folder Tree\\\\Coding\\\\rct-platform\\\\src\\\\app\\\\dashboard\\\\analytics\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Folder Tree\\\\Coding\\\\rct-platform\\\\src\\\\app\\\\network\")",
+      "Bash(npm run *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(netstat -ano)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

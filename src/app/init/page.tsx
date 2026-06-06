@@ -1,148 +1,246 @@
 'use client'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import Sidebar from '@/components/Sidebar'
-import SidebarHeader from '@/components/SidebarHeader'
 
 export default function InitPage() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      <TopNav breadcrumb="Network Init" statusLabel="STANDBY_MODE" statusColor="#94a3b8" />
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar>
-          <SidebarHeader label="Network Layers" />
-          <div className="flex-1 flex flex-col items-center justify-center p-6">
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-primary)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="7" stroke="#64748b" strokeWidth="1.5" strokeDasharray="3 2" />
+    <>
+      <style>{`
+        @keyframes rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes rotateReverse {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+        @keyframes rotateDiamond {
+          from { transform: rotate(45deg); }
+          to { transform: rotate(405deg); }
+        }
+        @keyframes scan {
+          0% { top: 0; }
+          50% { top: 100%; }
+          100% { top: 0; }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-primary-init {
+          display: inline-block;
+          padding: 14px 32px;
+          background: var(--accent-blue);
+          color: #0f1115;
+          font-family: var(--font-mono);
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          text-decoration: none;
+          box-shadow: 0 0 20px rgba(77,182,172,0.3);
+          transition: all 0.2s;
+        }
+        .btn-primary-init:hover {
+          box-shadow: 0 0 30px rgba(77,182,172,0.5);
+          transform: translateY(-1px);
+        }
+        .tip-card {
+          background: rgba(23,26,33,0.8);
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+      `}</style>
+
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
+        <TopNav breadcrumb="Uninitialized Network" statusLabel="STANDBY_MODE" statusColor="standby" showAvatar />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', flex: 1, overflow: 'hidden' }}>
+          {/* Left Sidebar */}
+          <aside style={{
+            background: 'var(--bg-surface)',
+            borderRight: '1px solid var(--border-primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '12px 16px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--text-tertiary)',
+              borderBottom: '1px solid var(--border-primary)',
+            }}>
+              Network Layers
+            </div>
+
+            {/* Empty state */}
+            <div style={{
+              padding: 20,
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: 'var(--text-tertiary)',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}>
+              No active layers detected. Initialize root node to begin mapping.
+            </div>
+
+            {/* Assets - pushed to bottom */}
+            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-primary)' }}>
+              <div style={{
+                padding: '12px 16px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: 'var(--text-tertiary)',
+                borderBottom: '1px solid var(--border-primary)',
+              }}>
+                Assets
+              </div>
+              <div style={{ padding: '8px 16px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-tertiary)' }}>Documentation.pdf</div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Canvas area */}
+          <section style={{
+            background: 'radial-gradient(ellipse at center, #1a1e26 0%, #0f1115 100%)',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 48,
+            overflow: 'hidden',
+            padding: '40px 60px',
+          }}>
+            {/* Grid lines overlay */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              backgroundImage: 'linear-gradient(rgba(148,163,184,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.03) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+              pointerEvents: 'none',
+            }} />
+
+            {/* Abstract container */}
+            <div style={{ position: 'relative', width: 300, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {/* Square rotating */}
+              <div style={{
+                position: 'absolute',
+                width: 200, height: 200,
+                border: '1px solid var(--accent-blue)',
+                opacity: 0.2,
+                animation: 'rotate 25s linear infinite',
+              }} />
+              {/* Circle dashed reverse */}
+              <div style={{
+                position: 'absolute',
+                width: 160, height: 160,
+                borderRadius: '50%',
+                border: '1px dashed var(--accent-blue)',
+                opacity: 0.3,
+                animation: 'rotateReverse 15s linear infinite',
+              }} />
+              {/* Diamond */}
+              <div style={{
+                position: 'absolute',
+                width: 240, height: 240,
+                borderRadius: 2,
+                border: '1px solid var(--accent-blue)',
+                opacity: 0.1,
+                animation: 'rotateDiamond 20s linear infinite',
+                transform: 'rotate(45deg)',
+              }} />
+              {/* Scanner line */}
+              <div style={{
+                position: 'absolute',
+                left: 0, right: 0,
+                height: 2,
+                background: 'linear-gradient(90deg, transparent, var(--accent-blue), transparent)',
+                animation: 'scan 4s ease-in-out infinite',
+              }} />
+              {/* Center crosshair SVG */}
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'relative', zIndex: 1 }}>
+                <path d="M12 2v20M2 12h20"/>
+                <circle cx="12" cy="12" r="4"/>
               </svg>
             </div>
-            <p className="font-mono text-[11px] text-center" style={{ color: 'var(--text-tertiary)' }}>
-              네트워크 비어 있음
-            </p>
-            <p className="font-mono text-[10px] text-center mt-1" style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}>
-              첫 노드를 생성하세요
-            </p>
-          </div>
-          <div style={{ borderTop: '1px solid var(--border-primary)' }}>
-            <SidebarHeader label="Assets" />
-            <div className="px-4 py-3 space-y-2">
-              {['Documentation', 'Quick Start', 'API Reference'].map(a => (
-                <div key={a} className="font-mono text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                  {a}
-                </div>
-              ))}
+
+            {/* Hero content */}
+            <div style={{ textAlign: 'center', animation: 'fadeUp 0.8s ease-out both', position: 'relative', zIndex: 1, maxWidth: 600 }}>
+              <h1 style={{
+                fontSize: 42,
+                fontWeight: 700,
+                lineHeight: 1.2,
+                marginBottom: 16,
+                background: 'linear-gradient(180deg, #f8fafc 0%, #94a3b8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                시스템이 네트워크 초기화를 준비했습니다
+              </h1>
+              <p style={{ fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 32 }}>
+                운영 환경이 비어 있습니다. 첫 번째 글로벌 루트 노드를 생성하여 계층 구조를 구성하고 데이터 흐름을 모니터링하세요.
+              </p>
+              <Link href="/signup" className="btn-primary-init">
+                첫 번째 노드 생성
+              </Link>
             </div>
-          </div>
-        </Sidebar>
 
-        {/* Canvas area */}
-        <div className="flex-1 relative flex flex-col items-center justify-center overflow-hidden">
-          {/* Animated geometric shapes */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {/* Rotating square */}
-            <div
-              className="absolute animate-spin-slow"
-              style={{ width: 260, height: 260, border: '1px solid rgba(36,42,53,0.6)', borderRadius: 4 }}
-            />
-            {/* Dashed circle */}
-            <div
-              className="absolute animate-spin-slow-reverse"
-              style={{
-                width: 200,
-                height: 200,
-                border: '1px dashed rgba(77,182,172,0.2)',
-                borderRadius: '50%',
-              }}
-            />
-            {/* Diamond */}
-            <div
-              className="absolute animate-spin-slow"
-              style={{
-                width: 140,
-                height: 140,
-                border: '1px solid rgba(157,80,187,0.2)',
-                transform: 'rotate(45deg)',
-              }}
-            />
-            {/* Center cross+circle */}
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="30" stroke="rgba(77,182,172,0.3)" strokeWidth="1" />
-              <circle cx="40" cy="40" r="4" fill="rgba(77,182,172,0.5)" />
-              <line x1="40" y1="10" x2="40" y2="70" stroke="rgba(77,182,172,0.2)" strokeWidth="1" />
-              <line x1="10" y1="40" x2="70" y2="40" stroke="rgba(77,182,172,0.2)" strokeWidth="1" />
-            </svg>
-            {/* Scanner line */}
-            <div
-              className="absolute left-0 right-0 animate-scan pointer-events-none"
-              style={{
-                height: 1,
-                background: 'linear-gradient(90deg, transparent, rgba(77,182,172,0.4), transparent)',
-              }}
-            />
-          </div>
-
-          {/* Hero text overlay */}
-          <div className="relative z-10 flex flex-col items-center gap-6 text-center px-8 animate-fadeIn">
-            <div
-              className="font-mono text-[11px] tracking-widest px-3 py-1 rounded"
-              style={{
-                color: '#94a3b8',
-                background: 'rgba(148,163,184,0.1)',
-                border: '1px solid rgba(148,163,184,0.2)',
-              }}
-            >
-              NETWORK_EMPTY // AWAITING_INIT
-            </div>
-            <h2
-              className="font-main text-2xl font-semibold leading-tight"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              시스템이 네트워크 초기화를<br />준비했습니다
-            </h2>
-            <p className="font-mono text-xs max-w-sm" style={{ color: 'var(--text-secondary)' }}>
-              바이너리 레그 구조로 네트워크를 구성하세요.<br />
-              첫 번째 노드를 생성하여 시작하십시오.
-            </p>
-            <Link
-              href="/signup"
-              className="font-mono text-sm tracking-wider px-8 py-3 rounded transition-all"
-              style={{
-                background: 'var(--accent-blue)',
-                color: 'var(--bg-base)',
-                border: '1px solid var(--accent-blue)',
-              }}
-            >
-              첫 번째 노드 생성
-            </Link>
-
-            {/* Tip cards */}
-            <div className="grid grid-cols-3 gap-3 mt-4 w-full max-w-lg">
+            {/* Tip grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, width: '100%', maxWidth: 700, position: 'relative', zIndex: 1 }}>
               {[
-                { title: 'Root Positioning', desc: '루트 노드 기반 최적 배치' },
-                { title: 'Secure Validation', desc: '이중 검증 보안 프로토콜' },
-                { title: 'Auto-Balancing', desc: '레그 자동 균형 조정' },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                  ),
+                  title: '루트 포지셔닝',
+                  desc: '첫 번째 노드는 이후 모든 레그의 마스터 앵커 역할을 합니다.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  ),
+                  title: '보안 검증',
+                  desc: '각 노드는 라이브 네트워크에 브로드캐스트되기 전 고유 서명이 필요합니다.',
+                },
+                {
+                  icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                  ),
+                  title: '자동 균형',
+                  desc: 'RCT 엔진이 레그 분배를 자동으로 최적화합니다.',
+                },
               ].map(tip => (
-                <div
-                  key={tip.title}
-                  className="glass rounded-lg p-3 text-left"
-                >
-                  <div className="font-mono text-[10px] tracking-wider mb-1" style={{ color: 'var(--accent-blue)' }}>
-                    {tip.title}
-                  </div>
-                  <div className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {tip.desc}
-                  </div>
+                <div key={tip.title} className="tip-card">
+                  {tip.icon}
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{tip.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{tip.desc}</div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         </div>
       </div>
-    </div>
+    </>
   )
 }

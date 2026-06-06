@@ -2,119 +2,128 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TopNav from '@/components/TopNav'
-import Sidebar from '@/components/Sidebar'
-import SidebarHeader from '@/components/SidebarHeader'
-import NodeItem from '@/components/NodeItem'
-import Modal from '@/components/Modal'
-import NetworkCanvas from '@/components/NetworkCanvas'
 
 const RANKS = ['SILVER I', 'GOLD II', 'PLATINUM III', 'DIAMOND', 'CROWN', 'LEGACY']
-const RANK_COLORS: Record<string, string> = {
-  'SILVER I': '#94a3b8',
-  'GOLD II': '#f59e0b',
-  'PLATINUM III': '#4db6ac',
-  'DIAMOND': '#60a5fa',
-  'CROWN': '#c084fc',
-  'LEGACY': '#f97316',
-}
+const ACTIVE_RANKS = ['SILVER I', 'GOLD II']
 
 export default function SignupPage() {
   const router = useRouter()
   const [leg, setLeg] = useState<'LEFT' | 'RIGHT'>('LEFT')
-  const [selectedRank, setSelectedRank] = useState('SILVER I')
-  const [nodeId, setNodeId] = useState('')
+  const [activeRanks, setActiveRanks] = useState<Set<string>>(new Set(ACTIVE_RANKS))
+
+  const toggleRank = (rank: string) => {
+    setActiveRanks(prev => {
+      const next = new Set(prev)
+      if (next.has(rank)) next.delete(rank)
+      else next.add(rank)
+      return next
+    })
+  }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ filter: 'blur(2px)', background: 'var(--bg-base)' }}>
+    <>
+      <style>{`
+        @keyframes modalPop {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+
       {/* Blurred background layout */}
-      <TopNav breadcrumb="Network Command" statusLabel="LIVE_NETWORK_O1" showPulseDot />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar>
-          <SidebarHeader label="Network Layers" />
-          <div className="py-2">
-            <NodeItem label="Global Root" active />
-            <NodeItem label="Left Leg" indent={1} />
-            <NodeItem label="Right Leg" indent={1} />
-          </div>
-        </Sidebar>
-        <div className="flex-1 relative">
-          <NetworkCanvas />
+      <div style={{ filter: 'blur(4px) brightness(0.5)', position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', pointerEvents: 'none' }}>
+        <TopNav breadcrumb="Main Network" statusLabel="LIVE_NETWORK_O1" statusColor="accent" showPulseDot showAvatar />
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 300px', flex: 1, overflow: 'hidden' }}>
+          {/* Left sidebar */}
+          <aside style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border-primary)' }} />
+          {/* Canvas */}
+          <section style={{ background: 'radial-gradient(ellipse at center, #1a1e26 0%, #0f1115 100%)' }} />
+          {/* Right sidebar */}
+          <aside style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-primary)' }} />
         </div>
-        <div className="w-56 shrink-0" style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-primary)' }} />
       </div>
 
-      {/* Modal overlay - not blurred */}
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(10,12,16,0.8)', backdropFilter: 'blur(8px)', filter: 'none' }}
-      >
-        <div
-          className="animate-modalPop rounded-xl w-full max-w-md"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-secondary)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
-            filter: 'none',
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-primary)' }}>
-            <div>
-              <span className="font-mono text-sm tracking-wider" style={{ color: 'var(--text-primary)' }}>
-                Initialize New Node
-              </span>
-              <p className="font-mono text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                NODE_INIT // BINARY_PLACEMENT
-              </p>
-            </div>
+      {/* Modal backdrop */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.4)',
+      }}>
+        <div style={{
+          width: 480,
+          background: 'rgba(23,26,33,0.95)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid var(--border-secondary)',
+          borderRadius: 8,
+          animation: 'modalPop 0.25s ease-out both',
+        }}>
+          {/* Modal header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border-primary)',
+          }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+              Initialize New Node
+            </span>
             <button
-              onClick={() => router.push('/')}
-              className="w-6 h-6 rounded flex items-center justify-center text-xs hover:bg-white/5 transition-colors"
-              style={{ color: 'var(--text-tertiary)' }}
+              onClick={() => router.back()}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              ✕
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             </button>
           </div>
 
-          {/* Body */}
-          <div className="px-5 py-4 space-y-5">
+          {/* Modal body */}
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Node Identifier */}
             <div>
-              <label className="font-mono text-[11px] uppercase tracking-widest block mb-2" style={{ color: 'var(--text-tertiary)' }}>
+              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>
                 Node Identifier
               </label>
               <input
                 type="text"
-                value={nodeId}
-                onChange={e => setNodeId(e.target.value)}
-                placeholder="node_identifier_alpha"
-                className="w-full px-3 py-2 rounded font-mono text-sm outline-none transition-colors"
+                defaultValue="AETHER_NODE_882"
+                placeholder="e.g. ALPHA_VANGUARD_01"
                 style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '8px 12px',
                   background: 'var(--bg-inset)',
                   border: '1px solid var(--border-secondary)',
+                  borderRadius: 4,
                   color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 13,
+                  outline: 'none',
                 }}
               />
             </div>
 
             {/* Leg Assignment */}
             <div>
-              <label className="font-mono text-[11px] uppercase tracking-widest block mb-2" style={{ color: 'var(--text-tertiary)' }}>
+              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>
                 Leg Assignment
               </label>
-              <div className="flex gap-2">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(['LEFT', 'RIGHT'] as const).map(l => (
                   <button
                     key={l}
                     onClick={() => setLeg(l)}
-                    className="flex-1 py-2 rounded font-mono text-xs tracking-wider transition-all"
                     style={{
+                      padding: '10px',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      letterSpacing: '0.08em',
+                      cursor: 'pointer',
+                      borderRadius: 4,
                       border: `1px solid ${leg === l ? 'var(--accent-blue)' : 'var(--border-secondary)'}`,
                       background: leg === l ? 'var(--accent-blue-dim)' : 'var(--bg-inset)',
                       color: leg === l ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                      transition: 'all 0.15s',
                     }}
                   >
-                    {l}
+                    {l === 'LEFT' ? 'LEFT (PRIMARY)' : 'RIGHT (SECONDARY)'}
                   </button>
                 ))}
               </div>
@@ -122,64 +131,91 @@ export default function SignupPage() {
 
             {/* Parent Node Path */}
             <div>
-              <label className="font-mono text-[11px] uppercase tracking-widest block mb-2" style={{ color: 'var(--text-tertiary)' }}>
+              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>
                 Parent Node Path
               </label>
-              <select
-                className="w-full px-3 py-2 rounded font-mono text-sm outline-none"
-                style={{
-                  background: 'var(--bg-inset)',
-                  border: '1px solid var(--border-secondary)',
-                  color: 'var(--text-primary)',
-                }}
-              >
+              <select style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--bg-inset)',
+                border: '1px solid var(--border-secondary)',
+                borderRadius: 4,
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 13,
+                outline: 'none',
+              }}>
                 <option>ROOT / L-ALPHA</option>
                 <option>ROOT / R-BETA</option>
                 <option>ROOT / L-ALPHA / L-01</option>
-                <option>ROOT / R-BETA / R-03</option>
               </select>
             </div>
 
-            {/* Rank Tier */}
+            {/* Rank Tier Requirement */}
             <div>
-              <label className="font-mono text-[11px] uppercase tracking-widest block mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                Rank Tier
+              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>
+                Rank Tier Requirement
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {RANKS.map(rank => (
-                  <button
-                    key={rank}
-                    onClick={() => setSelectedRank(rank)}
-                    className="py-2 px-2 rounded font-mono text-[10px] tracking-wide transition-all"
-                    style={{
-                      border: `1px solid ${selectedRank === rank ? RANK_COLORS[rank] : 'var(--border-secondary)'}`,
-                      background: selectedRank === rank ? `${RANK_COLORS[rank]}18` : 'var(--bg-inset)',
-                      color: selectedRank === rank ? RANK_COLORS[rank] : 'var(--text-tertiary)',
-                    }}
-                  >
-                    {rank}
-                  </button>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {RANKS.map(rank => {
+                  const isActive = activeRanks.has(rank)
+                  return (
+                    <button
+                      key={rank}
+                      onClick={() => toggleRank(rank)}
+                      style={{
+                        padding: '8px 4px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 11,
+                        letterSpacing: '0.05em',
+                        cursor: 'pointer',
+                        borderRadius: 4,
+                        border: `1px solid ${isActive ? 'var(--accent-blue)' : 'var(--border-primary)'}`,
+                        background: isActive ? 'var(--accent-blue-dim)' : 'var(--bg-inset)',
+                        color: isActive ? 'var(--accent-blue)' : 'var(--text-tertiary)',
+                        opacity: isActive ? 1 : 0.5,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {rank}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-2 px-5 py-4" style={{ borderTop: '1px solid var(--border-primary)' }}>
+          {/* Modal footer */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+            padding: '12px 20px',
+            background: 'rgba(10,12,16,0.5)',
+            borderTop: '1px solid var(--border-primary)',
+            borderRadius: '0 0 8px 8px',
+          }}>
             <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2 rounded font-mono text-xs tracking-wider transition-colors hover:bg-white/5"
-              style={{ color: 'var(--text-tertiary)', border: '1px solid var(--border-secondary)' }}
+              onClick={() => router.back()}
+              style={{
+                padding: '8px 16px',
+                fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.08em',
+                cursor: 'pointer', borderRadius: 4,
+                border: '1px solid var(--border-secondary)',
+                background: 'transparent',
+                color: 'var(--text-tertiary)',
+              }}
             >
               Discard
             </button>
             <button
               onClick={() => router.push('/dashboard')}
-              className="px-5 py-2 rounded font-mono text-xs tracking-wider transition-all"
               style={{
-                background: 'var(--accent-blue)',
-                color: 'var(--bg-base)',
+                padding: '8px 20px',
+                fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.08em',
+                cursor: 'pointer', borderRadius: 4,
                 border: '1px solid var(--accent-blue)',
+                background: 'var(--accent-blue)',
+                color: '#0f1115',
+                fontWeight: 600,
               }}
             >
               Deploy Node
@@ -187,6 +223,6 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

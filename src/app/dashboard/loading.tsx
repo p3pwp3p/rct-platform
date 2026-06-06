@@ -1,115 +1,174 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import TopNav from '@/components/TopNav'
-import Sidebar from '@/components/Sidebar'
-import SidebarHeader from '@/components/SidebarHeader'
-import NodeItem from '@/components/NodeItem'
-import NetworkCanvas from '@/components/NetworkCanvas'
 
-const DATA_STREAMS = [
-  { label: 'Node registry sync', status: 'LOADED', color: '#4db6ac' },
-  { label: 'Binary tree topology', status: 'LOADED', color: '#4db6ac' },
-  { label: 'Volume metrics', status: '78%', color: '#f59e0b' },
-  { label: 'Rank calculations', status: 'PENDING', color: '#64748b' },
-  { label: 'Analytics engine', status: 'PENDING', color: '#64748b' },
-]
+interface TreeNode {
+  x: number; y: number; level: number; children: TreeNode[]
+}
+
+function buildTree(x: number, y: number, level: number, maxLevel: number, spread: number): TreeNode {
+  const node: TreeNode = { x, y, level, children: [] }
+  if (level < maxLevel) {
+    node.children = [
+      buildTree(x - spread, y + 70, level + 1, maxLevel, spread / 1.8),
+      buildTree(x + spread, y + 70, level + 1, maxLevel, spread / 1.8),
+    ]
+  }
+  return node
+}
+
+function GhostCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const c = ref.current; if (!c) return
+    const ctx = c.getContext('2d'); if (!ctx) return
+    let animId: number
+    const resize = () => { c.width = c.offsetWidth; c.height = c.offsetHeight }
+    resize()
+    const root = buildTree(c.width * 0.5, c.height * 0.15, 0, 4, 140)
+    let t = 0
+    const drawNode = (node: TreeNode) => {
+      const nx = node.x + Math.sin(t * 0.015 + node.level) * 2
+      const ny = node.y + Math.cos(t * 0.012 + node.level) * 2
+      for (const child of node.children) {
+        const cx = child.x + Math.sin(t * 0.015 + child.level) * 2
+        const cy = child.y + Math.cos(t * 0.012 + child.level) * 2
+        const pulse = (Math.sin(t * 0.04 + node.level) + 1) / 2
+        ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(cx, cy)
+        ctx.strokeStyle = `rgba(77,182,172,${0.03 + pulse * 0.05})`
+        ctx.lineWidth = 1; ctx.stroke()
+        drawNode(child)
+      }
+      ctx.beginPath(); ctx.arc(nx, ny, 2, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(77,182,172,0.15)`; ctx.fill()
+    }
+    const draw = () => {
+      ctx.clearRect(0, 0, c.width, c.height)
+      drawNode(root)
+      t++; animId = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(animId)
+  }, [])
+  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+}
 
 export default function DashboardLoading() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      <TopNav breadcrumb="Network Command" statusLabel="INITIALIZING_SYX" statusColor="#f59e0b" />
+    <>
+      <style>{`
+        @keyframes progress-crawl {
+          0% { width: 0%; }
+          50% { width: 65%; }
+          100% { width: 100%; }
+        }
+        @keyframes beacon-pulse {
+          0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(77,182,172,0.7); }
+          70% { transform: scale(1.2); opacity: 0.5; box-shadow: 0 0 0 10px rgba(77,182,172,0); }
+          100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(77,182,172,0); }
+        }
+        .sidebar-header {
+          padding: 12px 16px;
+          font-family: var(--font-mono);
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: var(--text-tertiary);
+          border-bottom: 1px solid var(--border-primary);
+        }
+        .node-item {
+          display: flex; align-items: center;
+          padding: 7px 16px;
+          font-family: var(--font-mono); font-size: 12px;
+          color: var(--text-secondary);
+        }
+      `}</style>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar — dimmed */}
-        <Sidebar>
-          <SidebarHeader label="Network Layers" />
-          <div className="py-1">
-            <NodeItem label="Global Root" opacity={0.3} />
-            <NodeItem label="Left Leg" indent={1} opacity={0.2} />
-            <NodeItem label="Alpha Group" indent={2} opacity={0.15} />
-            <NodeItem label="Right Leg" indent={1} opacity={0.2} />
-          </div>
-        </Sidebar>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
+        <TopNav breadcrumb="Main Network" statusLabel="INITIALIZING_SYX" statusColor="gray" showAvatar={false} />
 
-        {/* Center Canvas with overlay */}
-        <div className="flex-1 relative overflow-hidden">
-          <NetworkCanvas dim />
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 300px', flex: 1, overflow: 'hidden' }}>
 
-          {/* Hydration overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="animate-modalPop rounded-xl w-full max-w-sm p-5"
-              style={{
+          {/* Left Sidebar */}
+          <aside style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border-primary)', opacity: 0.5, display: 'flex', flexDirection: 'column' }}>
+            <div className="sidebar-header">Network Layers</div>
+            <div className="node-item">Global Root</div>
+            <div className="node-item" style={{ paddingLeft: 40 }}>Left Leg</div>
+            <div className="node-item" style={{ paddingLeft: 40 }}>Right Leg</div>
+          </aside>
+
+          {/* Center */}
+          <section style={{ position: 'relative', background: 'radial-gradient(ellipse at center, #1a1e26 0%, #0f1115 100%)', overflow: 'hidden' }}>
+            <GhostCanvas />
+
+            {/* Hydration status overlay */}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{
+                width: 360,
                 background: 'rgba(23,26,33,0.95)',
                 border: '1px solid var(--border-secondary)',
+                borderRadius: 8,
                 backdropFilter: 'blur(12px)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-              }}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center animate-spin-slow"
-                  style={{ border: '2px solid var(--accent-blue)', borderTopColor: 'transparent' }}
-                />
-                <div>
-                  <div className="font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+                padding: 20,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: 'var(--accent-blue)',
+                    animation: 'beacon-pulse 2s ease-out infinite',
+                    flexShrink: 0,
+                  }} />
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)' }}>
                     Data Hydration in Progress
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: 4, background: 'var(--bg-inset)', borderRadius: 2, overflow: 'hidden', marginBottom: 12 }}>
+                  <div style={{
+                    height: 4,
+                    background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-purple))',
+                    borderRadius: 2,
+                    animation: 'progress-crawl 5s ease-in-out infinite',
+                  }} />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>45.2% Complete</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>1.2 Gbps</span>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-blue)' }}>[FETCH]</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)' }}>leg_binary_primary_v2.bin</span>
                   </div>
-                  <div className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                    NETWORK_SYNC // SYX_ENGINE
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', opacity: 0.5 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>[MAP]</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>node_mapping_recursive...</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Progress bar */}
-              <div
-                className="h-1.5 rounded-full overflow-hidden mb-4"
-                style={{ background: 'var(--bg-inset)' }}
-              >
-                <div
-                  className="h-1.5 rounded-full animate-progress"
-                  style={{ background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-purple))' }}
-                />
-              </div>
-
-              {/* Stream items */}
-              <div className="space-y-2">
-                {DATA_STREAMS.map(s => (
-                  <div key={s.label} className="flex items-center justify-between">
-                    <span className="font-mono text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                      {s.label}
-                    </span>
-                    <span className="font-mono text-[10px]" style={{ color: s.color }}>
-                      {s.status}
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        {/* Right Sidebar — dimmed */}
-        <div
-          className="w-56 shrink-0 flex flex-col"
-          style={{
-            background: 'var(--bg-surface)',
-            borderLeft: '1px solid var(--border-primary)',
-            opacity: 0.35,
-          }}
-        >
-          <SidebarHeader label="System Properties" />
-          <div className="p-4 space-y-3">
-            {['Hierarchy Engine', 'Perf. Decay', 'Leg Balancing', 'Visualizer'].map(l => (
-              <div key={l}>
-                <div className="font-mono text-[10px] mb-1 uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                  {l}
+          {/* Right Sidebar */}
+          <aside style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', opacity: 0.3, pointerEvents: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-primary)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)' }}>System Properties</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>PENDING</span>
+            </div>
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {['Hierarchy Engine', 'Performance Decay', 'Leg Balancing', 'Binary Visualizer'].map(label => (
+                <div key={label}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</div>
+                  <div style={{ height: 28, background: 'var(--bg-inset)', borderRadius: 4 }} />
                 </div>
-                <div className="h-6 rounded" style={{ background: 'var(--bg-inset)' }} />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </div>
-    </div>
+    </>
   )
 }

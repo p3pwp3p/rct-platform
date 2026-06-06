@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function GatewayPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const mouseRef = useRef({ x: 0, y: 0 })
+  const nebulaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -13,87 +13,49 @@ export default function GatewayPage() {
     if (!ctx) return
 
     let animId: number
+    let particles: { x: number; y: number; size: number; speed: number; opacity: number }[] = []
+    let width = 0
+    let height = 0
+
+    const initParticles = () => {
+      particles = Array.from({ length: 200 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: Math.random() * 1.5,
+        speed: Math.random() * 0.2 + 0.05,
+        opacity: Math.random() * 0.5 + 0.2,
+      }))
+    }
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      width = canvas.width = window.innerWidth
+      height = canvas.height = window.innerHeight
+      initParticles()
     }
     resize()
     window.addEventListener('resize', resize)
 
-    const handleMouse = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY }
-    }
-    window.addEventListener('mousemove', handleMouse)
-
-    const particles = Array.from({ length: 200 }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      speed: 0.2 + Math.random() * 0.5,
-      size: Math.random() * 1.5 + 0.3,
-      opacity: Math.random() * 0.6 + 0.1,
-    }))
-
     const draw = () => {
-      const w = canvas.width
-      const h = canvas.height
-      ctx.clearRect(0, 0, w, h)
-
-      ctx.fillStyle = '#0f1115'
-      ctx.fillRect(0, 0, w, h)
-
-      const mx = mouseRef.current.x || w / 2
-      const my = mouseRef.current.y || h / 2
-      const px = (mx / w - 0.5) * 30
-      const py = (my / h - 0.5) * 30
-
-      const grad = ctx.createRadialGradient(w / 2 + px, h / 2 + py, 0, w / 2 + px, h / 2 + py, w * 0.4)
-      grad.addColorStop(0, 'rgba(77,182,172,0.06)')
-      grad.addColorStop(0.5, 'rgba(157,80,187,0.04)')
-      grad.addColorStop(1, 'transparent')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, w, h)
-
-      // Perspective grid
-      ctx.strokeStyle = 'rgba(36,42,53,0.4)'
-      ctx.lineWidth = 0.5
-      const horizon = h * 0.6
-      const vanishX = w / 2
-      const cols = 14
-      for (let i = 0; i <= cols; i++) {
-        const tx = (w / cols) * i
-        ctx.beginPath()
-        ctx.moveTo(vanishX, horizon)
-        ctx.lineTo(tx, h)
-        ctx.stroke()
-      }
-      for (let j = 1; j <= 8; j++) {
-        const t = j / 8
-        const y = horizon + (h - horizon) * t
-        const spread = w * 0.5 * t
-        ctx.beginPath()
-        ctx.moveTo(vanishX - spread, y)
-        ctx.lineTo(vanishX + spread, y)
-        ctx.stroke()
-      }
-
-      // Stars
+      ctx.clearRect(0, 0, width, height)
       for (const p of particles) {
+        p.y -= p.speed
+        if (p.y < 0) p.y = height
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(224,230,237,${p.opacity})`
         ctx.fill()
-        p.y -= p.speed
-        if (p.y < 0) {
-          p.y = h
-          p.x = Math.random() * w
-        }
       }
-
       animId = requestAnimationFrame(draw)
     }
-
     draw()
+
+    const handleMouse = (e: MouseEvent) => {
+      if (!nebulaRef.current) return
+      const moveX = (e.clientX - width / 2) * 0.01
+      const moveY = (e.clientY - height / 2) * 0.01
+      nebulaRef.current.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`
+    }
+    window.addEventListener('mousemove', handleMouse)
 
     return () => {
       cancelAnimationFrame(animId)
@@ -103,55 +65,158 @@ export default function GatewayPage() {
   }, [])
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden flex flex-col items-center justify-center">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+    <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
 
-      <div className="relative z-10 flex flex-col items-center gap-8 animate-fadeIn">
-        <div className="flex flex-col items-center gap-4">
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
-            <rect x="4" y="11" width="44" height="8" rx="2" stroke="#4db6ac" strokeWidth="1.8" />
-            <rect x="4" y="23" width="44" height="8" rx="2" stroke="#4db6ac" strokeWidth="1.8" opacity="0.6" />
-            <rect x="4" y="35" width="44" height="8" rx="2" stroke="#4db6ac" strokeWidth="1.8" opacity="0.3" />
-          </svg>
-          <h1 className="font-mono text-4xl tracking-[0.35em] uppercase" style={{ color: 'var(--accent-blue)' }}>
-            Aetheris
-          </h1>
-          <p className="font-mono text-xs tracking-widest text-center" style={{ color: 'var(--text-tertiary)' }}>
-            당신의 네트워크 운명을 설계하세요
-          </p>
-          <p className="font-mono text-[11px] text-center max-w-xs" style={{ color: 'var(--text-tertiary)', opacity: 0.7 }}>
-            MT5 카피트레이딩 기반 · 월 평균 10% · Profit Sharing 40%
-          </p>
-        </div>
+        .btn-login {
+          background: transparent;
+          border: 1px solid #4db6ac;
+          color: #4db6ac;
+          padding: 14px 48px;
+          font-size: 14px;
+          font-weight: 500;
+          letter-spacing: 0.2em;
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          border-radius: 2px;
+          position: relative;
+          overflow: hidden;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .btn-login::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 120%;
+          height: 120%;
+          background: rgba(77,182,172,0.15);
+          transform: translate(-50%, -50%) scale(0);
+          transition: transform 0.4s ease;
+          z-index: -1;
+        }
+        .btn-login:hover {
+          color: #fff;
+          box-shadow: 0 0 20px rgba(77,182,172,0.2);
+          transform: translateY(-2px);
+        }
+        .btn-login:hover::before {
+          transform: translate(-50%, -50%) scale(1);
+        }
 
-        <div className="flex flex-col items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="font-mono text-sm tracking-[0.2em] uppercase px-10 py-3 rounded transition-all duration-300 hover:shadow-lg"
-            style={{
-              border: '1px solid var(--accent-blue)',
-              color: 'var(--accent-blue)',
-              background: 'rgba(77,182,172,0.07)',
-            }}
+        .grid-layer {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(to right, rgba(148,163,184,0.02) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(148,163,184,0.02) 1px, transparent 1px);
+          background-size: 60px 60px;
+          pointer-events: none;
+          z-index: 3;
+          transform: perspective(1000px) rotateX(60deg) translateY(100px);
+          opacity: 0.5;
+        }
+      `}</style>
+
+      <main
+        style={{
+          backgroundColor: '#07080a',
+          color: '#e0e6ed',
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Starfield canvas */}
+        <canvas
+          ref={canvasRef}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}
+        />
+
+        {/* Nebula glow */}
+        <div
+          ref={nebulaRef}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100%',
+            height: '100%',
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle at center, rgba(77,182,172,0.05) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* CSS Perspective grid */}
+        <div className="grid-layer" />
+
+        {/* Login UI */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 40,
+            animation: 'fadeIn 2s ease-out',
+          }}
+        >
+          {/* Brand icon */}
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#4db6ac"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ opacity: 0.8, filter: 'drop-shadow(0 0 15px rgba(77,182,172,0.3))' }}
           >
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+
+          {/* Login button */}
+          <Link href="/dashboard" className="btn-login">
             로그인
           </Link>
-          <Link
-            href="/signup"
-            className="font-mono text-xs tracking-wider transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            계정이 없으신가요? 노드 초기화 →
-          </Link>
         </div>
-      </div>
 
-      <div
-        className="absolute bottom-6 left-0 right-0 flex justify-center font-mono text-[10px] tracking-widest"
-        style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}
-      >
-        Aetheris OS // Gateway Node
-      </div>
-    </main>
+        {/* Footer */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            fontSize: 10,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            opacity: 0.3,
+            zIndex: 10,
+            color: '#64748b',
+          }}
+        >
+          RCT OS // Gateway Node
+        </div>
+      </main>
+    </>
   )
 }
