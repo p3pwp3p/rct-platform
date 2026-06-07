@@ -200,7 +200,7 @@ export default function AnalyticsPage() {
         .menu-item {
           display: flex; align-items: center; gap: 10px;
           padding: 9px 16px;
-          font-family: var(--font-mono); font-size: 12px;
+          font-family: var(--font-main); font-size: 12px;
           color: var(--text-secondary);
           cursor: pointer;
           text-decoration: none;
@@ -267,7 +267,7 @@ export default function AnalyticsPage() {
                 <div key={s.label} className="stat-card">
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>{s.label}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{s.value}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: s.up ? '#4db6ac' : '#f87171' }}>
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: s.up ? '#4db6ac' : '#f87171' }}>
                     {s.up ? '▲' : '▼'} {s.trend}
                   </div>
                 </div>
@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
             {/* Volume timeline */}
             <div className="chart-card" style={{ height: 200 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>Volume Distribution Timeline</span>
+                <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Volume Distribution Timeline</span>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {['7D', '24H'].map(b => (
                     <span key={b} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-tertiary)' }}>{b}</span>
@@ -292,11 +292,11 @@ export default function AnalyticsPage() {
             {/* 2-col charts */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="chart-card" style={{ height: 160 }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8 }}>Compression Curve</div>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Compression Curve</div>
                 <div style={{ flex: 1 }}><CompressionChart /></div>
               </div>
               <div className="chart-card" style={{ height: 160 }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8 }}>Retention Index</div>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Retention Index</div>
                 <div style={{ flex: 1 }}><RetentionChart /></div>
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function AnalyticsPage() {
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <DecayGauge />
               </div>
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5, marginTop: 8 }}>
+              <p style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5, marginTop: 8 }}>
                 Projected loss within next 48h based on inactivity clusters.
               </p>
             </div>
@@ -336,7 +336,7 @@ export default function AnalyticsPage() {
                     borderStyle: item.est ? 'dashed' : 'solid',
                   }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: item.est ? 'var(--accent-blue)' : 'var(--text-tertiary)', marginBottom: 2 }}>{item.date}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.desc}</div>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)' }}>{item.desc}</div>
                   </div>
                 ))}
               </div>
@@ -347,7 +347,7 @@ export default function AnalyticsPage() {
               <div style={{ height: 4, background: 'var(--border-primary)', borderRadius: 2, marginBottom: 8 }}>
                 <div style={{ height: 4, width: '15%', background: '#4db6ac', borderRadius: 2 }} />
               </div>
-              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>Network health remains optimal.</p>
+              <p style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>Network health remains optimal.</p>
             </div>
           </aside>
         </div>

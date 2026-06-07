@@ -32,10 +32,10 @@ export default function InitPage() {
           padding: 14px 32px;
           background: var(--accent-blue);
           color: #0f1115;
-          font-family: var(--font-mono);
+          font-family: var(--font-main);
           font-size: 14px;
           font-weight: 600;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.02em;
           border: none;
           border-radius: 4px;
           cursor: pointer;
@@ -87,6 +87,7 @@ export default function InitPage() {
             <div style={{
               padding: 20,
               fontStyle: 'italic',
+              fontFamily: 'var(--font-main)',
               fontSize: 12,
               color: 'var(--text-tertiary)',
               textAlign: 'center',
@@ -109,7 +110,7 @@ export default function InitPage() {
                 Assets
               </div>
               <div style={{ padding: '8px 16px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-tertiary)' }}>Documentation.pdf</div>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>Documentation.pdf</div>
               </div>
             </div>
           </aside>
@@ -185,6 +186,7 @@ export default function InitPage() {
                 fontWeight: 700,
                 lineHeight: 1.2,
                 marginBottom: 16,
+                fontFamily: 'var(--font-main)',
                 background: 'linear-gradient(180deg, #f8fafc 0%, #94a3b8 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -192,7 +194,7 @@ export default function InitPage() {
               }}>
                 시스템이 네트워크 초기화를 준비했습니다
               </h1>
-              <p style={{ fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 32 }}>
+              <p style={{ fontFamily: 'var(--font-main)', fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 32 }}>
                 운영 환경이 비어 있습니다. 첫 번째 글로벌 루트 노드를 생성하여 계층 구조를 구성하고 데이터 흐름을 모니터링하세요.
               </p>
               <Link href="/signup" className="btn-primary-init">
@@ -233,7 +235,7 @@ export default function InitPage() {
               ].map(tip => (
                 <div key={tip.title} className="tip-card">
                   {tip.icon}
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{tip.title}</div>
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{tip.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{tip.desc}</div>
                 </div>
               ))}

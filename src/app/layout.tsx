@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
-  title: 'Aetheris — Network Command',
+  title: 'RCT Platform',
   description: 'RCT / Aetheris Network Marketing Platform',
 }
 

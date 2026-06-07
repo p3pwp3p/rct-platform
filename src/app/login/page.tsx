@@ -139,6 +139,7 @@ export default function LoginPage() {
           border: none;
           padding: 13px;
           border-radius: 3px;
+          font-family: var(--font-main);
           font-size: 13px;
           font-weight: 700;
           letter-spacing: 0.12em;

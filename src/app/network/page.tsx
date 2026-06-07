@@ -47,6 +47,7 @@ export default function NetworkPage() {
         .nav-item {
           display: flex; align-items: center; gap: 10px;
           padding: 10px 16px;
+          font-family: var(--font-main);
           font-size: 13px;
           color: var(--text-secondary);
           text-decoration: none;
@@ -128,8 +129,8 @@ export default function NetworkPage() {
           <main style={{ padding: 32, overflowY: 'auto', background: 'radial-gradient(ellipse at center, #1a1e26 0%, #0f1115 100%)' }}>
             {/* Page header */}
             <div style={{ marginBottom: 24 }}>
-              <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>글로벌 네트워크 분석</h1>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>RCT 에코시스템 전반의 종합 성과 데이터입니다.</p>
+              <h1 style={{ fontFamily: 'var(--font-main)', fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>글로벌 네트워크 분석</h1>
+              <p style={{ fontFamily: 'var(--font-main)', fontSize: 14, color: 'var(--text-secondary)' }}>RCT 에코시스템 전반의 종합 성과 데이터입니다.</p>
             </div>
 
             {/* KPI grid */}
@@ -138,7 +139,7 @@ export default function NetworkPage() {
                 <div key={k.label} className="kpi-card">
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8 }}>{k.label}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{k.value}</div>
-                  <div style={{ fontSize: 12, color: k.up ? '#4db6ac' : '#f59e0b' }}>
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: k.up ? '#4db6ac' : '#f59e0b' }}>
                     {k.up ? '↑' : '↓'} {k.trend}
                   </div>
                 </div>
@@ -175,7 +176,7 @@ export default function NetworkPage() {
                   {RANKS.map(r => (
                     <div key={r.name}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>{r.name}</span>
+                        <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-secondary)' }}>{r.name}</span>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{r.count}</span>
                       </div>
                       <div style={{ height: 4, background: 'var(--bg-inset)', borderRadius: 2 }}>
@@ -199,7 +200,7 @@ export default function NetworkPage() {
                       boxShadow: `0 0 6px ${a.color}80`,
                     }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-primary)', marginBottom: 4 }}>{a.title}</div>
+                      <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)', marginBottom: 4 }}>{a.title}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>{a.meta}</div>
                     </div>
                     <button className="btn-ghost-sm">{a.action}</button>

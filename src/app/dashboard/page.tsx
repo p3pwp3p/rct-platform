@@ -121,7 +121,7 @@ export default function DashboardPage() {
           display: flex;
           align-items: center;
           padding: 7px 16px;
-          font-family: var(--font-mono);
+          font-family: var(--font-main);
           font-size: 12px;
           color: var(--text-secondary);
           cursor: pointer;
@@ -209,26 +209,27 @@ export default function DashboardPage() {
             <div style={{ position: 'absolute', top: 40, left: 40, maxWidth: 480, pointerEvents: 'none' }}>
               <h1 style={{
                 fontSize: 42, fontWeight: 700, lineHeight: 1.2, marginBottom: 16,
+                fontFamily: 'var(--font-main)',
                 background: 'linear-gradient(180deg, #f8fafc 0%, #94a3b8 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               }}>
                 당신의 네트워크 운명을 설계하세요
               </h1>
-              <p style={{ fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
+              <p style={{ fontFamily: 'var(--font-main)', fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
                 복잡한 바이너리 레그 구조를 정밀하게 시각화합니다. 실시간 데이터 기반 계층 관리로 성장을 최적화하세요.
               </p>
               <div style={{ display: 'flex', gap: 12, pointerEvents: 'all' }}>
                 <Link href="/signup" style={{
                   padding: '12px 24px', background: 'var(--accent-blue)', color: '#0f1115',
-                  fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, borderRadius: 4,
-                  textDecoration: 'none', letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, borderRadius: 4,
+                  textDecoration: 'none', letterSpacing: '0.01em',
                 }}>
                   노드 초기화
                 </Link>
                 <Link href="/init" style={{
                   padding: '12px 24px', border: '1px solid var(--border-secondary)', color: 'var(--text-secondary)',
-                  fontFamily: 'var(--font-mono)', fontSize: 13, borderRadius: 4,
-                  textDecoration: 'none', letterSpacing: '0.05em', background: 'rgba(23,26,33,0.7)',
+                  fontFamily: 'var(--font-main)', fontSize: 13, borderRadius: 4,
+                  textDecoration: 'none', letterSpacing: '0.01em', background: 'rgba(23,26,33,0.7)',
                 }}>
                   블루프린트 보기
                 </Link>

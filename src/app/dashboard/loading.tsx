@@ -79,7 +79,7 @@ export default function DashboardLoading() {
         .node-item {
           display: flex; align-items: center;
           padding: 7px 16px;
-          font-family: var(--font-mono); font-size: 12px;
+          font-family: var(--font-main); font-size: 12px;
           color: var(--text-secondary);
         }
       `}</style>
@@ -118,7 +118,7 @@ export default function DashboardLoading() {
                     animation: 'beacon-pulse 2s ease-out infinite',
                     flexShrink: 0,
                   }} />
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)' }}>
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)' }}>
                     Data Hydration in Progress
                   </span>
                 </div>

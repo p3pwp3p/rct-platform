@@ -11,7 +11,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [referral, setReferral] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +44,6 @@ export default function SignupPage() {
       options: {
         data: {
           full_name: name,
-          referral_code: referral || null,
         },
       },
     })
@@ -98,6 +96,7 @@ export default function SignupPage() {
           border: none;
           padding: 13px;
           border-radius: 3px;
+          font-family: var(--font-main);
           font-size: 13px;
           font-weight: 700;
           letter-spacing: 0.1em;
@@ -180,8 +179,9 @@ export default function SignupPage() {
                 <Link href="/login" style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   padding: '10px 24px', border: '1px solid #4db6ac', borderRadius: 3,
-                  fontSize: 12, color: '#4db6ac', textDecoration: 'none',
-                  fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase',
+                  fontSize: 13, color: '#4db6ac', textDecoration: 'none',
+                  fontFamily: 'var(--font-main)', fontWeight: 500,
+                  letterSpacing: '0.02em',
                   transition: 'all 0.2s',
                 }}>
                   로그인으로 이동
@@ -212,14 +212,6 @@ export default function SignupPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>비밀번호 확인</label>
                   <input className="su-input" type="password" placeholder="비밀번호 재입력" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} autoComplete="new-password" />
-                </div>
-
-                {/* 추천인 코드 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
-                    추천인 코드 <span style={{ color: '#64748b', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(선택)</span>
-                  </label>
-                  <input className="su-input" type="text" placeholder="REFERRAL_CODE" value={referral} onChange={e => setReferral(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)' }} />
                 </div>
 
                 {/* 약관 동의 */}

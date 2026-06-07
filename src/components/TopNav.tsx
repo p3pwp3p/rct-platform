@@ -43,7 +43,7 @@ export default function TopNav({
           RCT Platform
         </span>
         <span style={{ color: 'var(--border-secondary)' }}>/</span>
-        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{breadcrumb}</span>
+        <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)' }}>{breadcrumb}</span>
       </div>
 
       {/* Right */}
