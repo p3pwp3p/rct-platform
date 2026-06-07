@@ -2,10 +2,11 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import PageTransition from '@/components/PageTransition'
 
 const NAV_ITEMS = [
   {
-    section: '메인',
+    section: 'NETWORK',
     items: [
       { href: '/dashboard', label: '메인 네트워크', icon: 'home', exact: true },
       { href: '/dashboard/analytics', label: '성과 분석', icon: 'chart' },
@@ -14,7 +15,7 @@ const NAV_ITEMS = [
     ],
   },
   {
-    section: '계정',
+    section: 'ACCOUNT',
     items: [
       { href: '/dashboard/profile', label: '내 프로필', icon: 'user' },
     ],
@@ -125,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             RCT Platform
           </span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)' }}>
             {currentPageName}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -153,28 +154,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             flexDirection: 'column',
             overflow: 'hidden',
           }}>
-            {/* Brand area */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '16px', borderBottom: '1px solid var(--border-primary)',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                RCT Platform
-              </span>
-            </div>
-
             {/* Nav sections */}
             <nav style={{ flex: 1, overflowY: 'auto', paddingTop: 8 }}>
               {NAV_ITEMS.map(section => (
                 <div key={section.section}>
                   <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 10,
-                    textTransform: 'uppercase', letterSpacing: '0.12em',
-                    color: 'var(--text-tertiary)',
-                    padding: '8px 16px',
+                    fontFamily: 'var(--font-mono)', fontSize: 11,
+                    fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.14em',
+                    color: 'var(--text-secondary)',
+                    padding: '16px 16px 6px',
                   }}>
                     {section.section}
                   </div>
@@ -202,9 +191,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </aside>
 
           {/* Page content */}
-          <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <PageTransition>
             {children}
-          </div>
+          </PageTransition>
         </div>
       </div>
     </>
