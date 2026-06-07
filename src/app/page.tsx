@@ -191,8 +191,24 @@ export default function GatewayPage() {
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
 
+          {/* Title */}
+          <h1
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              fontWeight: 400,
+              letterSpacing: '0.35em',
+              textTransform: 'uppercase',
+              color: 'var(--accent-blue)',
+              opacity: 0.9,
+              marginTop: -20,
+            }}
+          >
+            RCT Platform
+          </h1>
+
           {/* Login button */}
-          <Link href="/dashboard" className="btn-login">
+          <Link href="/login" className="btn-login">
             로그인
           </Link>
         </div>
