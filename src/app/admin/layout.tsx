@@ -1,0 +1,207 @@
+'use client'
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+
+const NAV = [
+  {
+    section: 'OVERVIEW',
+    items: [
+      { href: '/admin', label: '관리자 홈', icon: 'grid', exact: true },
+    ],
+  },
+  {
+    section: 'MANAGEMENT',
+    items: [
+      { href: '/admin/requests', label: '레그 등록 현황', icon: 'inbox' },
+      { href: '/admin/members',  label: '회원 관리',      icon: 'users' },
+      { href: '/admin/legs',     label: '전체 레그 현황', icon: 'network', exact: true },
+      { href: '/admin/legs/tree', label: '트리 뷰',        icon: 'tree' },
+      { href: '/admin/sales',    label: '매출 관리',       icon: 'sales' },
+    ],
+  },
+  {
+    section: 'PAYOUTS',
+    items: [
+      { href: '/admin/payouts',   label: '수당 지급 관리', icon: 'payout' },
+      { href: '/admin/payouts/ledger', label: '노드별 수령 현황', icon: 'ledger' },
+      { href: '/admin/forfeited', label: '낙전 집계',       icon: 'forfeited' },
+    ],
+  },
+  {
+    section: 'HISTORY',
+    items: [
+      { href: '/admin/history/rank',   label: '직급 변경 이력', icon: 'history' },
+      { href: '/admin/history/status', label: '상태 변경 이력', icon: 'history' },
+    ],
+  },
+]
+
+function Icon({ name }: { name: string }) {
+  const a = { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  switch (name) {
+    case 'grid':    return <svg {...a}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    case 'inbox':   return <svg {...a}><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+    case 'users':   return <svg {...a}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    case 'network': return <svg {...a}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    case 'tree':    return <svg {...a}><line x1="12" y1="2" x2="12" y2="8"/><path d="M5 8h14"/><line x1="5" y1="8" x2="5" y2="14"/><line x1="19" y1="8" x2="19" y2="14"/><path d="M2 14h6"/><path d="M16 14h6"/></svg>
+    case 'logout':  return <svg {...a}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    case 'sales':   return <svg {...a}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+    case 'payout':    return <svg {...a}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    case 'ledger':    return <svg {...a}><path d="M4 3h12l4 4v14a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+    case 'forfeited': return <svg {...a}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+    case 'history':   return <svg {...a}><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-3"/><polyline points="3 4 3 11 10 11"/></svg>
+    default: return null
+  }
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router   = useRouter()
+
+  // ── 인증 가드 ──────────────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (error || !user) { supabase.auth.signOut(); router.replace('/login'); return }
+      // admin이 아닌 계정은 /dashboard로 강제 이동
+      if (user.user_metadata?.role !== 'admin') {
+        router.replace('/dashboard')
+      }
+    })
+
+    // 토큰 만료 / 리프레시 실패 시 자동 로그아웃
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') router.replace('/login')
+    })
+    return () => subscription.unsubscribe()
+  }, [router])
+  // ──────────────────────────────────────────────────────
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href)
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  return (
+    <>
+      <style>{`
+        .admin-nav-item {
+          display: flex; align-items: center; gap: 10px;
+          padding: 9px 16px; border-radius: 0;
+          font-family: var(--font-main); font-size: 13px;
+          color: var(--text-secondary); text-decoration: none;
+          cursor: pointer; transition: background 0.15s, color 0.15s;
+          border-left: 2px solid transparent;
+          position: relative;
+        }
+        .admin-nav-item:hover { background: rgba(148,163,184,0.05); color: var(--text-primary); }
+        .admin-nav-item.active {
+          background: var(--accent-blue-dim);
+          color: var(--accent-blue);
+          border-left-color: var(--accent-blue);
+        }
+        .admin-logout-btn {
+          display: flex; align-items: center; gap: 10px;
+          width: 100%; padding: 9px 16px;
+          font-family: var(--font-main); font-size: 13px;
+          color: var(--text-tertiary); background: none;
+          border: none; cursor: pointer; text-align: left;
+          transition: background 0.15s, color 0.15s;
+        }
+        .admin-logout-btn:hover { background: rgba(148,163,184,0.05); color: var(--text-secondary); }
+      `}</style>
+
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
+        {/* Top nav */}
+        <div style={{
+          height: 48, display: 'flex', alignItems: 'center',
+          padding: '0 20px', gap: 12, flexShrink: 0,
+          background: 'var(--bg-surface)',
+          borderBottom: '1px solid var(--border-primary)',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>RCT Platform</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)' }}>관리자</span>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10,
+              padding: '2px 8px', borderRadius: 4, letterSpacing: '0.08em',
+              border: '1px solid rgba(239,68,68,0.4)',
+              color: '#ef4444', background: 'rgba(239,68,68,0.06)',
+            }}>ADMIN</span>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ef4444',
+            }}>A</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden' }}>
+          {/* Sidebar */}
+          <aside style={{
+            background: 'var(--bg-surface)',
+            borderRight: '1px solid var(--border-primary)',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
+            <nav style={{ flex: 1, overflowY: 'auto', paddingTop: 8 }}>
+              {NAV.map(section => (
+                <div key={section.section}>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.14em',
+                    color: 'var(--text-tertiary)', padding: '16px 16px 6px',
+                  }}>
+                    {section.section}
+                  </div>
+                  {section.items.map(item => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`admin-nav-item${isActive(item.href, (item as any).exact) ? ' active' : ''}`}
+                    >
+                      <Icon name={item.icon} />
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {(item as any).badge && (
+                        <span style={{
+                          minWidth: 18, height: 18, borderRadius: 9,
+                          background: '#ef4444', color: '#fff',
+                          fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 700,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '0 5px',
+                        }}>
+                          {(item as any).badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </nav>
+
+            <div style={{ borderTop: '1px solid var(--border-primary)', padding: '8px 0' }}>
+              <button className="admin-logout-btn" onClick={handleLogout}>
+                <Icon name="logout" />
+                로그아웃
+              </button>
+            </div>
+          </aside>
+
+          {/* Content */}
+          <main style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {children}
+          </main>
+        </div>
+      </div>
+    </>
+  )
+}

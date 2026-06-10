@@ -70,19 +70,36 @@ export default function LoginPage() {
     }
   }, [])
 
+  // 아이디(@없음) → 이메일 변환 테이블
+  const USERNAME_MAP: Record<string, string> = {
+    'rctplatformadmin': 'rctplatformadmin@gmail.com',
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     if (!email || !password) {
-      setError('이메일과 비밀번호를 입력해주세요.')
+      setError('이메일 또는 아이디와 비밀번호를 입력해주세요.')
       return
     }
+
+    // 아이디 입력 시 이메일로 변환
+    const loginEmail = email.includes('@')
+      ? email
+      : (USERNAME_MAP[email.trim().toLowerCase()] ?? null)
+
+    if (!loginEmail) {
+      setError('존재하지 않는 아이디입니다.')
+      return
+    }
+
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password })
     setLoading(false)
+
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+        setError('아이디/이메일 또는 비밀번호가 올바르지 않습니다.')
       } else if (error.message.includes('Email not confirmed')) {
         setError('이메일 인증이 필요합니다. 받은 편지함을 확인해주세요.')
       } else {
@@ -90,7 +107,14 @@ export default function LoginPage() {
       }
       return
     }
-    router.push('/dashboard')
+
+    // 관리자 여부 확인 → 라우팅 분기
+    const role = data.user?.user_metadata?.role
+    if (role === 'admin') {
+      router.push('/admin')
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   return (
@@ -217,12 +241,12 @@ export default function LoginPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
-                  이메일
+                  이메일 / 아이디
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   className="field-input"
-                  placeholder="name@example.com"
+                  placeholder="이메일 또는 아이디"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onFocus={() => setFocusedField('email')}
@@ -236,7 +260,7 @@ export default function LoginPage() {
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
                     비밀번호
                   </label>
-                  <Link href="#" style={{ fontSize: 11, color: '#4db6ac', opacity: 0.7, textDecoration: 'none' }}
+                  <Link href="/forgot-password" style={{ fontSize: 11, color: '#4db6ac', opacity: 0.7, textDecoration: 'none' }}
                     onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
                   >

@@ -6,6 +6,15 @@ export default function GatewayPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const nebulaRef = useRef<HTMLDivElement>(null)
 
+  // Supabase 비밀번호 재설정 링크가 사이트 루트로 떨어지는 경우
+  // (Redirect URL 허용 목록에 /reset-password 미등록 시) 토큰을 보존한 채 전달.
+  // window.location 사용: supabase 클라이언트가 새로 초기화되며 해시를 처리하도록 풀 리로드.
+  useEffect(() => {
+    if (window.location.hash.includes('type=recovery')) {
+      window.location.replace('/reset-password' + window.location.hash)
+    }
+  }, [])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return

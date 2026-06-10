@@ -21,8 +21,8 @@ const config: Config = {
         'text-tertiary': '#64748b',
       },
       fontFamily: {
-        main: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        mono: ['JetBrains Mono', 'SF Mono', 'monospace'],
+        main: ['SUIT', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['Geist Mono', 'JetBrains Mono', 'SF Mono', 'monospace'],
       },
     },
   },

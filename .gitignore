@@ -40,3 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# 로컬 개발/테스트 스크립트 (service_role 키 하드코딩 — 절대 커밋 금지)
+/scripts/
+# Claude 로컬 설정 (권한 허용 명령에 시크릿 포함 가능)
+.claude/settings.local.json
+# 잘못 생성된 export 파일
+*rct_pdf_out.txt
+recovery_url.tmp

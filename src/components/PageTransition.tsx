@@ -13,26 +13,15 @@ export default function PageTransition({ children }: { children: React.ReactNode
     el.style.animation = 'none'
     // reflow 강제 트리거
     void el.offsetHeight
-    el.style.animation = 'spaceEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both'
+    el.style.animation = 'pageFade 0.18s ease-out both'
   }, [pathname])
 
   return (
     <>
       <style>{`
-        @keyframes spaceEnter {
-          0% {
-            opacity: 0;
-            transform: translateY(6px) scale(0.995);
-            filter: blur(4px) brightness(0.6);
-          }
-          40% {
-            filter: blur(1px) brightness(0.9);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0px) brightness(1);
-          }
+        @keyframes pageFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
       `}</style>
       <div
@@ -42,7 +31,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          animation: 'spaceEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
+          animation: 'pageFade 0.18s ease-out both',
         }}
       >
         {children}

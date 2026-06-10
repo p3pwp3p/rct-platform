@@ -1,0 +1,414 @@
+-- =============================================================
+-- Aetheris RCT Platform — Schema
+-- Run this in the Supabase SQL editor (once, on a fresh database)
+-- =============================================================
+
+-- Enable UUID / crypto extension
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- =============================================================
+-- Sequences
+-- =============================================================
+CREATE SEQUENCE IF NOT EXISTS node_seq    START 100     INCREMENT 1;
+CREATE SEQUENCE IF NOT EXISTS ct_seq      START 1000100 INCREMENT 1;
+
+-- =============================================================
+-- profiles
+-- =============================================================
+CREATE TABLE IF NOT EXISTS profiles (
+  id              uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  node_id         text        UNIQUE NOT NULL DEFAULT '',   -- e.g. 'RCT-00125'
+  ct_id           text        UNIQUE NOT NULL DEFAULT '',   -- e.g. '1000125'
+  name            text        NOT NULL DEFAULT '',
+  rank            text        NOT NULL DEFAULT 'R0'
+                              CHECK (rank IN ('R0','R1','R2','R3','R4','R5')),
+  referral_code   char(8)     UNIQUE NOT NULL DEFAULT '',
+  sales           numeric     NOT NULL DEFAULT 0,
+  parent_id       uuid        REFERENCES profiles(id),
+  leg_position    text        CHECK (leg_position IN ('LEFT','RIGHT')),
+  owner_id        uuid        REFERENCES auth.users(id),
+  referrer_id     uuid        REFERENCES profiles(id),
+  trc20_address   text,                                    -- Tether TRC-20 출금 지갑 주소
+  mt5_account_id  text,                                    -- Vantage MT5 계좌 ID
+  status          text        NOT NULL DEFAULT 'active'
+                              CHECK (status IN ('active','suspended','expelled')),
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+-- =============================================================
+-- Trigger: auto-generate node_id / ct_id / referral_code
+-- =============================================================
+CREATE OR REPLACE FUNCTION handle_new_profile()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  code  text := '';
+  i     int;
+BEGIN
+  -- node_id
+  IF NEW.node_id IS NULL OR NEW.node_id = '' THEN
+    NEW.node_id := 'RCT-' || LPAD(nextval('node_seq')::text, 5, '0');
+  END IF;
+
+  -- ct_id
+  IF NEW.ct_id IS NULL OR NEW.ct_id = '' THEN
+    NEW.ct_id := nextval('ct_seq')::text;
+  END IF;
+
+  -- referral_code: random 8-char from safe charset, guaranteed unique
+  IF NEW.referral_code IS NULL OR NEW.referral_code = '' THEN
+    LOOP
+      code := '';
+      FOR i IN 1..8 LOOP
+        code := code || substr(chars, floor(random() * length(chars) + 1)::int, 1);
+      END LOOP;
+      EXIT WHEN NOT EXISTS (SELECT 1 FROM profiles WHERE referral_code = code);
+    END LOOP;
+    NEW.referral_code := code;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE TRIGGER before_insert_profile
+  BEFORE INSERT ON profiles
+  FOR EACH ROW EXECUTE FUNCTION handle_new_profile();
+
+-- =============================================================
+-- rank_history
+-- =============================================================
+CREATE TABLE IF NOT EXISTS rank_history (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id  uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  old_rank    text        NOT NULL,
+  new_rank    text        NOT NULL,
+  changed_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- =============================================================
+-- Row Level Security
+-- =============================================================
+ALTER TABLE profiles     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rank_history ENABLE ROW LEVEL SECURITY;
+
+-- profiles: 자신의 row + owner_id가 자신인 row (아바타 계좌) 읽기 허용
+CREATE POLICY "profiles_select_own"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id OR auth.uid() = owner_id);
+
+CREATE POLICY "profiles_insert_own"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "profiles_update_own"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id OR auth.uid() = owner_id);
+
+-- rank_history: each user can only read their own history
+CREATE POLICY "rh_select_own"
+  ON rank_history FOR SELECT
+  USING (profile_id = auth.uid());
+
+-- =============================================================
+-- Admin policies (role = 'admin' in auth.users user_metadata)
+-- =============================================================
+-- Helper: is the current user an admin?
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT COALESCE(
+    (SELECT (raw_user_meta_data->>'role') = 'admin'
+     FROM auth.users WHERE id = auth.uid()),
+    false
+  );
+$$;
+
+-- profiles: admin can read / update ALL rows
+CREATE POLICY "profiles_admin_select"
+  ON profiles FOR SELECT
+  USING (is_admin());
+
+CREATE POLICY "profiles_admin_update"
+  ON profiles FOR UPDATE
+  USING (is_admin());
+
+CREATE POLICY "profiles_admin_insert"
+  ON profiles FOR INSERT
+  WITH CHECK (is_admin());
+
+-- rank_history: admin can read all
+CREATE POLICY "rh_admin_select"
+  ON rank_history FOR SELECT
+  USING (is_admin());
+
+-- =============================================================
+-- Function: get_downline  (recursive CTE — all descendants)
+-- =============================================================
+CREATE OR REPLACE FUNCTION get_downline(root_id uuid)
+RETURNS TABLE (
+  id              uuid,
+  node_id         text,
+  ct_id           text,
+  mt5_account_id  text,
+  name            text,
+  rank            text,
+  status          text,
+  sales           numeric,
+  parent_id       uuid,
+  leg_position    text,
+  trc20_address   text,
+  referrer_id     uuid,
+  created_at      timestamptz,
+  depth           int
+) LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  WITH RECURSIVE tree AS (
+    SELECT p.id, p.node_id, p.ct_id, p.mt5_account_id, p.name, p.rank, p.status, p.sales,
+           p.parent_id, p.leg_position, p.trc20_address, p.referrer_id, p.created_at, 0 AS depth
+    FROM profiles p
+    WHERE p.id = root_id
+
+    UNION ALL
+
+    SELECT c.id, c.node_id, c.ct_id, c.mt5_account_id, c.name, c.rank, c.status, c.sales,
+           c.parent_id, c.leg_position, c.trc20_address, c.referrer_id, c.created_at, t.depth + 1
+    FROM profiles c
+    JOIN tree t ON c.parent_id = t.id
+  )
+  SELECT * FROM tree;
+$$;
+
+-- =============================================================
+-- status_history  (회원 정지/복구/제명 이력)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS status_history (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id  uuid        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  old_status  text        NOT NULL,
+  new_status  text        NOT NULL,
+  reason      text,
+  changed_by  uuid        REFERENCES auth.users(id),
+  changed_at  timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE status_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "sh_admin_all"
+  ON status_history FOR ALL
+  USING (is_admin());
+
+CREATE POLICY "sh_select_own"
+  ON status_history FOR SELECT
+  USING (profile_id = auth.uid());
+
+-- =============================================================
+-- profit_reports  (Vantage 복사기 이익 공유 보고서 헤더)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS profit_reports (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id   uuid        REFERENCES profiles(id) ON DELETE SET NULL,  -- nullable: 미매칭 보고서 허용
+  date_from    date        NOT NULL,
+  date_to      date        NOT NULL,
+  total_unpaid numeric     NOT NULL DEFAULT 0,
+  status       text        NOT NULL DEFAULT 'pending'
+                           CHECK (status IN ('pending','confirmed','paid','failed')),
+  uploaded_at  timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE profit_reports ENABLE ROW LEVEL SECURITY;
+
+-- 본인 프로필 + 본인이 owner_id인 관리형 프로필 모두 허용
+CREATE POLICY "pr_select_own"
+  ON profit_reports FOR SELECT
+  USING (
+    profile_id IN (
+      SELECT id FROM profiles
+      WHERE id = auth.uid() OR owner_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "pr_insert_own"
+  ON profit_reports FOR INSERT
+  WITH CHECK (
+    profile_id IN (
+      SELECT id FROM profiles
+      WHERE id = auth.uid() OR owner_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "pr_admin_all"
+  ON profit_reports FOR ALL
+  USING (is_admin());
+
+-- =============================================================
+-- profit_report_items  (보고서 내 전략별 명세)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS profit_report_items (
+  id                   uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id            uuid        NOT NULL REFERENCES profit_reports(id) ON DELETE CASCADE,
+  mt5_account_id       text        NOT NULL,
+  strategy_name        text,
+  date_from            date,
+  date_to              date,
+  distributable_income numeric     NOT NULL DEFAULT 0,
+  profit_ratio         numeric     NOT NULL DEFAULT 0,
+  unpaid_profit        numeric     NOT NULL DEFAULT 0,
+  matched_profile_id   uuid        REFERENCES profiles(id),
+  matched_node_id      text,
+  matched_name         text,
+  trc20_address        text
+);
+
+ALTER TABLE profit_report_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "pri_select_own"
+  ON profit_report_items FOR SELECT
+  USING (
+    report_id IN (
+      SELECT id FROM profit_reports
+      WHERE profile_id IN (
+        SELECT id FROM profiles WHERE id = auth.uid() OR owner_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "pri_insert_own"
+  ON profit_report_items FOR INSERT
+  WITH CHECK (
+    report_id IN (
+      SELECT id FROM profit_reports
+      WHERE profile_id IN (
+        SELECT id FROM profiles WHERE id = auth.uid() OR owner_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "pri_admin_all"
+  ON profit_report_items FOR ALL
+  USING (is_admin());
+
+-- =============================================================
+-- csv_export_logs  (관리자 CSV 내보내기 이력)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS csv_export_logs (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  exported_at   timestamptz NOT NULL DEFAULT now(),
+  report_count  int         NOT NULL DEFAULT 0,
+  total_amount  numeric     NOT NULL DEFAULT 0,
+  report_ids    uuid[]      NOT NULL DEFAULT '{}',
+  note          text
+);
+
+ALTER TABLE csv_export_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "cel_admin_all"
+  ON csv_export_logs FOR ALL
+  USING (is_admin());
+
+-- =============================================================
+-- payout_distributions  (수당 계산 결과 — 수령인별 행)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS payout_distributions (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id    uuid        NOT NULL REFERENCES profit_reports(id) ON DELETE CASCADE,
+  source_id    uuid        NOT NULL REFERENCES profiles(id),   -- 수익 발생 원천 노드
+  recipient_id uuid        NOT NULL REFERENCES profiles(id),   -- 수당 수령 노드
+  bonus_type   text        NOT NULL CHECK (bonus_type IN ('referral','rank','sponsor')),
+  amount       numeric     NOT NULL DEFAULT 0,
+  rate         numeric     NOT NULL DEFAULT 0,
+  generation   int         NOT NULL DEFAULT 0,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pd_report    ON payout_distributions(report_id);
+CREATE INDEX IF NOT EXISTS idx_pd_recipient ON payout_distributions(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_pd_bonus_type ON payout_distributions(bonus_type);
+
+ALTER TABLE payout_distributions ENABLE ROW LEVEL SECURITY;
+
+-- 본인 프로필 + 관리형 프로필이 수령인인 행 읽기 허용
+CREATE POLICY "pd_select_own"
+  ON payout_distributions FOR SELECT
+  USING (
+    recipient_id IN (
+      SELECT id FROM profiles
+      WHERE id = auth.uid() OR owner_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "pd_admin_all"
+  ON payout_distributions FOR ALL
+  USING (is_admin());
+
+-- =============================================================
+-- forfeited_bonuses  (정지/제명 노드로 인한 낙전 수당)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS forfeited_bonuses (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id   uuid        REFERENCES profit_reports(id) ON DELETE CASCADE,  -- nullable: 수동 낙전은 report_id 없음
+  profile_id  uuid        NOT NULL REFERENCES profiles(id),
+  amount      numeric     NOT NULL DEFAULT 0,
+  reason      text        NOT NULL CHECK (reason IN ('suspended','expelled','manual')),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fb_report ON forfeited_bonuses(report_id);
+
+ALTER TABLE forfeited_bonuses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "fb_admin_all"
+  ON forfeited_bonuses FOR ALL
+  USING (is_admin());
+
+-- =============================================================
+-- Function: validate_referral_code
+-- Returns sponsor info + whether left/right legs are already taken.
+-- SECURITY DEFINER so unauthenticated callers (during sign-up) can
+-- look up any profile by referral code.
+-- =============================================================
+CREATE OR REPLACE FUNCTION validate_referral_code(code text)
+RETURNS TABLE (
+  profile_id    uuid,
+  node_id       text,
+  name          text,
+  rank          text,
+  left_taken    boolean,
+  right_taken   boolean
+) LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT
+    p.id                                                                              AS profile_id,
+    p.node_id,
+    p.name,
+    p.rank,
+    EXISTS(
+      SELECT 1 FROM profiles c
+      WHERE c.parent_id = p.id AND c.leg_position = 'LEFT'
+    )                                                                                 AS left_taken,
+    EXISTS(
+      SELECT 1 FROM profiles c
+      WHERE c.parent_id = p.id AND c.leg_position = 'RIGHT'
+    )                                                                                 AS right_taken
+  FROM profiles p
+  WHERE p.referral_code = upper(trim(code));
+$$;
+
+-- =============================================================
+-- Migration: run these in Supabase SQL editor if DB already exists
+-- =============================================================
+-- 0. profit_reports.profile_id를 nullable로 변경 (미매칭 보고서 허용)
+-- ALTER TABLE profit_reports ALTER COLUMN profile_id DROP NOT NULL;
+
+-- 1. forfeited_bonuses.reason에 'manual' 허용 추가
+-- ALTER TABLE forfeited_bonuses
+--   DROP CONSTRAINT IF EXISTS forfeited_bonuses_reason_check;
+-- ALTER TABLE forfeited_bonuses
+--   ADD CONSTRAINT forfeited_bonuses_reason_check
+--   CHECK (reason IN ('suspended','expelled','manual'));
+
+-- 2. forfeited_bonuses.report_id를 nullable로 변경 (수동 낙전은 report 없음)
+-- ALTER TABLE forfeited_bonuses ALTER COLUMN report_id DROP NOT NULL;
+
+-- 3. profiles.id: add-node (가상 노드) 지원을 위해 FK 해제 + DEFAULT uuid 추가
+--    - register 흐름: id = auth.users.id (명시 제공)
+--    - add-node 흐름: id = gen_random_uuid() (auto-generated, auth 계정 없음)
+-- ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+-- ALTER TABLE profiles ALTER COLUMN id SET DEFAULT gen_random_uuid();

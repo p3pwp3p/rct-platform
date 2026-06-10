@@ -7,14 +7,14 @@ import { supabase } from '@/lib/supabase'
 export default function SignupPage() {
   const router = useRouter()
 
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [name, setName]               = useState('')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [agreed, setAgreed] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [agreed, setAgreed]           = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
+  const [success, setSuccess]         = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,11 +41,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: name,
-        },
-      },
+      options: { data: { full_name: name } },
     })
     setLoading(false)
 
@@ -137,7 +133,6 @@ export default function SignupPage() {
       `}</style>
 
       <main style={{ minHeight: '100vh', backgroundColor: '#07080a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', position: 'relative' }}>
-        {/* Background grid */}
         <div style={{
           position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
           backgroundImage: 'linear-gradient(to right, rgba(148,163,184,0.015) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.015) 1px, transparent 1px)',
@@ -159,13 +154,12 @@ export default function SignupPage() {
 
             <div style={{ padding: '20px 24px 0' }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e0e6ed', letterSpacing: '-0.01em' }}>회원가입</h2>
-              <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>RCT 네트워크에 새 노드를 등록하세요.</p>
+              <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>계정을 만들고 노드를 등록하세요.</p>
             </div>
 
             <div style={{ height: 1, background: '#242a35', margin: '18px 0 0' }} />
 
             {success ? (
-              /* Success state */
               <div style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(77,182,172,0.1)', border: '1px solid #4db6ac', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4db6ac" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -173,15 +167,16 @@ export default function SignupPage() {
                   </svg>
                 </div>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#e0e6ed', marginBottom: 6 }}>가입 신청 완료</p>
-                  <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>입력하신 이메일로 인증 링크를 발송했습니다.<br />메일함을 확인하여 인증을 완료해주세요.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#e0e6ed', marginBottom: 6 }}>가입 완료</p>
+                  <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+                    로그인 후 후원인 코드로<br />CT 노드를 등록하세요.
+                  </p>
                 </div>
                 <Link href="/login" style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   padding: '10px 24px', border: '1px solid #4db6ac', borderRadius: 3,
                   fontSize: 13, color: '#4db6ac', textDecoration: 'none',
                   fontFamily: 'var(--font-main)', fontWeight: 500,
-                  letterSpacing: '0.02em',
                   transition: 'all 0.2s',
                 }}>
                   로그인으로 이동
@@ -190,31 +185,26 @@ export default function SignupPage() {
             ) : (
               <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                {/* 이름 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>이름</label>
                   <input className="su-input" type="text" placeholder="홍길동" value={name} onChange={e => setName(e.target.value)} autoComplete="name" />
                 </div>
 
-                {/* 이메일 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>이메일</label>
                   <input className="su-input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
                 </div>
 
-                {/* 비밀번호 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>비밀번호</label>
                   <input className="su-input" type="password" placeholder="8자 이상" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
                 </div>
 
-                {/* 비밀번호 확인 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>비밀번호 확인</label>
                   <input className="su-input" type="password" placeholder="비밀번호 재입력" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} autoComplete="new-password" />
                 </div>
 
-                {/* 약관 동의 */}
                 <div
                   style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '8px 0' }}
                   onClick={() => setAgreed(v => !v)}
@@ -232,7 +222,6 @@ export default function SignupPage() {
                   </span>
                 </div>
 
-                {/* 에러 */}
                 {error && (
                   <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 3 }}>
                     {error}
@@ -240,7 +229,7 @@ export default function SignupPage() {
                 )}
 
                 <button type="submit" className="su-btn" disabled={loading} style={{ marginTop: 4 }}>
-                  {loading ? <><span className="spinner" />처리 중...</> : '노드 등록'}
+                  {loading ? <><span className="spinner" />처리 중...</> : '계정 만들기'}
                 </button>
 
               </form>
