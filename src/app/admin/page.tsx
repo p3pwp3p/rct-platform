@@ -19,9 +19,7 @@ function Icon({ name }: { name: string }) {
 }
 
 function fmtSales(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`
-  return String(n)
+  return n.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 }
 
 function fmtDate(iso: string) {
@@ -54,7 +52,7 @@ export default function AdminPage() {
 
   const KPI = stats ? [
     { label: '전체 회원',     value: stats.totalMembers.toLocaleString(), sub: '등록된 노드 수', color: 'var(--accent-blue)', icon: 'users' },
-    { label: '총 네트워크 PV', value: fmtSales(stats.totalSales),           sub: '전체 누적 PV',   color: '#34d399',           icon: 'pv' },
+    { label: '총 네트워크 매출', value: fmtSales(stats.totalSales),           sub: '전체 누적 매출',   color: '#34d399',           icon: 'pv' },
     { label: '최근 7일 가입', value: stats.recentJoined.filter(r => {
         const d = new Date(r.profile.created_at)
         return Date.now() - d.getTime() < 7 * 86400 * 1000

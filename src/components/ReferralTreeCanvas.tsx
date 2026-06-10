@@ -114,17 +114,17 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
       }}
     >
       {/* 상단 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', letterSpacing: '0.04em' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', letterSpacing: '0.04em', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           {node.node_id}
           {node.ct_id && <span style={{ marginLeft: 5, opacity: 0.5 }}>· {node.ct_id}</span>}
-          {isMe && <span style={{ marginLeft: 5, opacity: 0.6 }}>ME</span>}
         </span>
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
           {blank && <div style={{ width: 5, height: 5, borderRadius: '50%', background: sc, boxShadow: `0 0 4px ${sc}` }} />}
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4 }}>{node.rank}</span>
+          {isMe && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: '#4db6ac', background: 'rgba(77,182,172,0.15)', border: '1px solid rgba(77,182,172,0.4)', padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>ME</span>}
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{node.rank}</span>
           {showGen && node.depth > 0 && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: gc, background: gc + '18', border: `1px solid ${gc}44`, padding: '1px 5px', borderRadius: 4 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: gc, background: gc + '18', border: `1px solid ${gc}44`, padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>
               {node.depth}대
             </span>
           )}
@@ -132,14 +132,14 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
       </div>
 
       {/* 이름 */}
-      <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: 'var(--text-primary)', marginBottom: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {node.name}
       </div>
 
       {/* 하단 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, marginTop: 'auto' }}>
         {showGen && node.depth > 0 && node.depth <= 4 && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: gc, background: gc + '15', border: `1px solid ${gc}33`, padding: '1px 5px', borderRadius: 3 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: gc, background: gc + '15', border: `1px solid ${gc}33`, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap' }}>
             {getGenRate(node.depth)} 수당
           </span>
         )}

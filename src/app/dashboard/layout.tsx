@@ -21,8 +21,9 @@ const NAV_ITEMS = [
   {
     section: 'ACCOUNT',
     items: [
-      { href: '/dashboard/payouts', label: '수당 내역', icon: 'payout' },
-      { href: '/dashboard/profile', label: '내 프로필', icon: 'user' },
+      { href: '/dashboard/payouts',  label: '수당 내역', icon: 'payout' },
+      { href: '/dashboard/receipts', label: '수령 현황', icon: 'coins' },
+      { href: '/dashboard/profile',  label: '내 프로필', icon: 'user' },
     ],
   },
 ]
@@ -55,6 +56,7 @@ function Icon({ name }: { name: string }) {
     case 'logout': return <svg {...a}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     case 'plus':   return <svg {...a}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     case 'payout': return <svg {...a}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    case 'coins':  return <svg {...a}><ellipse cx="8" cy="6" rx="6" ry="3"/><path d="M2 6v6c0 1.66 2.69 3 6 3s6-1.34 6-3V6"/><path d="M14 11.5c.6.3 1.3.5 2 .5 3.31 0 6-1.34 6-3V9c0-1.66-2.69-3-6-3"/></svg>
     default: return null
   }
 }

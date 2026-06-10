@@ -42,9 +42,7 @@ function nextRank(rank: RankKey): RankKey | null {
   return idx < RANK_ORDER.length - 1 ? RANK_ORDER[idx + 1] : null
 }
 function fmt(n: number) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
-  if (n >= 1_000)     return (n / 1_000).toFixed(1)     + 'K'
-  return String(n)
+  return n.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 }
 
 // ─── 캔버스 차트: 월별 매출 추이 ─────────────────────────────────────────────

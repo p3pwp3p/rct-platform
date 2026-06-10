@@ -292,6 +292,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
 // ── 수당 수령 내역 패널 ───────────────────────────────────────────────────────
 function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
   const [rows, setRows]     = useState<PayoutRow[]>([])
+  const [totals, setTotals] = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
 
@@ -305,16 +306,16 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
       })
     })
       .then(r => r.json())
-      .then(d => setRows(d.rows ?? []))
+      .then(d => { setRows(d.rows ?? []); setTotals(d.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 }) })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [profileId])
 
   const filtered = filter === 'all' ? rows : rows.filter(r => r.bonus_type === filter)
 
-  const totalReferral = rows.filter(r => r.bonus_type === 'referral').reduce((s, r) => s + r.amount, 0)
-  const totalRank     = rows.filter(r => r.bonus_type === 'rank').reduce((s, r) => s + r.amount, 0)
-  const totalSponsor  = rows.filter(r => r.bonus_type === 'sponsor').reduce((s, r) => s + r.amount, 0)
+  const totalReferral = totals.referral
+  const totalRank     = totals.rank
+  const totalSponsor  = totals.sponsor
 
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, overflow: 'hidden' }}>

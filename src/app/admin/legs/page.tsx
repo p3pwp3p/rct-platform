@@ -8,9 +8,7 @@ const RANK_COLOR: Record<string, string> = {
 }
 
 function fmtSales(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`
-  return n > 0 ? String(n) : '—'
+  return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
 
 function Shimmer() {

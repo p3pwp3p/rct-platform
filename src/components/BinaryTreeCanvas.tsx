@@ -29,9 +29,7 @@ const RANK_COLOR: Record<string, string> = {
 }
 
 function fmt(n: number) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K'
-  return n > 0 ? String(n) : '—'
+  return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
 
 const NODE_W = 178, NODE_H = 96, H_GAP = 44, V_GAP = 88

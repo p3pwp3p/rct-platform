@@ -13,9 +13,7 @@ const COMPANY_RATIO = 0.20
 const MEMBER_RATIO  = 0.80
 
 function fmt(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`
-  return String(Math.round(n))
+  return Math.round(n).toLocaleString('ko-KR')
 }
 function Skeleton({ w = '60%', h = 16 }: { w?: string; h?: number }) {
   return (

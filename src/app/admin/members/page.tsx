@@ -10,9 +10,7 @@ const RANK_COLOR: Record<string, string> = {
 }
 
 function fmtSales(n: number) {
-  if (n >= 1_000_000) return `${(n/1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n/1_000).toFixed(1)}k`
-  return n > 0 ? String(n) : '—'
+  return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
 function Shimmer() {
   return <div style={{ height:14, borderRadius:4, width:'70%', background:'linear-gradient(90deg,var(--bg-inset) 25%,rgba(148,163,184,0.06) 50%,var(--bg-inset) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite' }}/>
