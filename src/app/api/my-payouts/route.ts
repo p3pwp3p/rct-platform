@@ -62,7 +62,20 @@ export async function GET(req: NextRequest) {
       return s
     }, { referral: 0, rank: 0, sponsor: 0, total: 0 })
 
-    if (!allRows.length) return NextResponse.json({ rows: [], totals, rowCount: 0 })
+    // 2-B. 타입·세대(직급tier)·비율별 집계 — 내역을 하나로 합쳐 보여주기 위함
+    const breakMap = new Map<string, { bonus_type: string; generation: number; rate: number; count: number; amount: number }>()
+    for (const r of allRows) {
+      const key = `${r.bonus_type}|${r.generation}|${r.rate}`
+      const cur = breakMap.get(key) ?? { bonus_type: r.bonus_type, generation: r.generation, rate: r.rate, count: 0, amount: 0 }
+      cur.count += 1
+      cur.amount += r.amount
+      breakMap.set(key, cur)
+    }
+    const typeOrder: Record<string, number> = { referral: 0, rank: 1, sponsor: 2 }
+    const breakdown = [...breakMap.values()].sort((a, b) =>
+      (typeOrder[a.bonus_type] - typeOrder[b.bonus_type]) || (a.generation - b.generation))
+
+    if (!allRows.length) return NextResponse.json({ rows: [], totals, breakdown, rowCount: 0 })
 
     // 3. 표시는 최근 500건으로 제한
     const rows = allRows.slice(0, 500)
@@ -83,7 +96,7 @@ export async function GET(req: NextRequest) {
       profit_reports: reportMap.get(row.report_id) ?? null,
     }))
 
-    return NextResponse.json({ rows: enriched, totals, rowCount: allRows.length })
+    return NextResponse.json({ rows: enriched, totals, breakdown, rowCount: allRows.length })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : (e as any)?.message ?? '조회 오류'
     return NextResponse.json({ error: msg }, { status: 500 })

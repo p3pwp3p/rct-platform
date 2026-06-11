@@ -464,7 +464,7 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
                     background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)',
                     borderRadius: 6, color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-mono)', fontSize: 13, outline: 'none',
+                    fontFamily: 'var(--font-main)', fontSize: 13, outline: 'none',
                   }}
                   onFocus={e => (e.currentTarget.style.borderColor = '#60a5fa')}
                   onBlur={e => (e.currentTarget.style.borderColor = 'var(--border-secondary)')}

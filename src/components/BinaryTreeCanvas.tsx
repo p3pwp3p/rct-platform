@@ -239,8 +239,16 @@ export default function BinaryTreeCanvas({
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    const raw = Math.max(-60, Math.min(60, e.deltaY))
-    setZoom(z => Math.min(3, Math.max(0.25, z * Math.exp(-raw * 0.006))))
+    const factor = Math.exp(-Math.max(-150, Math.min(150, e.deltaY)) * 0.0015)
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
+    setZoom(oldZ => {
+      const newZ = Math.min(3, Math.max(0.25, oldZ * factor))
+      setPan(p => ({ x: mx - (mx - p.x) * (newZ / oldZ), y: my - (my - p.y) * (newZ / oldZ) }))
+      return newZ
+    })
   }, [])
   const handleMouseDown = useCallback((e: React.MouseEvent) => { isPanning.current = true; lastPos.current = { x: e.clientX, y: e.clientY } }, [])
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -316,7 +324,7 @@ export default function BinaryTreeCanvas({
           )}
 
           {tree && (
-            <div style={{ position: 'absolute', left: pan.x, top: pan.y, width: treeW, height: treeH, transform: `scale(${zoom})`, transformOrigin: '0 0', transition: 'transform 0.18s cubic-bezier(0.25,0.46,0.45,0.94)' }}>
+            <div style={{ position: 'absolute', left: pan.x, top: pan.y, width: treeW, height: treeH, transform: `scale(${zoom})`, transformOrigin: '0 0', transition: 'none', willChange: 'transform' }}>
               <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none', zIndex: 1 }} viewBox={`0 0 ${treeW} ${treeH}`}>
                 <Connectors positions={positions.map(p => ({ ...p, x: p.x + ox, y: p.y + oy }))} selectedId={selected?.id ?? null} />
               </svg>

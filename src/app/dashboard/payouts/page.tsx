@@ -252,7 +252,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
 
         {/* 상태 + 토글 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: sc, background: sc + '18', border: `1px solid ${sc}44`, padding: '3px 10px', borderRadius: 4, whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 700, color: sc, background: sc + '18', border: `1px solid ${sc}44`, padding: '3px 10px', borderRadius: 4, whiteSpace: 'nowrap' }}>
             {STATUS_LABEL[report.status]}
           </span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>

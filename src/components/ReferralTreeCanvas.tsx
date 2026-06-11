@@ -124,7 +124,7 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
           {isMe && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: '#4db6ac', background: 'rgba(77,182,172,0.15)', border: '1px solid rgba(77,182,172,0.4)', padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>ME</span>}
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{node.rank}</span>
           {showGen && node.depth > 0 && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: gc, background: gc + '18', border: `1px solid ${gc}44`, padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>
+            <span style={{ fontFamily: 'var(--font-main)', fontSize: 9, fontWeight: 700, color: gc, background: gc + '18', border: `1px solid ${gc}44`, padding: '1px 5px', borderRadius: 4, whiteSpace: 'nowrap' }}>
               {node.depth}대
             </span>
           )}
@@ -139,7 +139,7 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
       {/* 하단 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, marginTop: 'auto' }}>
         {showGen && node.depth > 0 && node.depth <= 4 && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: gc, background: gc + '15', border: `1px solid ${gc}33`, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 9, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}33`, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap' }}>
             {getGenRate(node.depth)} 수당
           </span>
         )}
@@ -179,8 +179,8 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
         <div>
           <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{node.name}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: sc, background: sc + '15', border: `1px solid ${sc}44`, padding: '1px 6px', borderRadius: 3 }}>{statusLabel[node.status] ?? node.status}</span>
-            {showGen && node.depth > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>{node.depth}대 · {getGenRate(node.depth)}</span>}
+            <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: sc, background: sc + '15', border: `1px solid ${sc}44`, padding: '1px 6px', borderRadius: 3 }}>{statusLabel[node.status] ?? node.status}</span>
+            {showGen && node.depth > 0 && <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>{node.depth}대 · {getGenRate(node.depth)}</span>}
           </div>
         </div>
       </div>
@@ -225,7 +225,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: crc, background: crc + '18', border: `1px solid ${crc}44`, padding: '1px 5px', borderRadius: 3 }}>{child.rank}</span>
-                    {showGen && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: cgc, background: cgc + '18', border: `1px solid ${cgc}44`, padding: '1px 5px', borderRadius: 3 }}>{child.depth}대</span>}
+                    {showGen && <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: cgc, background: cgc + '18', border: `1px solid ${cgc}44`, padding: '1px 5px', borderRadius: 3 }}>{child.depth}대</span>}
                   </div>
                 </div>
               )
@@ -314,8 +314,16 @@ export default function ReferralTreeCanvas({
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    const raw = Math.max(-60, Math.min(60, e.deltaY))
-    setZoom(z => Math.min(3, Math.max(0.25, z * Math.exp(-raw * 0.006))))
+    const factor = Math.exp(-Math.max(-150, Math.min(150, e.deltaY)) * 0.0015)
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
+    setZoom(oldZ => {
+      const newZ = Math.min(3, Math.max(0.25, oldZ * factor))
+      setPan(p => ({ x: mx - (mx - p.x) * (newZ / oldZ), y: my - (my - p.y) * (newZ / oldZ) }))
+      return newZ
+    })
   }, [])
   const handleMouseDown = useCallback((e: React.MouseEvent) => { isPanning.current = true; lastPos.current = { x: e.clientX, y: e.clientY } }, [])
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -417,7 +425,7 @@ export default function ReferralTreeCanvas({
 
           {/* 트리 렌더 */}
           {tree && tree.children.length > 0 && (
-            <div style={{ position: 'absolute', left: pan.x, top: pan.y, width: treeW, height: treeH, transform: `scale(${zoom})`, transformOrigin: '0 0', transition: 'transform 0.18s cubic-bezier(0.25,0.46,0.45,0.94)' }}>
+            <div style={{ position: 'absolute', left: pan.x, top: pan.y, width: treeW, height: treeH, transform: `scale(${zoom})`, transformOrigin: '0 0', transition: 'none', willChange: 'transform' }}>
               <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none', zIndex: 1 }} viewBox={`0 0 ${treeW} ${treeH}`}>
                 <Connectors positions={positions.map(p => ({ ...p, x: p.x + ox, y: p.y + oy }))} selectedId={selected?.id ?? null} />
               </svg>

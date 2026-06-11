@@ -52,11 +52,20 @@ export async function GET(req: NextRequest) {
     const recipientIds = [...new Set((rows ?? []).map(r => r.recipient_id))]
     const { data: profiles } = await admin
       .from('profiles')
-      .select('id, node_id, name, rank, trc20_address')
+      .select('id, node_id, name, rank, owner_id, trc20_address')
       .in('id', recipientIds)
 
+    // 2-B. TRC-20 주소는 계정(메인 프로필) 단위 — 각 노드의 소유 계정 주소를 조회
+    //      account id = owner_id ?? id (owner_id 없으면 본인이 메인 계정)
+    const accountIds = [...new Set((profiles ?? []).map(p => p.owner_id ?? p.id))]
+    const { data: accounts } = await admin
+      .from('profiles')
+      .select('id, trc20_address')
+      .in('id', accountIds)
+    const accountAddrMap = new Map((accounts ?? []).map(a => [a.id, a.trc20_address]))
+
     const profileMap = new Map(
-      (profiles ?? []).map(p => [p.id, p])
+      (profiles ?? []).map(p => [p.id, { ...p, trc20_address: accountAddrMap.get(p.owner_id ?? p.id) ?? null }])
     )
 
     // 3. recipient 별 합산

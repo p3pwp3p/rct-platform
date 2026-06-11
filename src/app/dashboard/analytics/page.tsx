@@ -101,7 +101,7 @@ function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
     })
 
     ctx.fillStyle = 'rgba(148,163,184,0.4)'
-    ctx.font = `10px var(--font-main, sans-serif)`
+    ctx.font = `11px var(--font-main, sans-serif)`
     ctx.textAlign = 'center'
     months.forEach((m, i) => {
       if (i % 2 === 0) ctx.fillText(m, xs[i], H - 8)

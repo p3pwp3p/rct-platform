@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 3. 수당 계산 ─────────────────────────────────────────────────────────
-    const { distributions, forfeited } = calcAllBonuses(earners, nodeMap, alreadyPaidMap)
+    const { distributions, forfeited, companyForfeited } = calcAllBonuses(earners, nodeMap, alreadyPaidMap)
     const summary = summarizeByRecipient(distributions)
 
     // ── 4. 결과 정리 ─────────────────────────────────────────────────────────
@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
       totalRank,
       totalSponsor,
       totalForfeited,
+      companyForfeited,   // 적격 직급자 없는 tier 풀 → 회사 귀속
       totalDistributed: totalReferral + totalRank + totalSponsor,
       rowCount:         distributions.length,
       recipientCount:   summary.size,

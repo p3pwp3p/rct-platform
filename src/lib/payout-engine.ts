@@ -7,7 +7,9 @@
  *     - 20% 회사 운영비
  *     - 80% 레퍼럴 수당:
  *         ① 추천 수당 20%: 직접 추천인 체인 (1대 8%, 2대 4%, 3대 4%, 4대 4%)
- *         ② 직급 수당 20%: 상위 직급 노드에 지급 (R1 8%, R2 4%, R3 2%, R4 1%, R5 0.5%) — 직급 누적 압축
+ *         ② 직급 수당: 전체 분윤 기준 직급별 풀을 동일 직급 이상 보유자에게 균등 분배
+ *            (R1 풀 8%, R2 풀 4%, R3 풀 2%, R4 풀 1%, R5 풀 0.5%)
+ *            상위 직급자는 하위 직급 풀도 함께 수령 (R3 → R1·R2·R3 풀 모두)
  *         ③ 후원 수당 40%: 바이너리 소실적 기준 8%, 월 MAX $20,000
  */
 
@@ -148,60 +150,57 @@ export function calcReferralBonus(
 }
 
 /**
- * ② 직급 수당 계산 (누적 압축 방식)
- *   각 earner의 unpaid_profit × 20% 에서
- *   parent_id 체인을 따라 올라가며 직급별 최초 적격 노드에 배분.
- *   같은 rank 레이어는 한 명만 받음 (compression).
- *   단, 이미 상위 직급을 가진 노드가 있으면 하위 직급 수당도 흡수함 (누적).
+ * ② 직급 수당 계산 (전체 풀 균등분배 방식)
+ *   전체 분윤 합계에서 직급 tier별 풀을 떼어내고(R1 8% … R5 0.5%),
+ *   각 풀을 "해당 직급 이상" 보유자 전체에게 머릿수로 균등 분배.
+ *   - 계보(누가 누구 윗선인지)는 무시 — 회사 전체 풀.
+ *   - 상위 직급자는 하위 tier 풀도 함께 수령 (R3 → R1·R2·R3 풀 모두).
+ *   - 정지/제명 직급자의 몫은 낙전 (재분배하지 않음).
+ *   → 직급자 1명당 (자신이 적격인 tier 수)만큼의 행이 생성됨.
  */
 export function calcRankBonus(
   earners:  EarnerItem[],
   nodeMap:  Map<string, PayoutNode>,
-): { rows: DistributionRow[]; forfeited: ForfeitedItem[] } {
+): { rows: DistributionRow[]; forfeited: ForfeitedItem[]; companyForfeited: number } {
   const rows:      DistributionRow[] = []
   const forfeited: ForfeitedItem[]   = []
+  let   companyForfeited = 0   // 적격 직급자가 없어 회사로 귀속되는 풀
 
-  for (const { profile_id, unpaid_profit } of earners) {
-    const remainingRanks = new Set(RANK_ORDER)  // R1~R5
+  // 전체 분윤 합계 = 모든 직급 풀의 기준 금액
+  const totalProfit = earners.reduce((s, e) => s + e.unpaid_profit, 0)
+  if (totalProfit <= 0) return { rows, forfeited, companyForfeited }
 
-    let current = nodeMap.get(profile_id)
-    while (current && remainingRanks.size > 0) {
-      const upId = current.parent_id
-      if (!upId) break
-      const up = nodeMap.get(upId)
-      if (!up) break
+  RANK_ORDER.forEach((tier, tierIdx) => {
+    const rate = RANK_RATES[tier]
+    const pool = totalProfit * rate
+    if (pool <= 0) return
 
-      if (up.rank !== 'R0') {
-        const rankIdx = RANK_ORDER.indexOf(up.rank)
-        if (rankIdx >= 0) {
-          for (let i = 0; i <= rankIdx; i++) {
-            const tier = RANK_ORDER[i]
-            if (remainingRanks.has(tier)) {
-              remainingRanks.delete(tier)
-              const rate   = RANK_RATES[tier]
-              const amount = unpaid_profit * rate
-              if (up.status !== 'active') {
-                forfeited.push({ profile_id: upId, amount, reason: up.status as 'suspended' | 'expelled' })
-              } else {
-                rows.push({
-                  source_id:    profile_id,
-                  recipient_id: upId,
-                  bonus_type:   'rank',
-                  amount,
-                  rate,
-                  generation:   i + 1,
-                })
-              }
-            }
-          }
-        }
-      }
-
-      current = up
+    // 이 tier 이상(>=) 직급을 보유한 노드 전체
+    const qualified = [...nodeMap.values()].filter(n => RANK_ORDER.indexOf(n.rank) >= tierIdx)
+    if (qualified.length === 0) {
+      // 적격자 없음 → tier 풀 전액 회사 낙전
+      companyForfeited += pool
+      return
     }
-  }
 
-  return { rows, forfeited }
+    const share = pool / qualified.length
+    for (const node of qualified) {
+      if (node.status !== 'active') {
+        forfeited.push({ profile_id: node.id, amount: share, reason: node.status as 'suspended' | 'expelled' })
+        continue
+      }
+      rows.push({
+        source_id:    node.id,   // 풀 모델: 단일 source 없음 → self 기록
+        recipient_id: node.id,
+        bonus_type:   'rank',
+        amount:       share,
+        rate,
+        generation:   tierIdx + 1,  // R1=1 … R5=5
+      })
+    }
+  })
+
+  return { rows, forfeited, companyForfeited }
 }
 
 /**
@@ -287,14 +286,15 @@ export function calcAllBonuses(
   earners:        EarnerItem[],
   nodeMap:        Map<string, PayoutNode>,
   alreadyPaidMap: Map<string, number> = new Map(),
-): { distributions: DistributionRow[]; forfeited: ForfeitedItem[] } {
+): { distributions: DistributionRow[]; forfeited: ForfeitedItem[]; companyForfeited: number } {
   const referral = calcReferralBonus(earners, nodeMap)
   const rank     = calcRankBonus(earners, nodeMap)
   const sponsor  = calcSponsorBonus(earners, nodeMap, alreadyPaidMap)
 
   return {
-    distributions: [...referral.rows, ...rank.rows, ...sponsor],
-    forfeited:     [...referral.forfeited, ...rank.forfeited],
+    distributions:    [...referral.rows, ...rank.rows, ...sponsor],
+    forfeited:        [...referral.forfeited, ...rank.forfeited],
+    companyForfeited: rank.companyForfeited,
   }
 }
 
