@@ -381,7 +381,7 @@ export default function AnalyticsPage() {
               성과 분석
             </h1>
             <p style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>
-              내 바이너리 네트워크의 누적 매출 · 직급 현황 · 레그 밸런스를 확인합니다.
+              누적 매출 · 직급 현황 · 레그 밸런스를 한눈에 확인합니다.
             </p>
           </div>
 

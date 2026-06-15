@@ -1,8 +1,8 @@
 'use client'
-import { useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 const NAV = [
   {
@@ -24,7 +24,7 @@ const NAV = [
   {
     section: 'PAYOUTS',
     items: [
-      { href: '/admin/payouts',   label: '수당 지급 관리', icon: 'payout' },
+      { href: '/admin/payouts',   label: '수당 지급 관리', icon: 'payout', exact: true },
       { href: '/admin/payouts/ledger', label: '노드별 수령 현황', icon: 'ledger' },
       { href: '/admin/forfeited', label: '낙전 집계',       icon: 'forfeited' },
     ],

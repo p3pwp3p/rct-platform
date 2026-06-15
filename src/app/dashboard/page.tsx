@@ -396,7 +396,7 @@ export default function DashboardHome() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
             {[
               {
-                href: '/dashboard/legs', label: '바이너리 레그', desc: '내 네트워크 트리 시각화', color: '#60a5fa',
+                href: '/dashboard/legs', label: '네트워크 트리', desc: '내 네트워크 트리 시각화', color: '#60a5fa',
                 icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v6M12 22v-6M12 8a4 4 0 0 1-4 4H4M12 8a4 4 0 0 0 4 4h4M12 16a4 4 0 0 1-4-4H4M12 16a4 4 0 0 0 4-4h4"/></svg>,
               },
               {
