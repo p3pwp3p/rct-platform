@@ -162,7 +162,7 @@ export default function ForgotPasswordPage() {
                     className="field-input"
                     placeholder="가입한 이메일 주소"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value.replace(/\s/g, ''))}
                     autoComplete="email"
                     autoFocus
                   />

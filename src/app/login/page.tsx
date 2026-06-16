@@ -248,7 +248,7 @@ export default function LoginPage() {
                   className="field-input"
                   placeholder="이메일 또는 아이디"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value.replace(/\s/g, ''))}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   autoComplete="email"
@@ -272,7 +272,7 @@ export default function LoginPage() {
                   className="field-input"
                   placeholder="••••••••"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value.replace(/\s/g, ''))}
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
                   autoComplete="current-password"

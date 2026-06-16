@@ -180,7 +180,7 @@ export default function ProfilePage() {
                   ].map(({ label, val, set }) => (
                     <div key={label}>
                       <label style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', display: 'block', marginBottom: 5 }}>{label}</label>
-                      <input className="pf-input" type="password" value={val} onChange={e => set(e.target.value)} />
+                      <input className="pf-input" type="password" value={val} onChange={e => set(e.target.value.replace(/\s/g, ''))} />
                     </div>
                   ))}
                   {pwErr && <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6 }}>{pwErr}</div>}

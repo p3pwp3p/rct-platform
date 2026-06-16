@@ -215,7 +215,7 @@ export default function ResetPasswordPage() {
                     className="field-input"
                     placeholder="8자 이상"
                     value={password}
-                    onChange={e => { setPassword(e.target.value); setError('') }}
+                    onChange={e => { setPassword(e.target.value.replace(/\s/g, '')); setError('') }}
                     autoComplete="new-password"
                     autoFocus
                   />
@@ -229,7 +229,7 @@ export default function ResetPasswordPage() {
                     className="field-input"
                     placeholder="다시 입력"
                     value={confirm}
-                    onChange={e => { setConfirm(e.target.value); setError('') }}
+                    onChange={e => { setConfirm(e.target.value.replace(/\s/g, '')); setError('') }}
                     autoComplete="new-password"
                   />
                 </div>

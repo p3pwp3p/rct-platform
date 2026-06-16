@@ -192,17 +192,17 @@ export default function SignupPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>이메일</label>
-                  <input className="su-input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
+                  <input className="su-input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value.replace(/\s/g, ''))} autoComplete="email" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>비밀번호</label>
-                  <input className="su-input" type="password" placeholder="8자 이상" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
+                  <input className="su-input" type="password" placeholder="8자 이상" value={password} onChange={e => setPassword(e.target.value.replace(/\s/g, ''))} autoComplete="new-password" />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>비밀번호 확인</label>
-                  <input className="su-input" type="password" placeholder="비밀번호 재입력" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} autoComplete="new-password" />
+                  <input className="su-input" type="password" placeholder="비밀번호 재입력" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value.replace(/\s/g, ''))} autoComplete="new-password" />
                 </div>
 
                 <div
