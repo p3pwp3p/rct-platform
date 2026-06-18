@@ -306,7 +306,8 @@ function LegBarChart({ profiles, legMonths }: { profiles: Profile[]; legMonths: 
           const isLast = months.length > 1 && label === months[months.length - 1].label
           return (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', width: 36, height: '100%', position: 'relative', zIndex: 1 }}>
-              <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+              {/* inner row 에 height:100% 필수 — 자식 막대의 %높이가 이 높이를 기준으로 계산됨 */}
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end', gap: 2 }}>
                 <div style={{ flex: 1, background: '#3b82f6', borderRadius: '2px 2px 0 0', height: `${lh}%`, boxShadow: isLast ? '0 0 10px rgba(59,130,246,0.3)' : 'none', transition: 'height 0.4s ease' }}/>
                 <div style={{ flex: 1, background: '#a78bfa', borderRadius: '2px 2px 0 0', height: `${rh}%`, boxShadow: isLast ? '0 0 10px rgba(139,92,246,0.3)' : 'none', transition: 'height 0.4s ease' }}/>
               </div>
@@ -499,9 +500,11 @@ export default function SalesPage() {
           setMonthlyData(pts)
 
           // 3. profit_report_items → 레그별 월별 집계
+          //    matched_node_id 는 node_id 문자열(RCT-xxxxx), 노드 uuid 는 matched_profile_id.
+          //    leg 매칭은 uuid(profile.id) 기준이므로 matched_profile_id 를 사용한다.
           const { data: items } = await supabase
             .from('profit_report_items')
-            .select('report_id, distributable_income, matched_node_id')
+            .select('report_id, distributable_income, matched_profile_id')
 
           if (items && items.length > 0) {
             const nodeMap = new Map(profs.map(p => [p.id, p.leg_position]))
@@ -509,8 +512,8 @@ export default function SalesPage() {
 
             const byReport: Record<string, { left: number; right: number }> = {}
             for (const it of items as ProfitReportItem[]) {
-              if (!it.matched_node_id) continue
-              const leg = nodeMap.get(it.matched_node_id)
+              if (!it.matched_profile_id) continue
+              const leg = nodeMap.get(it.matched_profile_id)
               const label = repMap.get(it.report_id)
               if (!label) continue
               if (!byReport[label]) byReport[label] = { left: 0, right: 0 }
