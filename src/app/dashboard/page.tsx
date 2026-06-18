@@ -3,32 +3,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getDashboardData } from '@/lib/db'
 import { useProfile } from '@/lib/contexts/ProfileContext'
-import type { DashboardData } from '@/lib/types'
-
-// ─── 상수 ─────────────────────────────────────────────────────────────
-const RANK_COLOR: Record<string, string> = {
-  'R0': '#64748b', 'R1': '#34d399', 'R2': '#60a5fa',
-  'R3':     '#fbbf24', 'R4': '#f97316', 'R5': '#a78bfa',
-}
-const RANK_ORDER = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5']
-
-// 다음 직급 달성 조건
-// legRank: '' = 레그 내 rank 조건 없음 (legMembers 조건만 사용)
-// legMembers: 0 = 레그 멤버 수 조건 없음
-// legCount: 각 레그에서 legRank를 달성한 사람 수 (legRank가 있을 때만 의미)
-const RANK_REQ: Record<string, { direct: number; legRank: string; legCount: number; legMembers: number } | null> = {
-  'R0': { direct: 3,  legRank: '',   legCount: 0, legMembers: 10 },  // 직추천 3 + 각 레그 10명
-  'R1': { direct: 5,  legRank: 'R1', legCount: 2, legMembers: 0  },
-  'R2': { direct: 8,  legRank: 'R2', legCount: 2, legMembers: 0  },
-  'R3': { direct: 15, legRank: 'R3', legCount: 2, legMembers: 0  },
-  'R4': { direct: 20, legRank: 'R4', legCount: 2, legMembers: 0  },
-  'R5': null,
-}
-
-function nextRank(rank: string): string | null {
-  const idx = RANK_ORDER.indexOf(rank)
-  return idx < RANK_ORDER.length - 1 ? RANK_ORDER[idx + 1] : null
-}
+import type { DashboardData, Rank } from '@/lib/types'
+import { RANK_COLOR, RANK_ORDER, RANK_REQUIREMENTS, nextRank, sumRankGte } from '@/lib/ranks'
 
 function fmt(n: number) {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
@@ -89,11 +65,11 @@ export default function DashboardHome() {
   const profile    = data?.profile
   const legStats   = data?.legStats
   const recent     = data?.recentDownline ?? []
-  const myRank     = profile?.rank ?? 'R0'
+  const myRank: Rank = profile?.rank ?? 'R0'
   const rankColor  = RANK_COLOR[myRank]
   const myRankIdx  = RANK_ORDER.indexOf(myRank)
   const nxt        = nextRank(myRank)
-  const nxtReq     = nxt ? RANK_REQ[myRank] : null
+  const nxtReq     = nxt ? RANK_REQUIREMENTS[myRank] : null
   const leftSales  = legStats?.left.sales  ?? 0
   const rightSales = legStats?.right.sales ?? 0
   const totalLeg   = leftSales + rightSales
@@ -103,13 +79,8 @@ export default function DashboardHome() {
     ? ((leftSales / rightSales - 1) * 100).toFixed(0)
     : null
 
-  // 다음 직급에 필요한 각 leg 달성자 수 (rank ≥ 조건)
-  const legRankKey = nxtReq && nxtReq.legRank ? nxtReq.legRank : myRank
-  // rank-check 서버와 동일: 해당 rank 이상(≥) 합산
-  const sumRankGte = (counts: Record<string, number> | undefined, minRank: string) => {
-    const minIdx = RANK_ORDER.indexOf(minRank)
-    return RANK_ORDER.slice(minIdx).reduce((s, r) => s + ((counts ?? {})[r] ?? 0), 0)
-  }
+  // 다음 직급에 필요한 각 leg 달성자 수 (rank ≥ 조건) — sumRankGte 는 단일 소스
+  const legRankKey: Rank = nxtReq && nxtReq.legRank ? nxtReq.legRank : myRank
   const leftLegRankCount  = sumRankGte(legStats?.left.rankCounts,  legRankKey)
   const rightLegRankCount = sumRankGte(legStats?.right.rankCounts, legRankKey)
   // 레그 전체 멤버 수 (legMembers 조건용)
@@ -283,7 +254,7 @@ export default function DashboardHome() {
                     <Gauge cur={legStats?.directReferrals ?? 0} need={nxtReq.direct} color={RANK_COLOR[nxt!]} />
                   </div>
 
-                  {(nxtReq.legRank || nxtReq.legMembers > 0) && (
+                  {(nxtReq.legRank || (nxtReq.legTotal ?? 0) > 0) && (
                     <>
                       <div style={{ borderTop: '1px solid var(--border-primary)' }} />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -301,20 +272,20 @@ export default function DashboardHome() {
                           </div>
                         ) : (
                           <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>
-                            각 라인 멤버 {nxtReq.legMembers}명 이상
+                            각 라인 멤버 {nxtReq.legTotal}명 이상
                           </div>
                         )}
                         {[
                           {
                             label: 'Left Leg',
                             cur:   nxtReq.legRank ? leftLegRankCount  : leftLegTotal,
-                            need:  nxtReq.legRank ? nxtReq.legCount   : nxtReq.legMembers,
+                            need:  nxtReq.legRank ? (nxtReq.legCount ?? 0) : (nxtReq.legTotal ?? 0),
                             col:   '#60a5fa',
                           },
                           {
                             label: 'Right Leg',
                             cur:   nxtReq.legRank ? rightLegRankCount : rightLegTotal,
-                            need:  nxtReq.legRank ? nxtReq.legCount   : nxtReq.legMembers,
+                            need:  nxtReq.legRank ? (nxtReq.legCount ?? 0) : (nxtReq.legTotal ?? 0),
                             col:   '#a78bfa',
                           },
                         ].map(leg => (

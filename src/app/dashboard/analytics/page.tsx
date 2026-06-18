@@ -2,45 +2,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDashboardData } from '@/lib/db'
 import { useProfile } from '@/lib/contexts/ProfileContext'
-import type { DashboardData, RankHistoryEntry, DownlineRow } from '@/lib/types'
+import type { DashboardData, RankHistoryEntry, DownlineRow, Rank } from '@/lib/types'
+import { RANK_COLOR, RANK_ORDER, RANK_REQUIREMENTS, nextRank, reqSummary, sumRankGte } from '@/lib/ranks'
 
-// ─── 직급 상수 ───────────────────────────────────────────────────────────────
-const RANK_ORDER = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'] as const
-type RankKey = typeof RANK_ORDER[number]
+// 직급 키 별칭 (단일 소스 Rank 와 동일)
+type RankKey = Rank
 
-const RANK_COLOR: Record<RankKey, string> = {
-  'R0': '#64748b', 'R1': '#34d399', 'R2': '#60a5fa',
-  'R3': '#fbbf24',     'R4': '#f97316', 'R5': '#a78bfa',
-}
-
-// ─── 직급 달성 조건 (rank-check/route.ts 와 동일하게 유지) ──────────────────
-// legTotal  : A/B 각 레그 총 멤버 수 (R0→R1)
-// legRank   : A/B 각 레그에서 해당 rank 이상 보유자 수 (R1→R5)
-type RankReq =
-  | { direct: number; legTotal: number }
-  | { direct: number; legRank: { rank: RankKey; count: number } }
-  | null
-
-const RANK_REQ: Record<RankKey, RankReq> = {
-  'R0': { direct: 3,  legTotal: 10 },
-  'R1': { direct: 5,  legRank: { rank: 'R1', count: 2 } },
-  'R2': { direct: 8,  legRank: { rank: 'R2', count: 2 } },
-  'R3': { direct: 15, legRank: { rank: 'R3', count: 2 } },
-  'R4': { direct: 20, legRank: { rank: 'R4', count: 2 } },
-  'R5': null,
-}
-
-function reqSummary(rank: RankKey): string {
-  const req = RANK_REQ[rank]
-  if (!req) return '최고 직급'
-  if ('legTotal' in req) return `직추천 ${req.direct} · L/R 각 ${req.legTotal}명`
-  return `직추천 ${req.direct} · L/R 각 ${req.legRank.rank} 이상 ${req.legRank.count}명`
-}
-
-function nextRank(rank: RankKey): RankKey | null {
-  const idx = RANK_ORDER.indexOf(rank)
-  return idx < RANK_ORDER.length - 1 ? RANK_ORDER[idx + 1] : null
-}
 function fmt(n: number) {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 }
@@ -384,20 +351,11 @@ export default function AnalyticsPage() {
   const rightDist = RANK_ORDER.map(rank => ({ rank, count: legStats?.right.rankCounts[rank] ?? 0 }))
   const totalDownline = leftDist.reduce((a, b) => a + b.count, 0) + rightDist.reduce((a, b) => a + b.count, 0)
 
-  // 다음 직급 달성에 필요한 각 leg 인원 수
-  // legRank 조건: 해당 rank 이상(≥) 합산 (rank-check 서버 로직과 동일)
-  const reqForNext = next ? RANK_REQ[myRank] : null
-  const legRankKey = reqForNext && 'legRank' in reqForNext ? reqForNext.legRank.rank : null
-
-  // rankCounts는 각 rank "정확히" 의 카운트 — ≥ 조건으로 합산
-  const sumRankGte = (counts: Record<string, number>, minRank: string) => {
-    const minIdx = RANK_ORDER.indexOf(minRank)
-    return RANK_ORDER.slice(minIdx).reduce((s, r) => s + (counts[r] ?? 0), 0)
-  }
-  const leftLegRankCount = legRankKey
-    ? sumRankGte(legStats?.left.rankCounts  ?? {}, legRankKey) : 0
-  const rightLegRankCount = legRankKey
-    ? sumRankGte(legStats?.right.rankCounts ?? {}, legRankKey) : 0
+  // 다음 직급 달성에 필요한 각 leg 인원 수 (조건·합산은 단일 소스 ranks.ts)
+  const reqForNext = next ? RANK_REQUIREMENTS[myRank] : null
+  const legRankKey = reqForNext?.legRank ?? null
+  const leftLegRankCount  = legRankKey ? sumRankGte(legStats?.left.rankCounts,  legRankKey) : 0
+  const rightLegRankCount = legRankKey ? sumRankGte(legStats?.right.rankCounts, legRankKey) : 0
 
   // 월별 차트: 하위 노드 가입월 기준 누적 매출 (실데이터)
   const descendants = dashData?.descendants ?? []
@@ -748,20 +706,22 @@ export default function AnalyticsPage() {
             {next && reqForNext && (() => {
               const nextColor = RANK_COLOR[next]
 
-              if ('legTotal' in reqForNext) {
+              if (reqForNext.legTotal != null) {
+                const legTotal = reqForNext.legTotal
                 return (
                   <div style={{ background: 'var(--bg-inset)', border: `1px solid ${nextColor}33`, borderRadius: 8, padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 700, color: nextColor, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
                       {next} 달성 조건
                     </div>
                     <CondRow label="직추천" cur={direct} need={reqForNext.direct} color={nextColor} />
-                    <CondRow label="Left Leg 총 인원" cur={leftTotal}  need={reqForNext.legTotal} color="#60a5fa" labelColor="#60a5fa" />
-                    <CondRow label="Right Leg 총 인원" cur={rightTotal} need={reqForNext.legTotal} color="#a78bfa" labelColor="#a78bfa" />
+                    <CondRow label="Left Leg 총 인원" cur={leftTotal}  need={legTotal} color="#60a5fa" labelColor="#60a5fa" />
+                    <CondRow label="Right Leg 총 인원" cur={rightTotal} need={legTotal} color="#a78bfa" labelColor="#a78bfa" />
                   </div>
                 )
               }
 
-              const { rank: reqRank, count } = reqForNext.legRank
+              const reqRank = reqForNext.legRank ?? next
+              const count   = reqForNext.legCount ?? 0
               const reqRankColor = RANK_COLOR[reqRank]
               return (
                 <div style={{ background: 'var(--bg-inset)', border: `1px solid ${nextColor}33`, borderRadius: 8, padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>

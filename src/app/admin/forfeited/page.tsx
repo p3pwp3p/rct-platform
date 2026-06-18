@@ -35,7 +35,7 @@ const REASON_COLOR: Record<string, string> = {
 function fmt(n: number) {
   return n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-function Shimmer({ w = '70%', h = 14 }: { w?: string; h?: number }) {
+function Shimmer({ w = '70%', h = 14 }: { w?: string | number; h?: number }) {
   return <div style={{ height: h, width: w, borderRadius: 4, background: 'linear-gradient(90deg,var(--bg-inset) 25%,rgba(148,163,184,0.06) 50%,var(--bg-inset) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' }}/>
 }
 

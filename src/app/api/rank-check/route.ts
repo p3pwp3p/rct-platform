@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { RANK_ORDER, RANK_REQUIREMENTS } from '@/lib/ranks'
+import type { Rank } from '@/lib/types'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,35 +15,11 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
   return data.user?.user_metadata?.role === 'admin'
 }
 
-const RANK_ORDER = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5']
-
-// 다음 직급 승급 조건 (현재 rank → 다음 rank)
-// legTotal : A/B 각 레그 총 하위 인원 수 (직급/상태 무관)
-// legRank  : A/B 각 레그에서 요구되는 최소 직급 보유자
-type RankReq = {
-  direct:    number   // 직추천 활성 인원 수
-  legTotal?: number   // A/B 각 레그 최소 총 인원
-  legRank?:  string   // A/B 각 레그 필요 직급
-  legCount?: number   // legRank 보유자 최소 수
-}
-
-const RANK_UP: Record<string, RankReq | null> = {
-  // R0 → R1: 직추천 3명 + A/B 각 라인 총 10명 이상 (총 하위 20명)
-  R0: { direct: 3, legTotal: 10 },
-  // R1 → R2: 직추천 5명 + A/B 각 라인 R1 이상 2명
-  R1: { direct: 5,  legRank: 'R1', legCount: 2 },
-  // R2 → R3: 직추천 8명 + A/B 각 라인 R2 이상 2명
-  R2: { direct: 8,  legRank: 'R2', legCount: 2 },
-  // R3 → R4: 직추천 15명 + A/B 각 라인 R3 이상 2명
-  R3: { direct: 15, legRank: 'R3', legCount: 2 },
-  // R4 → R5: 직추천 20명 + A/B 각 라인 R4 이상 2명
-  R4: { direct: 20, legRank: 'R4', legCount: 2 },
-  R5: null,
-}
+// 승급 조건·직급 순서는 src/lib/ranks.ts 단일 소스를 사용한다.
 
 type Profile = {
   id: string
-  rank: string
+  rank: Rank
   status: string
   parent_id: string | null
   referrer_id: string | null
@@ -65,7 +43,7 @@ function getDescendants(rootId: string, all: Profile[]): Profile[] {
 
 // 한 노드의 직급 조건 충족 여부 검사 → 충족 시 업그레이드 후 true 반환
 async function tryUpgrade(profile: Profile, all: Profile[]): Promise<boolean> {
-  const req = RANK_UP[profile.rank]
+  const req = RANK_REQUIREMENTS[profile.rank]
   if (!req) return false  // R5 최고 직급
 
   const nextRank = RANK_ORDER[RANK_ORDER.indexOf(profile.rank) + 1]
@@ -92,7 +70,7 @@ async function tryUpgrade(profile: Profile, all: Profile[]): Promise<boolean> {
     if (!leftDirect || !rightDirect) return false
 
     // "R2 이상" = R2, R3, R4, R5 모두 포함 (누적 압축 방식)
-    const countRankGte = (rootId: string, minRank: string) => {
+    const countRankGte = (rootId: string, minRank: Rank) => {
       const minIdx = RANK_ORDER.indexOf(minRank)
       return getDescendants(rootId, all)
         .filter(p => RANK_ORDER.indexOf(p.rank) >= minIdx).length
