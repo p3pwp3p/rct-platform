@@ -315,15 +315,17 @@ export default function AnalyticsPage() {
   const [activePeriod, setActivePeriod] = useState<'1M' | '3M' | '6M' | '1Y'>('1Y')
   const [dashData, setDashData] = useState<DashboardData | null>(null)
   const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState<string | null>(null)
 
   useEffect(() => {
     if (profileLoading) return
     if (!activeProfile) { setLoading(false); return }
     setLoading(true)
     setDashData(null)
+    setError(null)
     getDashboardData(activeProfile.id)
       .then(d => setDashData(d))
-      .catch(e => console.error('[analytics]', e))
+      .catch(e => { console.error('[analytics]', e); setError('성과 데이터를 불러오지 못했습니다.') })
       .finally(() => setLoading(false))
   }, [activeProfile?.id, profileLoading])
 
@@ -438,6 +440,14 @@ export default function AnalyticsPage() {
               누적 매출 · 직급 현황 · 레그 밸런스를 한눈에 확인합니다.
             </p>
           </div>
+
+          {error && (
+            <div style={{
+              padding: '12px 16px', background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8,
+              fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171',
+            }}>⚠ {error}</div>
+          )}
 
           {/* KPI 카드 4개 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
