@@ -26,7 +26,7 @@ const NAV = [
     items: [
       { href: '/admin/payouts',   label: '수당 지급 관리', icon: 'payout', exact: true },
       { href: '/admin/payouts/ledger', label: '노드별 수령 현황', icon: 'ledger' },
-      { href: '/admin/forfeited', label: '회사 매출',       icon: 'forfeited' },
+      { href: '/admin/forfeited', label: '회사 매출',       icon: 'revenue' },
     ],
   },
   {
@@ -51,6 +51,7 @@ function Icon({ name }: { name: string }) {
     case 'payout':    return <svg {...a}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
     case 'ledger':    return <svg {...a}><path d="M4 3h12l4 4v14a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
     case 'forfeited': return <svg {...a}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+    case 'revenue':   return <svg {...a}><circle cx="12" cy="12" r="9"/><path d="M14.8 9.3a2.5 2.5 0 0 0-2.3-1.3c-1.4 0-2.5.8-2.5 2 0 2.6 5 1.4 5 4 0 1.2-1.1 2-2.5 2a2.5 2.5 0 0 1-2.3-1.3"/><line x1="12" y1="6.5" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="17.5"/></svg>
     case 'history':   return <svg {...a}><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-3"/><polyline points="3 4 3 11 10 11"/></svg>
     default: return null
   }
