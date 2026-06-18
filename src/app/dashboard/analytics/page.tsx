@@ -48,7 +48,7 @@ function fmt(n: number) {
 // ─── 월별 누적 하위 매출 시계열 (실데이터) ───────────────────────────────────
 // 각 하위 노드의 가입월(created_at) 기준으로, 월말까지 합류한 노드들의 매출을
 // 누적 합산 → "현재까지 N개월" 구간의 누적 매출 추이.
-function buildMonthlySeries(descendants: DownlineRow[], months: number): { data: number[]; labels: string[] } {
+function buildMonthlySeries(descendants: DownlineRow[], months: number): { data: number[]; labels: string[]; dates: string[] } {
   const now = new Date()
   const buckets = Array.from({ length: months }, (_, k) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - k), 1)
@@ -62,12 +62,17 @@ function buildMonthlySeries(descendants: DownlineRow[], months: number): { data:
     }, 0)
   })
   const labels = buckets.map(({ m }) => `${m + 1}월`)
-  return { data, labels }
+  const dates  = buckets.map(({ y, m }) => `${y}년 ${m + 1}월`)
+  return { data, labels, dates }
 }
 
-// ─── 캔버스 차트: 월별 매출 추이 (반응형) ────────────────────────────────────
-function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
-  const ref = useRef<HTMLCanvasElement>(null)
+// ─── 캔버스 차트: 월별 매출 추이 (반응형 + hover 툴팁) ───────────────────────
+function MonthlyChart({ data, months, dates }: { data: number[]; months: string[]; dates: string[] }) {
+  const ref     = useRef<HTMLCanvasElement>(null)
+  const geom    = useRef<{ xs: number[]; ys: number[] }>({ xs: [], ys: [] })
+  const drawRef = useRef<() => void>(() => {})
+  const hoverRef = useRef<number | null>(null)
+  const [hover, setHover] = useState<number | null>(null)
 
   useEffect(() => {
     const c = ref.current; if (!c) return
@@ -82,7 +87,9 @@ function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
       ctx.clearRect(0, 0, w0, h0)
 
       const W = w0, H = h0
-      const PAD = { t: 18, r: 18, b: 40, l: 58 }
+      // l 키움 + GAP_LABEL 로 Y축 라벨과 그래프 사이 간격 확대
+      const PAD = { t: 18, r: 20, b: 44, l: 74 }
+      const GAP_LABEL = 18
       const cW = W - PAD.l - PAD.r
       const cH = H - PAD.t - PAD.b
       const maxV = Math.max(...data, 1) * 1.1
@@ -96,14 +103,14 @@ function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
         ctx.fillStyle = 'rgba(148,163,184,0.45)'
         ctx.font = `11px var(--font-mono, monospace)`
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
-        ctx.fillText(fmt(maxV * i / 4 / 1.1), PAD.l - 8, y)
+        ctx.fillText(fmt(maxV * i / 4 / 1.1), PAD.l - GAP_LABEL, y)
       }
 
       const n = data.length
       const xs = data.map((_, i) => n === 1 ? PAD.l + cW / 2 : PAD.l + (i / (n - 1)) * cW)
       const ys = data.map(v => PAD.t + cH - (v / maxV) * cH)
+      geom.current = { xs, ys }
 
-      // 곡선 경로(베지어) 정의 함수
       const tracePath = () => {
         ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
         for (let i = 1; i < xs.length; i++) {
@@ -128,31 +135,76 @@ function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
         ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
       }
 
-      // 포인트 (도넛 스타일)
+      // hover 세로 가이드라인
+      const hv = hoverRef.current
+      if (hv != null && xs[hv] != null) {
+        ctx.strokeStyle = 'rgba(96,165,250,0.45)'; ctx.lineWidth = 1
+        ctx.setLineDash([4, 4])
+        ctx.beginPath(); ctx.moveTo(xs[hv], PAD.t); ctx.lineTo(xs[hv], PAD.t + cH); ctx.stroke()
+        ctx.setLineDash([])
+      }
+
+      // 포인트 (도넛 스타일, hover 시 강조)
       xs.forEach((x, i) => {
-        ctx.beginPath(); ctx.arc(x, ys[i], 4, 0, Math.PI * 2)
-        ctx.fillStyle = 'var(--bg-surface)'
-        ctx.fillStyle = '#0e1117'; ctx.fill()
+        const on = i === hv
+        ctx.beginPath(); ctx.arc(x, ys[i], on ? 5.5 : 4, 0, Math.PI * 2)
+        ctx.fillStyle = on ? '#60a5fa' : '#0e1117'; ctx.fill()
         ctx.lineWidth = 2.5; ctx.strokeStyle = '#60a5fa'; ctx.stroke()
       })
 
       // 월 라벨 (X축) — 폰트 키움
-      ctx.fillStyle = 'rgba(148,163,184,0.7)'
-      ctx.font = `13px var(--font-main, sans-serif)`
+      ctx.font = `15px var(--font-main, sans-serif)`
       ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
       const step = n <= 7 ? 1 : 2
       months.forEach((m, i) => {
-        if (i % step === 0 || i === n - 1) ctx.fillText(m, xs[i], H - 12)
+        if (i % step === 0 || i === n - 1) {
+          ctx.fillStyle = i === hv ? '#60a5fa' : 'rgba(148,163,184,0.75)'
+          ctx.fillText(m, xs[i], H - 12)
+        }
       })
     }
 
+    drawRef.current = draw
     draw()
     const ro = new ResizeObserver(draw)
     ro.observe(c)
     return () => ro.disconnect()
-  }, [data, months])
+  }, [data, months, dates])
 
-  return <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block' }} />
+  // hover 변동 시 가이드만 다시 그림
+  useEffect(() => { drawRef.current() }, [hover])
+
+  const onMove = (e: React.MouseEvent) => {
+    const c = ref.current; if (!c) return
+    const rect = c.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const { xs } = geom.current
+    if (!xs.length) return
+    let best = 0, bd = Infinity
+    xs.forEach((x, i) => { const d = Math.abs(x - mx); if (d < bd) { bd = d; best = i } })
+    hoverRef.current = best
+    setHover(best)
+  }
+  const onLeave = () => { hoverRef.current = null; setHover(null) }
+
+  const g = geom.current
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }} onMouseMove={onMove} onMouseLeave={onLeave}>
+      <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block' }} />
+      {hover != null && g.xs[hover] != null && (
+        <div style={{
+          position: 'absolute', left: g.xs[hover], top: Math.max(4, g.ys[hover] - 14),
+          transform: 'translate(-50%, -100%)', pointerEvents: 'none', zIndex: 5,
+          background: 'var(--bg-surface)', border: '1px solid var(--border-secondary)',
+          borderRadius: 7, padding: '7px 11px', whiteSpace: 'nowrap',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+        }}>
+          <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>{dates[hover]}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: '#60a5fa' }}>{fmt(data[hover])}</div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── 레그 밸런스 바 ─────────────────────────────────────────────────────────
@@ -344,7 +396,7 @@ export default function AnalyticsPage() {
   // 월별 차트: 하위 노드 가입월 기준 누적 매출 (실데이터)
   const descendants = dashData?.descendants ?? []
   const periodMonths: Record<typeof activePeriod, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12 }
-  const { data: chartData, labels: chartMonths } = buildMonthlySeries(descendants, periodMonths[activePeriod])
+  const { data: chartData, labels: chartMonths, dates: chartDates } = buildMonthlySeries(descendants, periodMonths[activePeriod])
 
   return (
     <>
@@ -489,7 +541,7 @@ export default function AnalyticsPage() {
             <div style={{ height: 180 }}>
               {loading
                 ? <Sk w="100%" h={180} r={8} />
-                : <MonthlyChart data={chartData} months={chartMonths} />}
+                : <MonthlyChart data={chartData} months={chartMonths} dates={chartDates} />}
             </div>
           </div>
 
