@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getDashboardData } from '@/lib/db'
 import { useProfile } from '@/lib/contexts/ProfileContext'
-import type { DashboardData, RankHistoryEntry } from '@/lib/types'
+import type { DashboardData, RankHistoryEntry, DownlineRow } from '@/lib/types'
 
 // ─── 직급 상수 ───────────────────────────────────────────────────────────────
 const RANK_ORDER = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'] as const
@@ -45,70 +45,114 @@ function fmt(n: number) {
   return n.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 }
 
-// ─── 캔버스 차트: 월별 매출 추이 ─────────────────────────────────────────────
+// ─── 월별 누적 하위 매출 시계열 (실데이터) ───────────────────────────────────
+// 각 하위 노드의 가입월(created_at) 기준으로, 월말까지 합류한 노드들의 매출을
+// 누적 합산 → "현재까지 N개월" 구간의 누적 매출 추이.
+function buildMonthlySeries(descendants: DownlineRow[], months: number): { data: number[]; labels: string[] } {
+  const now = new Date()
+  const buckets = Array.from({ length: months }, (_, k) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - k), 1)
+    return { y: d.getFullYear(), m: d.getMonth() }
+  })
+  const data = buckets.map(({ y, m }) => {
+    const nextMonthStart = new Date(y, m + 1, 1).getTime()
+    return descendants.reduce((sum, node) => {
+      const t = new Date(node.created_at).getTime()
+      return t < nextMonthStart ? sum + (node.sales ?? 0) : sum
+    }, 0)
+  })
+  const labels = buckets.map(({ m }) => `${m + 1}월`)
+  return { data, labels }
+}
+
+// ─── 캔버스 차트: 월별 매출 추이 (반응형) ────────────────────────────────────
 function MonthlyChart({ data, months }: { data: number[]; months: string[] }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const c = ref.current; if (!c) return
-    const dpr = window.devicePixelRatio || 1
-    const w0 = c.offsetWidth, h0 = c.offsetHeight
-    c.width = w0 * dpr; c.height = h0 * dpr
-    const ctx = c.getContext('2d')!
-    ctx.scale(dpr, dpr)
-    const W = w0, H = h0
-    const PAD = { t: 16, r: 16, b: 32, l: 52 }
-    const cW = W - PAD.l - PAD.r
-    const cH = H - PAD.t - PAD.b
-    const maxV = Math.max(...data) * 1.1
 
-    ctx.strokeStyle = 'rgba(148,163,184,0.07)'
-    ctx.lineWidth = 1
-    for (let i = 0; i <= 4; i++) {
-      const y = PAD.t + cH - (i / 4) * cH
-      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke()
-      ctx.fillStyle = 'rgba(148,163,184,0.35)'
-      ctx.font = `10px var(--font-mono, monospace)`
-      ctx.textAlign = 'right'
-      ctx.fillText(fmt(maxV * i / 4 / 1.1), PAD.l - 6, y + 4)
+    const draw = () => {
+      const dpr = window.devicePixelRatio || 1
+      const w0 = c.offsetWidth, h0 = c.offsetHeight
+      if (w0 === 0 || h0 === 0 || data.length === 0) return
+      c.width = w0 * dpr; c.height = h0 * dpr
+      const ctx = c.getContext('2d')!
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, w0, h0)
+
+      const W = w0, H = h0
+      const PAD = { t: 18, r: 18, b: 40, l: 58 }
+      const cW = W - PAD.l - PAD.r
+      const cH = H - PAD.t - PAD.b
+      const maxV = Math.max(...data, 1) * 1.1
+
+      // 가로 그리드 + Y축 라벨
+      for (let i = 0; i <= 4; i++) {
+        const y = PAD.t + cH - (i / 4) * cH
+        ctx.strokeStyle = 'rgba(148,163,184,0.07)'
+        ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + cW, y); ctx.stroke()
+        ctx.fillStyle = 'rgba(148,163,184,0.45)'
+        ctx.font = `11px var(--font-mono, monospace)`
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
+        ctx.fillText(fmt(maxV * i / 4 / 1.1), PAD.l - 8, y)
+      }
+
+      const n = data.length
+      const xs = data.map((_, i) => n === 1 ? PAD.l + cW / 2 : PAD.l + (i / (n - 1)) * cW)
+      const ys = data.map(v => PAD.t + cH - (v / maxV) * cH)
+
+      // 곡선 경로(베지어) 정의 함수
+      const tracePath = () => {
+        ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
+        for (let i = 1; i < xs.length; i++) {
+          const cpx = (xs[i - 1] + xs[i]) / 2
+          ctx.bezierCurveTo(cpx, ys[i - 1], cpx, ys[i], xs[i], ys[i])
+        }
+      }
+
+      // 영역 그라데이션
+      const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH)
+      grad.addColorStop(0, 'rgba(96,165,250,0.26)')
+      grad.addColorStop(1, 'rgba(96,165,250,0)')
+      tracePath()
+      ctx.lineTo(xs[xs.length - 1], PAD.t + cH)
+      ctx.lineTo(xs[0], PAD.t + cH)
+      ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
+
+      // 라인
+      if (n > 1) {
+        tracePath()
+        ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2.5
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+      }
+
+      // 포인트 (도넛 스타일)
+      xs.forEach((x, i) => {
+        ctx.beginPath(); ctx.arc(x, ys[i], 4, 0, Math.PI * 2)
+        ctx.fillStyle = 'var(--bg-surface)'
+        ctx.fillStyle = '#0e1117'; ctx.fill()
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#60a5fa'; ctx.stroke()
+      })
+
+      // 월 라벨 (X축) — 폰트 키움
+      ctx.fillStyle = 'rgba(148,163,184,0.7)'
+      ctx.font = `13px var(--font-main, sans-serif)`
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
+      const step = n <= 7 ? 1 : 2
+      months.forEach((m, i) => {
+        if (i % step === 0 || i === n - 1) ctx.fillText(m, xs[i], H - 12)
+      })
     }
 
-    const xs = data.map((_, i) => PAD.l + (i / (data.length - 1)) * cW)
-    const ys = data.map(v  => PAD.t + cH - (v / maxV) * cH)
-
-    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH)
-    grad.addColorStop(0, 'rgba(96,165,250,0.22)')
-    grad.addColorStop(1, 'rgba(96,165,250,0)')
-    ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
-    for (let i = 1; i < xs.length; i++) {
-      const cpx = (xs[i - 1] + xs[i]) / 2
-      ctx.bezierCurveTo(cpx, ys[i - 1], cpx, ys[i], xs[i], ys[i])
-    }
-    ctx.lineTo(xs[xs.length - 1], PAD.t + cH)
-    ctx.lineTo(xs[0], PAD.t + cH)
-    ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
-
-    ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
-    for (let i = 1; i < xs.length; i++) {
-      const cpx = (xs[i - 1] + xs[i]) / 2
-      ctx.bezierCurveTo(cpx, ys[i - 1], cpx, ys[i], xs[i], ys[i])
-    }
-    ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.stroke()
-
-    xs.forEach((x, i) => {
-      ctx.beginPath(); ctx.arc(x, ys[i], 3, 0, Math.PI * 2)
-      ctx.fillStyle = '#60a5fa'; ctx.fill()
-    })
-
-    ctx.fillStyle = 'rgba(148,163,184,0.4)'
-    ctx.font = `11px var(--font-main, sans-serif)`
-    ctx.textAlign = 'center'
-    months.forEach((m, i) => {
-      if (i % 2 === 0) ctx.fillText(m, xs[i], H - 8)
-    })
+    draw()
+    const ro = new ResizeObserver(draw)
+    ro.observe(c)
+    return () => ro.disconnect()
   }, [data, months])
 
-  return <canvas ref={ref} style={{ width: '100%', height: '100%' }} />
+  return <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block' }} />
 }
 
 // ─── 레그 밸런스 바 ─────────────────────────────────────────────────────────
@@ -187,10 +231,11 @@ function DistributionChart({
   right: { rank: RankKey; count: number }[]
 }) {
   const max = Math.max(...left.map(d => d.count), ...right.map(d => d.count), 1)
+  const COLS = '28px 1fr 40px 1fr 28px'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* 헤더 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 28px 1fr 28px', gap: '0 6px', marginBottom: 8, alignItems: 'center' }}>
+      {/* 헤더: LEFT … (중앙) … RIGHT */}
+      <div style={{ display: 'grid', gridTemplateColumns: COLS, gap: '0 8px', marginBottom: 10, alignItems: 'center' }}>
         <div />
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#60a5fa', textAlign: 'center' }}>Left</div>
         <div />
@@ -202,31 +247,31 @@ function DistributionChart({
         const rc = right[i].count
         const color = RANK_COLOR[rank]
         return (
-          <div key={rank} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 28px 1fr 28px', gap: '0 6px', alignItems: 'center', padding: '4px 0' }}>
-            {/* Rank 라벨 */}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, textAlign: 'center' }}>{rank}</span>
-            {/* Left 바 (오른쪽 정렬) */}
-            <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
+          <div key={rank} style={{ display: 'grid', gridTemplateColumns: COLS, gap: '0 8px', alignItems: 'center', padding: '5px 0' }}>
+            {/* Left 숫자 — 바 바깥쪽(왼쪽 끝) */}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: lc > 0 ? '#60a5fa' : 'var(--text-tertiary)', textAlign: 'right' }}>{lc}</span>
+            {/* Left 바 — 중앙(오른쪽)을 향해 채워짐 */}
+            <div style={{ height: 7, background: 'var(--bg-inset)', borderRadius: 4, overflow: 'hidden', display: 'flex', justifyContent: 'flex-end' }}>
               <div style={{
                 height: '100%', width: `${(lc / max) * 100}%`,
-                background: '#60a5fa', borderRadius: 3,
+                background: '#60a5fa', borderRadius: 4,
                 transition: 'width 0.6s ease',
                 boxShadow: lc > 0 ? '0 0 6px #60a5fa66' : 'none',
               }} />
             </div>
-            {/* Left 숫자 */}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: lc > 0 ? '#60a5fa' : 'var(--text-tertiary)', textAlign: 'center' }}>{lc}</span>
-            {/* Right 바 */}
-            <div style={{ height: 6, background: 'var(--bg-inset)', borderRadius: 3, overflow: 'hidden' }}>
+            {/* Rank 라벨 — 중앙 */}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color, textAlign: 'center' }}>{rank}</span>
+            {/* Right 바 — 중앙(왼쪽)에서 바깥으로 채워짐 */}
+            <div style={{ height: 7, background: 'var(--bg-inset)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', width: `${(rc / max) * 100}%`,
-                background: '#a78bfa', borderRadius: 3,
+                background: '#a78bfa', borderRadius: 4,
                 transition: 'width 0.6s ease',
                 boxShadow: rc > 0 ? '0 0 6px #a78bfa66' : 'none',
               }} />
             </div>
-            {/* Right 숫자 */}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: rc > 0 ? '#a78bfa' : 'var(--text-tertiary)', textAlign: 'center' }}>{rc}</span>
+            {/* Right 숫자 — 바 바깥쪽(오른쪽 끝) */}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: rc > 0 ? '#a78bfa' : 'var(--text-tertiary)', textAlign: 'left' }}>{rc}</span>
           </div>
         )
       })}
@@ -296,17 +341,10 @@ export default function AnalyticsPage() {
   const rightLegRankCount = legRankKey
     ? sumRankGte(legStats?.right.rankCounts ?? {}, legRankKey) : 0
 
-  // 월별 차트: 아직 DB에 시계열 데이터 없으므로 현재 총 매출 기준 시뮬레이션
-  const totalSales = leftSales + rightSales
-  const MONTHLY = loading
-    ? [18, 24, 31, 27, 38, 43, 52, 48, 61, 74, 68, 87].map(v => v * 1000)
-    : Array.from({ length: 12 }, (_, i) => Math.round(totalSales * (0.4 + 0.6 * (i + 1) / 12)))
-  const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
-
-  const periodSlice: Record<typeof activePeriod, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12 }
-  const sliceCount  = periodSlice[activePeriod]
-  const chartData   = MONTHLY.slice(-sliceCount)
-  const chartMonths = MONTHS.slice(-sliceCount)
+  // 월별 차트: 하위 노드 가입월 기준 누적 매출 (실데이터)
+  const descendants = dashData?.descendants ?? []
+  const periodMonths: Record<typeof activePeriod, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12 }
+  const { data: chartData, labels: chartMonths } = buildMonthlySeries(descendants, periodMonths[activePeriod])
 
   return (
     <>
@@ -449,7 +487,9 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div style={{ height: 180 }}>
-              <MonthlyChart data={chartData} months={chartMonths} />
+              {loading
+                ? <Sk w="100%" h={180} r={8} />
+                : <MonthlyChart data={chartData} months={chartMonths} />}
             </div>
           </div>
 

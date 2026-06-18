@@ -149,6 +149,7 @@ export interface DashboardData {
   profile: Profile
   legStats: LegStats
   recentDownline: DownlineRow[]   // newest 10 members in the tree
+  descendants: DownlineRow[]      // 전체 하위 노드 (depth > 0) — 시계열 분석용
   rankHistory: RankHistoryEntry[] // latest 5 rank changes
 }
 

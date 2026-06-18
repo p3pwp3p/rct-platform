@@ -294,6 +294,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     profile: profileResult.data as Profile,
     legStats,
     recentDownline,
+    descendants,
     rankHistory: (rankHistoryResult.data ?? []) as RankHistoryEntry[],
   }
 }
