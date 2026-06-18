@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   mt5_account_id  text,                                    -- Vantage MT5 계좌 ID
   status          text        NOT NULL DEFAULT 'active'
                               CHECK (status IN ('active','suspended','expelled')),
+  vantage_ack     boolean     NOT NULL DEFAULT false,        -- Vantage 가입 안내 모달 확인 여부 (계정당 1회)
   created_at      timestamptz NOT NULL DEFAULT now()
 );
 

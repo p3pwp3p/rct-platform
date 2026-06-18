@@ -25,6 +25,7 @@ export interface Profile {
   trc20_address: string | null  // Tether TRC-20 출금 지갑 주소
   mt5_account_id: string | null // Vantage MT5 계좌 ID (카피ID)
   status: 'active' | 'suspended' | 'expelled'  // 회원 상태 (블랭크)
+  vantage_ack: boolean          // Vantage 가입 안내 모달 확인 여부 (계정당 1회)
   created_at: string            // ISO 8601
 }
 
