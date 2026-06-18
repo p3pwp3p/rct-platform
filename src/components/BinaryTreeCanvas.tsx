@@ -153,7 +153,7 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
         {[
           { label: 'CT ID',   value: node.ctId || '—',           mono: true },
           { label: 'MT5',     value: node.mt5AccountId || '—',   mono: true },
-          { label: 'PV',      value: fmt(node.sales),             mono: true },
+          { label: '매출',    value: fmt(node.sales),             mono: true },
           { label: 'Joined',  value: node.joined ? node.joined.slice(0, 10) : '—', mono: true },
           { label: 'Leg',     value: node.legPosition || '—',     mono: true },
           { label: 'Sub Legs',value: `${node.children.length}개`, mono: true },
