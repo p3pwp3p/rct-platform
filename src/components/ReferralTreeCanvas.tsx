@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<string, string> = {
   active: '#34d399', suspended: '#fbbf24', expelled: '#f87171',
 }
 
-const NODE_W = 178, NODE_H = 96, H_GAP = 44, V_GAP = 88
+const NODE_W = 178, NODE_H = 108, H_GAP = 44, V_GAP = 88
 
 interface Pos { node: ReferralNode; x: number; y: number; depth: number }
 
@@ -131,9 +131,14 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
         </div>
       </div>
 
-      {/* 이름 */}
-      <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: 'var(--text-primary)', marginBottom: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {node.name}
+      {/* 이름 + MT5 */}
+      <div style={{ marginBottom: 'auto', minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {node.name}
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          MT5 <span style={{ color: node.mt5_account_id ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5_account_id || '—'}</span>
+        </div>
       </div>
 
       {/* 하단 */}

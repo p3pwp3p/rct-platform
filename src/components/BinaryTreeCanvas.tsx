@@ -32,7 +32,7 @@ function fmt(n: number) {
   return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
 
-const NODE_W = 178, NODE_H = 96, H_GAP = 44, V_GAP = 88
+const NODE_W = 178, NODE_H = 108, H_GAP = 44, V_GAP = 88
 
 interface Pos { node: NetNode; x: number; y: number; depth: number }
 
@@ -110,8 +110,13 @@ function NodeCard({ p, selected, maxSales, isMe, onSelect }: {
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4 }}>{node.rank}</span>
       </div>
-      <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {node.name}
+      <div style={{ marginBottom: 'auto', minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {node.name}
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          MT5 <span style={{ color: node.mt5AccountId ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5AccountId || '—'}</span>
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, marginTop: 'auto' }}>
         <div style={{ flex: 1, height: 2, background: 'var(--border-primary)', borderRadius: 1 }}>
