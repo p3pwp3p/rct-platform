@@ -466,7 +466,7 @@ export default function DashboardHome() {
               )}
             </div>
             <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginTop: 9 }}>
-              바이너리 레그 노드 고유의 추천 코드입니다.
+              레그 노드 고유의 추천 코드입니다.
             </div>
           </div>
 
