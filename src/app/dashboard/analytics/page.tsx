@@ -386,7 +386,7 @@ export default function AnalyticsPage() {
 
   // 다음 직급 달성에 필요한 각 leg 인원 수
   // legRank 조건: 해당 rank 이상(≥) 합산 (rank-check 서버 로직과 동일)
-  const reqForNext = next ? RANK_REQ[next] : null
+  const reqForNext = next ? RANK_REQ[myRank] : null
   const legRankKey = reqForNext && 'legRank' in reqForNext ? reqForNext.legRank.rank : null
 
   // rankCounts는 각 rank "정확히" 의 카운트 — ≥ 조건으로 합산
