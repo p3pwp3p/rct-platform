@@ -216,15 +216,15 @@ function MonthlyChart({ monthly, selected, onSelect }: {
           }}>
             <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 5 }}>{monthLong(monthly[hover].month)}</div>
             {TYPES.map(t => (
-              <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
+              <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, marginBottom: 2 }}>
                 <div style={{ width: 7, height: 7, borderRadius: 2, background: BONUS_COLOR[t] }} />
-                <span style={{ color: 'var(--text-tertiary)', minWidth: 52 }}>{BONUS_LABEL[t]}</span>
-                <span style={{ color: BONUS_COLOR[t], fontWeight: 700, marginLeft: 'auto' }}>{fmt(monthly[hover][t])}</span>
+                <span style={{ fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)', minWidth: 52 }}>{BONUS_LABEL[t]}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: BONUS_COLOR[t], fontWeight: 700, marginLeft: 'auto' }}>{fmt(monthly[hover][t])}</span>
               </div>
             ))}
-            <div style={{ display: 'flex', gap: 10, borderTop: '1px solid var(--border-primary)', marginTop: 4, paddingTop: 4, fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-              <span style={{ color: 'var(--text-secondary)' }}>합계</span>
-              <span style={{ color: '#34d399', fontWeight: 700, marginLeft: 'auto' }}>{fmt(monthly[hover].total)}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid var(--border-primary)', marginTop: 4, paddingTop: 4, fontSize: 12 }}>
+              <span style={{ fontFamily: 'var(--font-main)', color: 'var(--text-secondary)' }}>합계</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 700, marginLeft: 'auto' }}>{fmt(monthly[hover].total)}</span>
             </div>
           </div>
         )}
