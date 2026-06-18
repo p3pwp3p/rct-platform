@@ -468,15 +468,15 @@ export default function MembersPage() {
                                       {directLegs.map(leg => {
                                         const lrc = RANK_COLOR[leg.rank] ?? '#64748b'
                                         return (
-                                          <div key={leg.id} style={{ display:'grid', gridTemplateColumns:'90px 1fr 100px 80px 80px', gap:0, padding:'9px 14px', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:5, alignItems:'center' }}>
+                                          <div key={leg.id} style={{ display:'grid', gridTemplateColumns:'84px 1fr 90px 52px 96px', gap:'0 16px', padding:'9px 14px', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:5, alignItems:'center' }}>
                                             <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'#60a5fa' }}>{leg.leg_position === 'LEFT' ? '← LEFT' : 'RIGHT →'}</div>
-                                            <div>
-                                              <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)' }}>{leg.name}</div>
+                                            <div style={{ minWidth:0 }}>
+                                              <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{leg.name}</div>
                                               <div style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>{leg.node_id}</div>
                                             </div>
-                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)' }}>{fmtSales(leg.sales)}</div>
-                                            <span style={{ fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:lrc, background:lrc+'18', border:`1px solid ${lrc}44`, padding:'2px 6px', borderRadius:3 }}>{leg.rank}</span>
-                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-tertiary)' }}>{leg.created_at.slice(0,10)}</div>
+                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', textAlign:'right' }}>{fmtSales(leg.sales)}</div>
+                                            <span style={{ justifySelf:'start', fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:lrc, background:lrc+'18', border:`1px solid ${lrc}44`, padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>{leg.rank}</span>
+                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-tertiary)', textAlign:'right', whiteSpace:'nowrap' }}>{leg.created_at.slice(0,10)}</div>
                                           </div>
                                         )
                                       })}

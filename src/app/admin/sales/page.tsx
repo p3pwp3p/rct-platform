@@ -59,13 +59,23 @@ function MonthlyChart({ data }: { data: MonthPoint[] }) {
   const [panStart, setPanStart]         = useState(0)   // 시작 인덱스
   const [tooltip, setTooltip]           = useState<{ i: number; x: number; y: number } | null>(null)
 
+  // 컨테이너 실제 폭을 측정해 viewBox와 1:1 매핑 → 왜곡 제거
+  const [W, setW] = useState(840)
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return
+    const measure = () => setW(Math.max(320, el.clientWidth - 40))
+    measure()
+    const ro = new ResizeObserver(measure); ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const total = data.length
   const visible = visibleCount === 0 ? total : Math.max(3, Math.min(visibleCount, total))
   const startIdx = Math.max(0, Math.min(panStart, total - visible))
   const slice    = data.slice(startIdx, startIdx + visible)
 
   const maxVal  = Math.max(...slice.map(d => d.value), 1)
-  const W = 1000, H = 200, PAD_L = 48, PAD_R = 16, PAD_T = 10, PAD_B = 40
+  const H = 220, PAD_L = 56, PAD_R = 20, PAD_T = 14, PAD_B = 44
   const plotW = W - PAD_L - PAD_R
   const plotH = H - PAD_T - PAD_B
 
@@ -90,9 +100,13 @@ function MonthlyChart({ data }: { data: MonthPoint[] }) {
     return d
   }
 
-  const linePath = makePath(pts)
+  // 단일 포인트는 양 끝을 같은 y로 펼쳐 평탄한 라인/영역으로 렌더 (삼각형 아티팩트 방지)
+  const linePts = pts.length === 1
+    ? [{ ...pts[0], x: PAD_L }, { ...pts[0], x: W - PAD_R }]
+    : pts
+  const linePath = makePath(linePts)
   const areaPath = linePath
-    ? linePath + ` L ${pts[pts.length-1].x} ${PAD_T + plotH} L ${PAD_L} ${PAD_T + plotH} Z`
+    ? linePath + ` L ${linePts[linePts.length-1].x} ${PAD_T + plotH} L ${linePts[0].x} ${PAD_T + plotH} Z`
     : ''
 
   // y-axis ticks
@@ -182,7 +196,7 @@ function MonthlyChart({ data }: { data: MonthPoint[] }) {
             <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>정산 보고서를 업로드하면 차트가 표시됩니다</span>
           </div>
         ) : (
-          <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ overflow: 'visible', display: 'block' }}
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible', display: 'block' }}
             onMouseMove={handleSvgMouseMove} onMouseLeave={() => setTooltip(null)}>
             <defs>
               <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">

@@ -26,7 +26,7 @@ const NAV = [
     items: [
       { href: '/admin/payouts',   label: '수당 지급 관리', icon: 'payout', exact: true },
       { href: '/admin/payouts/ledger', label: '노드별 수령 현황', icon: 'ledger' },
-      { href: '/admin/forfeited', label: '낙전 집계',       icon: 'forfeited' },
+      { href: '/admin/forfeited', label: '회사 매출',       icon: 'forfeited' },
     ],
   },
   {

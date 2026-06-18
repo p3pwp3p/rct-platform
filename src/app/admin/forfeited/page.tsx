@@ -45,6 +45,10 @@ export default function ForfeitedPage() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
 
+  // 회사 매출 집계 (service-role API)
+  type Revenue = { totalProfit: number; companyBase: number; memberPool: number; totalPaid: number; forfeiture: number; forfeitRecorded: number; companyTotal: number; reportCount: number }
+  const [rev, setRev] = useState<Revenue | null>(null)
+
   // 수동 낙전 추가
   const [showAdd, setShowAdd]       = useState(false)
   const [addNodeId, setAddNodeId]   = useState('')
@@ -94,6 +98,12 @@ export default function ForfeitedPage() {
         map[r.reason].count++
       }
       setSummary(Object.values(map))
+
+      // 회사 매출 집계 (service-role API — RLS 무관하게 정확 집계)
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token ?? ''
+      const rr = await fetch('/api/company-revenue', { headers: { Authorization: `Bearer ${token}` } })
+      if (rr.ok) setRev(await rr.json())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : (e as any)?.message ?? JSON.stringify(e) ?? '오류')
     } finally {
@@ -142,9 +152,9 @@ export default function ForfeitedPage() {
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-main)' }}>낙전 집계</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-main)' }}>회사 매출</h1>
             <p style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-main)' }}>
-              정지·제명 노드로 인해 차단된 수당 내역
+              회사에 귀속되는 모든 수익 — 기본 수익(20%)과 회원 미지급 낙전
             </p>
           </div>
           <button onClick={() => setShowAdd(v => !v)}
@@ -191,11 +201,51 @@ export default function ForfeitedPage() {
 
         {error && <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>}
 
+        {/* ── 회사 총수입 ── */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(77,182,172,0.10), rgba(77,182,172,0.02))', border: '1px solid rgba(77,182,172,0.3)', borderRadius: 12, padding: '22px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 6 }}>회사 총수입 (회사에 귀속되는 모든 금액)</div>
+              {loading || !rev
+                ? <Shimmer w={200} h={32}/>
+                : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: '#4db6ac' }}>
+                    {fmt(rev.companyTotal)} <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>USDT</span>
+                  </div>}
+              <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
+                = 회사 기본수익(20%) + 낙전 &nbsp;=&nbsp; 총매출 − 회원 지급액
+              </div>
+            </div>
+          </div>
+
+          {/* 구성 분해 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 1, marginTop: 20, background: 'var(--border-primary)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
+            {[
+              { label: '총매출 (분윤)',        value: rev?.totalProfit, color: 'var(--text-primary)', note: `${rev?.reportCount ?? 0}개 정산` },
+              { label: '회사 기본수익 (20%)',  value: rev?.companyBase, color: '#4db6ac', note: '회사 몫' },
+              { label: '회원 지급액',          value: rev?.totalPaid,   color: '#a78bfa', note: '실제 지급' },
+              { label: '낙전 (미지급분)',      value: rev?.forfeiture,  color: '#fbbf24', note: '회원 몫 80% − 지급액' },
+            ].map(c => (
+              <div key={c.label} style={{ background: 'var(--bg-surface)', padding: '14px 16px' }}>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>{c.label}</div>
+                {loading || !rev
+                  ? <Shimmer h={18}/>
+                  : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 17, fontWeight: 700, color: c.color }}>{fmt(c.value ?? 0)}</div>}
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 3 }}>{c.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── 낙전 상세 ── */}
+        <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 4 }}>
+          낙전 상세 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-tertiary)' }}>· 정지·제명·수동 등 사유가 기록된 낙전 (낙전 총액의 일부)</span>
+        </div>
+
         {/* KPI 카드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {/* 전체 합계 */}
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, padding: '16px 20px' }}>
-            <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>전체 낙전 합계</div>
+            <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>기록된 낙전 합계</div>
             {loading ? <Shimmer h={22}/> : (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: '#f87171' }}>
                 {fmt(totalAll)} <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>USDT</span>
