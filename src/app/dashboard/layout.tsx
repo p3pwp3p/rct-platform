@@ -613,22 +613,29 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showVantageWarn, setShowVantageWarn] = useState(false)
   const [vantageBusy, setVantageBusy] = useState(false)
 
-  // 메인 계정 프로필 (owner_id 없는 본인 계정) — vantage_ack 저장 위치
-  const mainProfile = profiles.find(p => !p.owner_id) ?? null
+  // vantage_ack은 auth 유저(계정) 단위. 유저가 소유한 프로필 중 하나라도 ack면 확인 완료로 간주.
+  const vantageAcked = profiles.some(p => p.vantage_ack)
 
   // 노드 추가 클릭 — ack 안 된 계정이면 Vantage 안내 먼저, 아니면 바로 추가
   const handleAddNodeClick = () => {
-    if (mainProfile?.vantage_ack) setShowAddModal(true)
+    if (vantageAcked) setShowAddModal(true)
     else setShowVantageWarn(true)
   }
 
-  // 예/아니오 어느 쪽이든 ack 저장 → 이후 안내 미표시
+  // 예/아니오 어느 쪽이든 ack 저장 → 이후 안내 미표시 (계정 단위, service-role 라우트로 기록)
   const ackVantage = async (proceed: boolean) => {
     setVantageBusy(true)
     try {
-      if (mainProfile && !mainProfile.vantage_ack) {
-        await supabase.from('profiles').update({ vantage_ack: true }).eq('id', mainProfile.id)
-        await refresh()
+      if (!vantageAcked) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          await fetch('/api/vantage-ack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: session.access_token }),
+          })
+          await refresh()
+        }
       }
     } finally {
       setVantageBusy(false)
