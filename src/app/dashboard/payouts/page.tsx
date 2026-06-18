@@ -162,7 +162,7 @@ function ParsePreview({
         {[
           { label: 'MT5 계좌 ID', value: parsed.mt5AccountId },
           { label: '기간',        value: `${parsed.dateFrom} ~ ${parsed.dateTo}` },
-          { label: '총 미지급',   value: `$${fmt(parsed.totalUnpaid)}` },
+          { label: '총 미지급',   value: fmt(parsed.totalUnpaid) },
         ].map(({ label, value }) => (
           <div key={label} style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-primary)', borderRadius: 8, padding: '12px 16px' }}>
             <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>{label}</div>
@@ -193,9 +193,9 @@ function ParsePreview({
               <tr key={i} style={{ borderBottom: i < parsed.items.length - 1 ? '1px solid var(--border-primary)' : 'none' }}>
                 <td style={{ padding: '11px 16px', fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{item.strategyName}</td>
                 <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{item.dateFrom} ~ {item.dateTo}</td>
-                <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>${fmt(item.distributedIncome)}</td>
+                <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{fmt(item.distributedIncome)}</td>
                 <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#fbbf24' }}>{(item.profitRatio * 100).toFixed(0)}%</td>
-                <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#34d399' }}>${fmt(item.unpaidProfit)}</td>
+                <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#34d399' }}>{fmt(item.unpaidProfit)}</td>
               </tr>
             ))}
           </tbody>
@@ -247,7 +247,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
         {/* 총액 */}
         <div>
           <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>미지급 이익</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: '#34d399' }}>${fmt(report.total_unpaid)}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: '#34d399' }}>{fmt(report.total_unpaid)}</div>
         </div>
 
         {/* 상태 + 토글 */}
@@ -276,9 +276,9 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
               {report.items.map((item, i) => (
                 <tr key={item.id} style={{ borderBottom: i < report.items.length - 1 ? '1px solid var(--border-primary)' : 'none' }}>
                   <td style={{ padding: '10px 20px', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)' }}>{item.strategy_name}</td>
-                  <td style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>${fmt(item.distributable_income)}</td>
+                  <td style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{fmt(item.distributable_income)}</td>
                   <td style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#fbbf24' }}>{(item.profit_ratio * 100).toFixed(0)}%</td>
-                  <td style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#34d399' }}>${fmt(item.unpaid_profit)}</td>
+                  <td style={{ padding: '10px 20px', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#34d399' }}>{fmt(item.unpaid_profit)}</td>
                 </tr>
               ))}
             </tbody>
@@ -332,7 +332,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
             { key: 'sponsor',  label: '후원', val: totalSponsor },
           ].map(({ key, label, val }) => (
             <div key={key} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: BONUS_COLOR[key] }}>
-              {label} <span style={{ fontWeight: 700 }}>${fmt(val)}</span>
+              {label} <span style={{ fontWeight: 700 }}>{fmt(val)}</span>
             </div>
           ))}
         </div>
@@ -392,7 +392,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
                     {(row.rate * 100).toFixed(1)}%
                   </td>
                   <td style={{ padding: '10px 16px', fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: c }}>
-                    ${fmt(row.amount)}
+                    {fmt(row.amount)}
                   </td>
                 </tr>
               )
@@ -466,7 +466,7 @@ export default function MemberPayoutsPage() {
               <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{label}</div>
               {loading
                 ? <Skeleton w="80%" h={24} />
-                : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color }}>${fmt(value)}</div>
+                : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color }}>{fmt(value)}</div>
               }
             </div>
           ))}

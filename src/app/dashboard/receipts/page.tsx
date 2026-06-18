@@ -81,7 +81,7 @@ export default function ReceiptsPage() {
                 <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{k.label}</div>
                 {loading
                   ? <Skeleton w="80%" h={22} />
-                  : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: k.color }}>${fmt(k.value)}</div>}
+                  : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: k.color }}>{fmt(k.value)}</div>}
               </div>
             ))}
           </div>
@@ -143,7 +143,7 @@ export default function ReceiptsPage() {
                           <td style={{ padding: '12px 18px', fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{divisionLabel(r)}</td>
                           <td style={{ padding: '12px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#fbbf24' }}>{(r.rate * 100).toFixed(1)}%</td>
                           <td style={{ padding: '12px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{r.count.toLocaleString('ko-KR')}건</td>
-                          <td style={{ padding: '12px 18px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>${fmt(r.amount)}</td>
+                          <td style={{ padding: '12px 18px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>{fmt(r.amount)}</td>
                         </tr>
                       )
                     })}
@@ -155,7 +155,7 @@ export default function ReceiptsPage() {
             {/* 비율 설명 */}
             <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.2)', fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
               <strong style={{ color: 'var(--text-secondary)' }}>지급률</strong>은 수익(분윤) 금액에서 해당 수당으로 지급되는 비율입니다.
-              예: 직급수당 R3는 분윤의 2% — 하위 노드 $150 수익마다 $3가 지급됩니다.
+              예: 직급수당 R3는 분윤의 2% — 하위 노드 수익 150마다 3이 지급됩니다.
               <br/>
               <strong style={{ color: 'var(--text-secondary)' }}>구분</strong> — 추천수당은 추천 세대(1~4대), 직급수당은 직급 단계(R1·R2·R3…), 후원수당은 바이너리 약한 레그 기준입니다.
             </div>
