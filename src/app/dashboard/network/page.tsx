@@ -2,7 +2,7 @@
 import Link from 'next/link'
 
 const KPI = [
-  { label: 'Total Network Volume', value: '842,910 USDT', trend: '12.4% vs last period', up: true },
+  { label: 'Total Network Volume', value: '842,910', trend: '12.4% vs last period', up: true },
   { label: 'Active Nodes', value: '12,482', trend: '342 new this week', up: true },
   { label: 'Growth Velocity', value: '1.84x', trend: '0.04% stabilization', up: false },
   { label: 'Network Depth', value: '142 Levels', trend: 'Expansion optimized', up: true },

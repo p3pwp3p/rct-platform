@@ -211,7 +211,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Binance Tether</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Binance</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#34d399', letterSpacing: '0.06em' }}>TRC-20</div>
               </div>
               {loading ? (
