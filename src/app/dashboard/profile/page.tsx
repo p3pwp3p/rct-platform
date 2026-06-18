@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
   const handlePwChange = async () => {
     setPwErr(''); setPwMsg('')
-    if (pwNew.length < 6)    { setPwErr('새 비밀번호는 6자 이상'); return }
+    if (pwNew.length < 8)    { setPwErr('새 비밀번호는 8자 이상이어야 합니다.'); return }
     if (pwNew !== pwConf)     { setPwErr('비밀번호가 일치하지 않습니다'); return }
     setPwBusy(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -103,7 +103,16 @@ export default function ProfilePage() {
     }
     const { error } = await supabase.auth.updateUser({ password: pwNew })
     setPwBusy(false)
-    if (error) { setPwErr(error.message); return }
+    if (error) {
+      if (error.message.includes('should be different')) {
+        setPwErr('기존 비밀번호와 다른 비밀번호를 사용해주세요.')
+      } else if (error.message.includes('weak') || error.message.includes('at least')) {
+        setPwErr('더 강력한 비밀번호를 사용해주세요.')
+      } else {
+        setPwErr(error.message)
+      }
+      return
+    }
     setPwMsg('변경 완료')
     setPwCur(''); setPwNew(''); setPwConf(''); setPwOpen(false)
     setTimeout(() => setPwMsg(''), 3000)
