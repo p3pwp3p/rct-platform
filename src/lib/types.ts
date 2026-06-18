@@ -134,7 +134,10 @@ export interface RankCounts {
 
 export interface LegSide {
   total: number        // total member count in this leg
+  activeCount: number  // members with status='active'
   sales: number        // cumulative sales in this leg
+  topRank: Rank        // highest rank present in this leg
+  latestJoinedAt: string | null  // ISO date of most recently joined node
   rankCounts: RankCounts
 }
 

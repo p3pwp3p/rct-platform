@@ -367,10 +367,16 @@ export default function AnalyticsPage() {
   const myRank     = (profile?.rank ?? 'R0') as RankKey
   const color      = RANK_COLOR[myRank]
   const next       = nextRank(myRank)
-  const leftSales  = legStats?.left.sales  ?? 0
-  const rightSales = legStats?.right.sales ?? 0
-  const leftTotal  = legStats?.left.total  ?? 0
-  const rightTotal = legStats?.right.total ?? 0
+  const leftSales       = legStats?.left.sales        ?? 0
+  const rightSales      = legStats?.right.sales       ?? 0
+  const leftTotal       = legStats?.left.total        ?? 0
+  const rightTotal      = legStats?.right.total       ?? 0
+  const leftActive      = legStats?.left.activeCount  ?? 0
+  const rightActive     = legStats?.right.activeCount ?? 0
+  const leftTopRank     = legStats?.left.topRank      ?? 'R0'
+  const rightTopRank    = legStats?.right.topRank     ?? 'R0'
+  const leftLatest      = legStats?.left.latestJoinedAt  ?? null
+  const rightLatest     = legStats?.right.latestJoinedAt ?? null
   const direct     = legStats?.directReferrals ?? 0
 
   // 다운라인 직급 분포: left / right 분리
@@ -494,15 +500,15 @@ export default function AnalyticsPage() {
               },
               {
                 label: 'Left Leg',
-                value: loading ? null : fmt(leftSales),
-                sub: leftSales + rightSales > 0 ? `${((leftSales / (leftSales + rightSales)) * 100).toFixed(1)}%` : '0%',
+                value: loading ? null : fmt(leftTotal),
+                sub: leftTotal + rightTotal > 0 ? `전체의 ${((leftTotal / (leftTotal + rightTotal)) * 100).toFixed(1)}%` : '노드 없음',
                 color: '#60a5fa',
                 isMono: true,
               },
               {
                 label: 'Right Leg',
-                value: loading ? null : fmt(rightSales),
-                sub: leftSales + rightSales > 0 ? `${((rightSales / (leftSales + rightSales)) * 100).toFixed(1)}%` : '0%',
+                value: loading ? null : fmt(rightTotal),
+                sub: leftTotal + rightTotal > 0 ? `전체의 ${((rightTotal / (leftTotal + rightTotal)) * 100).toFixed(1)}%` : '노드 없음',
                 color: '#a78bfa',
                 isMono: true,
               },
@@ -549,20 +555,20 @@ export default function AnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
             <div className="an-card">
-              <div className="an-card-title">Leg 밸런스</div>
-              <LegBalanceBar left={leftSales} right={rightSales} />
+              <div className="an-card-title">Leg 밸런스 (노드 수)</div>
+              <LegBalanceBar left={leftTotal} right={rightTotal} />
               <div style={{
                 marginTop: 16, padding: '10px 14px',
                 background: 'var(--bg-inset)', borderRadius: 6,
                 border: '1px solid var(--border-primary)',
               }}>
-                {leftSales > rightSales * 1.4 ? (
+                {leftTotal > rightTotal * 1.4 ? (
                   <p style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#fbbf24', margin: 0, lineHeight: 1.6 }}>
-                    ⚠ Right Leg &lt; Left Leg ({rightSales > 0 ? ((leftSales / rightSales - 1) * 100).toFixed(0) : '∞'}% 차이) — Right Leg 강화를 권장합니다.
+                    ⚠ Right Leg &lt; Left Leg ({rightTotal > 0 ? ((leftTotal / rightTotal - 1) * 100).toFixed(0) : '∞'}% 차이) — Right Leg 강화를 권장합니다.
                   </p>
-                ) : rightSales > leftSales * 1.4 ? (
+                ) : rightTotal > leftTotal * 1.4 ? (
                   <p style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#fbbf24', margin: 0, lineHeight: 1.6 }}>
-                    ⚠ Left Leg &lt; Right Leg ({leftSales > 0 ? ((rightSales / leftSales - 1) * 100).toFixed(0) : '∞'}% 차이) — Left Leg 강화를 권장합니다.
+                    ⚠ Left Leg &lt; Right Leg ({leftTotal > 0 ? ((rightTotal / leftTotal - 1) * 100).toFixed(0) : '∞'}% 차이) — Left Leg 강화를 권장합니다.
                   </p>
                 ) : (
                   <p style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#34d399', margin: 0, lineHeight: 1.6 }}>
@@ -590,6 +596,68 @@ export default function AnalyticsPage() {
                 }
               </div>
             </div>
+          </div>
+
+          {/* L / R 레그 상세 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {([
+              { label: 'LEFT LEG',  color: '#60a5fa', total: leftTotal,  active: leftActive,  topRank: leftTopRank  as RankKey, sales: leftSales,  latest: leftLatest  },
+              { label: 'RIGHT LEG', color: '#a78bfa', total: rightTotal, active: rightActive, topRank: rightTopRank as RankKey, sales: rightSales, latest: rightLatest },
+            ]).map(leg => (
+              <div key={leg.label} className="an-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* 헤더 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: leg.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: leg.color }}>{leg.label}</span>
+                </div>
+                {/* 총 / 활성 노드 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ background: 'var(--bg-inset)', borderRadius: 7, padding: '10px 12px' }}>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>총 노드</div>
+                    {loading
+                      ? <Sk w={36} h={20} />
+                      : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: leg.color }}>{leg.total}</span>
+                    }
+                  </div>
+                  <div style={{ background: 'var(--bg-inset)', borderRadius: 7, padding: '10px 12px' }}>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>활성 노드</div>
+                    {loading
+                      ? <Sk w={36} h={20} />
+                      : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: '#34d399' }}>{leg.active}</span>
+                    }
+                  </div>
+                </div>
+                {/* 최고 직급 / 평균 매출 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ background: 'var(--bg-inset)', borderRadius: 7, padding: '10px 12px' }}>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>최고 직급</div>
+                    {loading
+                      ? <Sk w={36} h={20} />
+                      : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 700, color: RANK_COLOR[leg.topRank] }}>{leg.topRank}</span>
+                    }
+                  </div>
+                  <div style={{ background: 'var(--bg-inset)', borderRadius: 7, padding: '10px 12px' }}>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 4 }}>평균 노드 매출</div>
+                    {loading
+                      ? <Sk w={48} h={20} />
+                      : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {leg.total > 0 ? fmt(Math.round(leg.sales / leg.total)) : '—'}
+                        </span>
+                    }
+                  </div>
+                </div>
+                {/* 최근 가입 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid var(--border-primary)' }}>
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>최근 가입일</span>
+                  {loading
+                    ? <Sk w={80} h={12} />
+                    : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {leg.latest ? leg.latest.slice(0, 10) : '—'}
+                      </span>
+                  }
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* 직급 변동 히스토리 */}

@@ -35,7 +35,7 @@ function emptyRankCounts(): RankCounts {
 
 /** Build a zero-initialised LegSide object */
 function emptyLegSide(): LegSide {
-  return { total: 0, sales: 0, rankCounts: emptyRankCounts() }
+  return { total: 0, activeCount: 0, sales: 0, topRank: 'R0', latestJoinedAt: null, rankCounts: emptyRankCounts() }
 }
 
 /**
@@ -105,14 +105,19 @@ function collectLegRows(
   return result
 }
 
+const RANK_ORDER_AGG = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'] as const
+
 /** Aggregate count / sales / rank breakdown from a list of rows */
 function aggregateLeg(rows: DownlineRow[]): LegSide {
   const side = emptyLegSide()
   for (const row of rows) {
     side.total++
+    if (row.status === 'active') side.activeCount++
     side.sales += row.sales
     const r = row.rank as Rank
     if (r in side.rankCounts) side.rankCounts[r]++
+    if (RANK_ORDER_AGG.indexOf(r) > RANK_ORDER_AGG.indexOf(side.topRank)) side.topRank = r
+    if (!side.latestJoinedAt || row.created_at > side.latestJoinedAt) side.latestJoinedAt = row.created_at
   }
   return side
 }
