@@ -38,6 +38,70 @@ function divisionLabel(r: BreakdownRow): string {
   return '바이너리 소실적'
 }
 
+// ─── 기간 선택 드롭다운 ────────────────────────────────────────────────────────
+function MonthDropdown({ months, value, onChange }: {
+  months: string[]; value: string | null; onChange: (m: string | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  // 최신 월이 위로 오도록 내림차순
+  const opts: (string | null)[] = [null, ...[...months].sort((a, b) => b.localeCompare(a))]
+  const label = value ? monthLong(value) : '전체 기간'
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', cursor: 'pointer',
+          background: 'var(--bg-inset)', border: `1px solid ${open ? '#34d399' : 'var(--border-secondary)'}`,
+          borderRadius: 7, fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-primary)', transition: 'border-color 0.15s',
+        }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span style={{ minWidth: 70, textAlign: 'left' }}>{label}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="md-menu" style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 30,
+          minWidth: 150, maxHeight: 260, overflowY: 'auto',
+          background: 'var(--bg-surface)', border: '1px solid var(--border-secondary)',
+          borderRadius: 8, padding: 4, boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+        }}>
+          {opts.map(o => {
+            const sel = o === value
+            return (
+              <button key={o ?? 'all'} onClick={() => { onChange(o); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%',
+                  padding: '8px 10px', cursor: 'pointer', border: 'none', borderRadius: 5, textAlign: 'left',
+                  background: sel ? 'rgba(52,211,153,0.12)' : 'transparent',
+                  fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: sel ? 700 : 400,
+                  color: sel ? '#34d399' : 'var(--text-secondary)', whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { if (!sel) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(148,163,184,0.06)' }}
+                onMouseLeave={e => { if (!sel) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}>
+                {o ? monthLong(o) : '전체 기간'}
+                {sel && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── 월별 수령 추이 (stacked bar) ──────────────────────────────────────────────
 function MonthlyChart({ monthly, selected, onSelect }: {
   monthly: MonthRow[]; selected: string | null; onSelect: (m: string | null) => void
@@ -70,7 +134,10 @@ function MonthlyChart({ monthly, selected, onSelect }: {
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>월별 수령 추이</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>월별 수령 추이</span>
+          <MonthDropdown months={monthly.map(m => m.month)} value={selected} onChange={onSelect} />
+        </div>
         <div style={{ display: 'flex', gap: 14 }}>
           {TYPES.map(t => (
             <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-secondary)' }}>
@@ -216,41 +283,21 @@ export default function ReceiptsPage() {
 
   return (
     <>
-      <style>{`@keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+      <style>{`
+        @keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        .md-menu { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.2) transparent; }
+        .md-menu::-webkit-scrollbar { width: 6px; }
+        .md-menu::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 3px; }
+      `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 900, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
           {/* 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-main)' }}>수령 현황</h1>
-              <p style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-main)' }}>
-                내가 추천·직급·후원 수당으로 받은 금액
-              </p>
-            </div>
-            {/* 월 선택 chips */}
-            {!loading && monthly.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button onClick={() => setMonth(null)}
-                  style={{
-                    padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font-main)', fontSize: 12,
-                    fontWeight: month === null ? 700 : 400,
-                    border: `1px solid ${month === null ? '#34d399' : 'var(--border-secondary)'}`,
-                    background: month === null ? 'rgba(52,211,153,0.12)' : 'transparent',
-                    color: month === null ? '#34d399' : 'var(--text-tertiary)', transition: 'all 0.15s',
-                  }}>전체</button>
-                {monthly.map(m => (
-                  <button key={m.month} onClick={() => setMonth(m.month)}
-                    style={{
-                      padding: '5px 12px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font-main)', fontSize: 12,
-                      fontWeight: month === m.month ? 700 : 400,
-                      border: `1px solid ${month === m.month ? '#34d399' : 'var(--border-secondary)'}`,
-                      background: month === m.month ? 'rgba(52,211,153,0.12)' : 'transparent',
-                      color: month === m.month ? '#34d399' : 'var(--text-tertiary)', transition: 'all 0.15s',
-                    }}>{monthLong(m.month)}</button>
-                ))}
-              </div>
-            )}
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-main)' }}>수령 현황</h1>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-main)' }}>
+              내가 추천·직급·후원 수당으로 받은 금액
+            </p>
           </div>
 
           {error && (
