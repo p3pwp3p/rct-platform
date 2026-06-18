@@ -348,7 +348,7 @@ CREATE TABLE IF NOT EXISTS forfeited_bonuses (
   report_id   uuid        REFERENCES profit_reports(id) ON DELETE CASCADE,  -- nullable: 수동 낙전은 report_id 없음
   profile_id  uuid        NOT NULL REFERENCES profiles(id),
   amount      numeric     NOT NULL DEFAULT 0,
-  reason      text        NOT NULL CHECK (reason IN ('suspended','expelled','manual')),
+  reason      text        NOT NULL CHECK (reason IN ('suspended','expelled','manual','company')),  -- company: 적격 직급자 없는 tier 풀의 회사 귀속분
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 

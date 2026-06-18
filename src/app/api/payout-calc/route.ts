@@ -204,6 +204,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 회사 귀속 낙전(적격 직급자 없는 tier 풀) 저장 — profile_id 는 NOT NULL 이라
+    // 트리 루트(parent_id null = 회사 노드)를 placeholder 로 사용, reason='company'
+    if (companyForfeited > 0) {
+      const rootId = [...nodeMap.values()].find(n => !n.parent_id)?.id
+      if (rootId) {
+        const { error: cfErr } = await admin.from('forfeited_bonuses').insert({
+          report_id: reportId, profile_id: rootId,
+          amount: companyForfeited, reason: 'company',
+        })
+        if (cfErr) console.error('[company forfeited insert]', cfErr)
+      }
+    }
+
     return NextResponse.json({ ...result, saved: true })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : (e as any)?.message ?? '계산 오류'

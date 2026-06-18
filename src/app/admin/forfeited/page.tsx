@@ -25,11 +25,13 @@ const REASON_LABEL: Record<string, string> = {
   suspended: '일시 정지',
   expelled:  '제명',
   manual:    '수동 처리',
+  company:   '회사 귀속 (적격 직급자 없음)',
 }
 const REASON_COLOR: Record<string, string> = {
   suspended: '#fbbf24',
   expelled:  '#f87171',
   manual:    '#94a3b8',
+  company:   '#4db6ac',
 }
 
 function fmt(n: number) {
@@ -223,7 +225,7 @@ export default function ForfeitedPage() {
               { label: '총매출 (분윤)',        value: rev?.totalProfit, color: 'var(--text-primary)', note: `${rev?.reportCount ?? 0}개 정산` },
               { label: '회사 기본수익 (20%)',  value: rev?.companyBase, color: '#4db6ac', note: '회사 몫' },
               { label: '회원 지급액',          value: rev?.totalPaid,   color: '#a78bfa', note: '실제 지급' },
-              { label: '낙전 (미지급분)',      value: rev?.forfeiture,  color: '#fbbf24', note: '회원 몫 80% − 지급액' },
+              { label: '미배분 낙전 (전체)',   value: rev?.forfeiture,  color: '#fbbf24', note: '회원 몫 80% − 실지급 (계산값)' },
             ].map(c => (
               <div key={c.label} style={{ background: 'var(--bg-surface)', padding: '14px 16px' }}>
                 <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>{c.label}</div>
@@ -238,7 +240,7 @@ export default function ForfeitedPage() {
 
         {/* ── 낙전 상세 ── */}
         <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 4 }}>
-          낙전 상세 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-tertiary)' }}>· 정지·제명·수동 등 사유가 기록된 낙전 (낙전 총액의 일부)</span>
+          사유별 낙전 명세 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-tertiary)' }}>· 정지·제명·수동·회사귀속 사유가 기록된 낙전 (위 '미배분 낙전(전체)'의 명세 일부)</span>
         </div>
 
         {/* KPI 카드 */}
