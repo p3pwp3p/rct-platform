@@ -368,6 +368,30 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
           {/* ── Step 1: 후원인 코드 ── */}
           {step === 'sponsor' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Vantage 선물사 가입 안내 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, padding: '14px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>
+                    먼저 Vantage 선물사 가입이 필요합니다
+                  </span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                  노드를 등록하려면 <strong>Vantage 선물 계좌</strong>가 있어야 합니다.<br/>
+                  상위 스폰서의 <strong>IB 추천코드</strong>가 있으면 그 코드로 가입하시고,
+                  없다면 아래 링크로 가입해 주세요.
+                </div>
+                <a href="https://vigco.co/la-com-inv/2l6qPx7E" target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 12px', borderRadius: 7, background: '#f59e0b', color: '#1a1206', fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                  Vantage 추천코드로 가입하기
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </a>
+                <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontFamily: 'var(--font-main)', fontSize: 11, color: '#f87171', lineHeight: 1.6 }}>
+                  <span style={{ flexShrink: 0 }}>⚠</span>
+                  <span>가입 시 입력한 <strong>IB 코드는 이후 변경이 불가능</strong>합니다. 신중히 확인 후 가입하세요.</span>
+                </div>
+              </div>
+
               <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--bg-inset)', borderRadius: 7, border: '1px solid var(--border-primary)' }}>
                 <strong style={{ color: 'var(--accent-blue)' }}>후원인</strong>은 내가 트리에서 배치될 위치를 결정합니다.<br/>
                 후원인의 레프트 또는 라이트 레그에 등록됩니다.
