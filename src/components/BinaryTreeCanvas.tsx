@@ -153,16 +153,19 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
         {[
           { label: 'CT ID',   value: node.ctId || '—',           mono: true },
           { label: 'MT5',     value: node.mt5AccountId || '—',   mono: true },
-          { label: '매출',    value: fmt(node.sales),             mono: true },
+          { label: '매출',    value: `${fmt(node.sales)} USDT`,   mono: true },
           { label: 'Joined',  value: node.joined ? node.joined.slice(0, 10) : '—', mono: true },
           { label: 'Leg',     value: node.legPosition || '—',     mono: true },
           { label: 'Sub Legs',value: `${node.children.length}개`, mono: true },
-        ].map((r, i) => (
+        ].map((r, i) => {
+          const isKo = /[가-힣]/.test(r.label)  // 한글 라벨은 mono+uppercase 가 어색 → main 폰트
+          return (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '9px 16px', borderBottom: '1px solid var(--border-primary)' }}>
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', flexShrink: 0, whiteSpace: 'nowrap' }}>{r.label}</span>
+            <span style={{ fontSize: 10, fontFamily: isKo ? 'var(--font-main)' : 'var(--font-mono)', textTransform: isKo ? 'none' : 'uppercase', letterSpacing: isKo ? 'normal' : '0.08em', color: 'var(--text-tertiary)', flexShrink: 0, whiteSpace: 'nowrap' }}>{r.label}</span>
             <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 500, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.value}</span>
           </div>
-        ))}
+          )
+        })}
         {node.children.length > 0 && (
           <div style={{ padding: '12px 16px' }}>
             <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: 8 }}>직속 레그 ({node.children.length})</div>
