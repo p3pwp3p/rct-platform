@@ -34,22 +34,28 @@ export default function ReceiptsPage() {
   const [totals, setTotals]       = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
   const [rowCount, setRowCount]   = useState(0)
   const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState<string | null>(null)
   const [filter, setFilter]       = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
 
   useEffect(() => {
     if (profileLoading) return
     if (!profileId) { setLoading(false); return }
     setLoading(true)
+    setError(null)
     supabase.auth.getSession()
       .then(({ data: { session } }) =>
         fetch(`/api/my-payouts?profileId=${profileId}`, { headers: { Authorization: `Bearer ${session?.access_token ?? ''}` } }))
-      .then(r => r.json())
+      .then(async r => {
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) throw new Error(d?.error ?? `요청 실패 (${r.status})`)
+        return d
+      })
       .then(d => {
         setBreakdown(d.breakdown ?? [])
         setTotals(d.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 })
         setRowCount(d.rowCount ?? 0)
       })
-      .catch(console.error)
+      .catch(e => { console.error('[receipts]', e); setError('수령 내역을 불러오지 못했습니다.') })
       .finally(() => setLoading(false))
   }, [profileId, profileLoading])
 
@@ -68,6 +74,14 @@ export default function ReceiptsPage() {
               내가 추천·직급·후원 수당으로 받은 금액
             </p>
           </div>
+
+          {error && (
+            <div style={{
+              padding: '12px 16px', background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8,
+              fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171',
+            }}>⚠ {error}</div>
+          )}
 
           {/* KPI 카드 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>

@@ -294,20 +294,26 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
   const [rows, setRows]     = useState<PayoutRow[]>([])
   const [totals, setTotals] = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
   const [loading, setLoading] = useState(true)
+  const [error, setError]   = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
 
   useEffect(() => {
     if (!profileId) { setLoading(false); return }
     setLoading(true)
+    setError(null)
     supabase.auth.getSession().then(({ data: { session } }) => {
       const token = session?.access_token ?? ''
       return fetch(`/api/my-payouts?profileId=${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
     })
-      .then(r => r.json())
+      .then(async r => {
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok) throw new Error(d?.error ?? `요청 실패 (${r.status})`)
+        return d
+      })
       .then(d => { setRows(d.rows ?? []); setTotals(d.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 }) })
-      .catch(console.error)
+      .catch(e => { console.error('[payouts]', e); setError('수당 수령 내역을 불러오지 못했습니다.') })
       .finally(() => setLoading(false))
   }, [profileId])
 
@@ -354,7 +360,9 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
         ))}
       </div>
 
-      {loading ? (
+      {error ? (
+        <div style={{ padding: '16px 20px', margin: '16px 20px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>
+      ) : loading ? (
         <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[1,2,3].map(i => <Skeleton key={i} w="100%" h={14} />)}
         </div>
@@ -409,6 +417,7 @@ export default function MemberPayoutsPage() {
   const { activeProfile } = useProfile()
   const [reports, setReports] = useState<MemberReportWithItems[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState<string | null>(null)
   const [parsed, setParsed]   = useState<ParsedPdfReport | null>(null)
 
   const profileId    = activeProfile?.id ?? ''
@@ -417,8 +426,9 @@ export default function MemberPayoutsPage() {
   async function load() {
     if (!profileId) return
     setLoading(true)
+    setError(null)
     try { setReports(await memberGetProfitReports(profileId)) }
-    catch (e: any) { console.error(e) }
+    catch (e: any) { console.error(e); setError('수당 보고서를 불러오지 못했습니다.') }
     finally { setLoading(false) }
   }
 
@@ -445,6 +455,10 @@ export default function MemberPayoutsPage() {
             Vantage 복사기 이익 공유 보고서를 업로드하면 수당 내역이 자동으로 등록됩니다.
           </p>
         </div>
+
+        {error && (
+          <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>
+        )}
 
         {/* MT5 계좌 미등록 경고 */}
         {!mt5AccountId && (
