@@ -72,10 +72,44 @@ export async function GET(req: NextRequest) {
       breakMap.set(key, cur)
     }
     const typeOrder: Record<string, number> = { referral: 0, rank: 1, sponsor: 2 }
-    const breakdown = [...breakMap.values()].sort((a, b) =>
-      (typeOrder[a.bonus_type] - typeOrder[b.bonus_type]) || (a.generation - b.generation))
+    const sortBreak = (arr: { bonus_type: string; generation: number; rate: number; count: number; amount: number }[]) =>
+      [...arr].sort((a, b) => (typeOrder[a.bonus_type] - typeOrder[b.bonus_type]) || (a.generation - b.generation))
+    const breakdown = sortBreak([...breakMap.values()])
 
-    if (!allRows.length) return NextResponse.json({ rows: [], totals, breakdown, rowCount: 0 })
+    // 2-C. 월별 집계 — report_id → profit_reports.date_from(YYYY-MM) 기준
+    const allReportIds = [...new Set(allRows.map(r => r.report_id))]
+    const monthOf = new Map<string, string>()
+    if (allReportIds.length) {
+      const { data: allReports } = await admin
+        .from('profit_reports')
+        .select('id, date_from')
+        .in('id', allReportIds)
+      for (const r of (allReports ?? [])) monthOf.set(r.id, String(r.date_from).slice(0, 7))
+    }
+
+    type MonthRow = { month: string; referral: number; rank: number; sponsor: number; total: number; count: number }
+    const monthlyMap = new Map<string, MonthRow>()
+    const monthBreak = new Map<string, Map<string, { bonus_type: string; generation: number; rate: number; count: number; amount: number }>>()
+    for (const r of allRows) {
+      const m = monthOf.get(r.report_id) ?? '기타'
+      const mm = monthlyMap.get(m) ?? { month: m, referral: 0, rank: 0, sponsor: 0, total: 0, count: 0 }
+      if (r.bonus_type === 'referral') mm.referral += r.amount
+      else if (r.bonus_type === 'rank') mm.rank += r.amount
+      else if (r.bonus_type === 'sponsor') mm.sponsor += r.amount
+      mm.total += r.amount; mm.count += 1
+      monthlyMap.set(m, mm)
+
+      const bm = monthBreak.get(m) ?? new Map()
+      const key = `${r.bonus_type}|${r.generation}|${r.rate}`
+      const cur = bm.get(key) ?? { bonus_type: r.bonus_type, generation: r.generation, rate: r.rate, count: 0, amount: 0 }
+      cur.count += 1; cur.amount += r.amount
+      bm.set(key, cur); monthBreak.set(m, bm)
+    }
+    const monthly = [...monthlyMap.values()].sort((a, b) => a.month.localeCompare(b.month))
+    const breakdownByMonth: Record<string, ReturnType<typeof sortBreak>> = {}
+    for (const [m, bm] of monthBreak) breakdownByMonth[m] = sortBreak([...bm.values()])
+
+    if (!allRows.length) return NextResponse.json({ rows: [], totals, breakdown, monthly: [], breakdownByMonth: {}, rowCount: 0 })
 
     // 3. 표시는 최근 500건으로 제한
     const rows = allRows.slice(0, 500)
@@ -96,7 +130,7 @@ export async function GET(req: NextRequest) {
       profit_reports: reportMap.get(row.report_id) ?? null,
     }))
 
-    return NextResponse.json({ rows: enriched, totals, breakdown, rowCount: allRows.length })
+    return NextResponse.json({ rows: enriched, totals, breakdown, monthly, breakdownByMonth, rowCount: allRows.length })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : (e as any)?.message ?? '조회 오류'
     return NextResponse.json({ error: msg }, { status: 500 })
