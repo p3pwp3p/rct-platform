@@ -43,7 +43,10 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, phone: phone.trim() || null, trc20_address: trc20.trim() || null } },
+      options: {
+        data: { full_name: name, phone: phone.trim() || null, trc20_address: trc20.trim() || null },
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
     })
     setLoading(false)
 

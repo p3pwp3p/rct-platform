@@ -10,8 +10,12 @@ export default function GatewayPage() {
   // (Redirect URL 허용 목록에 /reset-password 미등록 시) 토큰을 보존한 채 전달.
   // window.location 사용: supabase 클라이언트가 새로 초기화되며 해시를 처리하도록 풀 리로드.
   useEffect(() => {
-    if (window.location.hash.includes('type=recovery')) {
-      window.location.replace('/reset-password' + window.location.hash)
+    const hash = window.location.hash
+    if (hash.includes('type=recovery')) {
+      window.location.replace('/reset-password' + hash)
+    } else if (hash.includes('type=signup') || hash.includes('type=email')) {
+      // 회원가입/이메일 인증 링크가 사이트 루트로 떨어진 경우 확인 페이지로 전달
+      window.location.replace('/auth/confirm' + hash)
     }
   }, [])
 
