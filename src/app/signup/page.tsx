@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [name, setName]               = useState('')
   const [email, setEmail]             = useState('')
   const [phone, setPhone]             = useState('')
+  const [trc20, setTrc20]             = useState('')
   const [password, setPassword]       = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [agreed, setAgreed]           = useState(false)
@@ -42,7 +43,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, phone: phone.trim() || null } },
+      options: { data: { full_name: name, phone: phone.trim() || null, trc20_address: trc20.trim() || null } },
     })
     setLoading(false)
 
@@ -202,6 +203,14 @@ export default function SignupPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>전화번호 <span style={{ color: '#475569', textTransform: 'none', letterSpacing: 0 }}>(선택)</span></label>
                   <input className="su-input" type="tel" placeholder="010-1234-5678" value={phone} onChange={e => setPhone(e.target.value.replace(/[^\d-+\s]/g, ''))} autoComplete="tel" />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>바이낸스 TRC-20 지갑주소 <span style={{ color: '#475569', textTransform: 'none', letterSpacing: 0 }}>(선택)</span></label>
+                  <input className="su-input" type="text" placeholder="T로 시작하는 출금 지갑 주소" value={trc20} onChange={e => setTrc20(e.target.value.replace(/\s/g, ''))} autoComplete="off" spellCheck={false} />
+                  <span style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                    지갑이 없으면 비워두고 먼저 가입한 뒤, 내 프로필에서 나중에 등록할 수 있습니다.
+                  </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

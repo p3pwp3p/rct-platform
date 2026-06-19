@@ -583,6 +583,12 @@ function VantageWarningModal({ busy, onProceed, onDismiss }: {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
           </a>
 
+          <a href="https://accounts.binance.com/register" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 12px', borderRadius: 7, background: 'transparent', border: '1px solid #f0b90b', color: '#f0b90b', fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            바이낸스 가입하기
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+          </a>
+
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '11px 13px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171', lineHeight: 1.6 }}>
             <span style={{ flexShrink: 0, fontWeight: 700 }}>⚠</span>
             <span>가입 시 입력한 <strong>IB 코드는 이후 변경이 불가능</strong>합니다. 신중히 확인 후 가입하세요. 이 안내는 한 번만 표시됩니다.</span>
