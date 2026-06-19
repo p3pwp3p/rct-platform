@@ -7,6 +7,7 @@ import PageTransition from '@/components/PageTransition'
 import { ProfileProvider, useProfile } from '@/lib/contexts/ProfileContext'
 import { validateReferralCode } from '@/lib/db'
 import type { Profile, SponsorInfo } from '@/lib/types'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // ─── 상수 ─────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -734,6 +735,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             {currentPageName}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle />
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px',
               border: '1px solid var(--accent-blue)', borderRadius: 4, color: 'var(--accent-blue)',

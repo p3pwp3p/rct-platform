@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV = [
   {
@@ -132,6 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)' }}>관리자</span>
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle />
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 10,
               padding: '2px 8px', borderRadius: 4, letterSpacing: '0.08em',

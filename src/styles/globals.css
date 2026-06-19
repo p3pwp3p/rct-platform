@@ -21,6 +21,20 @@
   --font-mono: 'Geist Mono', 'JetBrains Mono', 'SF Mono', monospace;
 }
 
+[data-theme="light"] {
+  --bg-base: #f0f2f5;
+  --bg-surface: #ffffff;
+  --bg-inset: #e6e9ef;
+  --border-primary: #d1d9e6;
+  --border-secondary: #bcc8d8;
+  --accent-blue: #0d9488;
+  --accent-blue-dim: rgba(13, 148, 136, 0.1);
+  --accent-purple: #7c3aed;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -104,6 +118,9 @@ html, body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-primary);
+}
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.8);
 }
 
 /* ── 커스텀 스크롤바 ───────────────────────────────────────── */
