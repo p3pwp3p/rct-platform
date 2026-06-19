@@ -393,8 +393,24 @@ RETURNS TABLE (
 $$;
 
 -- =============================================================
+-- popups — 홈페이지 팝업 공지 (관리자에서 등록, 기간 설정)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS popups (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       text        NOT NULL,
+  body        text        NOT NULL DEFAULT '',
+  link_url    text,                                   -- 선택: 버튼 링크
+  link_label  text,                                   -- 선택: 버튼 문구
+  start_at    timestamptz NOT NULL DEFAULT now(),     -- 노출 시작
+  end_at      timestamptz,                            -- 노출 종료 (null = 무기한)
+  active      boolean     NOT NULL DEFAULT true,      -- 수동 on/off
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- =============================================================
 -- Migration: run these in Supabase SQL editor if DB already exists
 -- =============================================================
+-- 4. popups 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 0. profit_reports.profile_id를 nullable로 변경 (미매칭 보고서 허용)
 -- ALTER TABLE profit_reports ALTER COLUMN profile_id DROP NOT NULL;
 

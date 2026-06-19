@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import HomePopups from '@/components/HomePopups'
 
 export default function GatewayPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -246,6 +247,8 @@ export default function GatewayPage() {
           RCT OS // Gateway Node
         </div>
       </main>
+
+      <HomePopups />
     </>
   )
 }
