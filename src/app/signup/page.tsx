@@ -238,8 +238,8 @@ export default function SignupPage() {
                     )}
                   </div>
                   <span style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>
-                    <Link href="#" onClick={e => e.stopPropagation()} style={{ color: '#4db6ac', textDecoration: 'none' }}>이용약관</Link> 및{' '}
-                    <Link href="#" onClick={e => e.stopPropagation()} style={{ color: '#4db6ac', textDecoration: 'none' }}>개인정보 처리방침</Link>에 동의합니다.
+                    <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()} style={{ color: '#4db6ac', textDecoration: 'none' }}>이용약관</Link> 및{' '}
+                    <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()} style={{ color: '#4db6ac', textDecoration: 'none' }}>개인정보 처리방침</Link>에 동의합니다.
                   </span>
                 </div>
 

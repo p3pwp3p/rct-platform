@@ -408,8 +408,22 @@ CREATE TABLE IF NOT EXISTS popups (
 );
 
 -- =============================================================
+-- terms — 약관/정책 문서 (관리자에서 카테고리별 등록·수정)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS terms (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title       text        NOT NULL,                  -- 카테고리/문서 제목 (예: 이용약관)
+  body        text        NOT NULL DEFAULT '',       -- 본문 (일반 텍스트)
+  sort_order  int         NOT NULL DEFAULT 0,        -- 노출 순서 (작을수록 위)
+  published   boolean     NOT NULL DEFAULT true,     -- 게시 여부
+  updated_at  timestamptz NOT NULL DEFAULT now(),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- =============================================================
 -- Migration: run these in Supabase SQL editor if DB already exists
 -- =============================================================
+-- 5. terms 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 4. popups 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 0. profit_reports.profile_id를 nullable로 변경 (미매칭 보고서 허용)
 -- ALTER TABLE profit_reports ALTER COLUMN profile_id DROP NOT NULL;
