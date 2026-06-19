@@ -302,7 +302,7 @@ export default function LoginPage() {
               <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>계정이 없으신가요?</span>
               <div className="divider-line" />
             </div>
-            <div style={{ padding: '0 24px 24px' }}>
+            <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Link
                 href="/signup"
                 style={{
@@ -316,8 +316,49 @@ export default function LoginPage() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#4db6ac'; e.currentTarget.style.color = '#4db6ac' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#323a48'; e.currentTarget.style.color = '#94a3b8' }}
               >
-                회원가입
+                RCT 회원가입
               </Link>
+
+              {/* 외부 가입 링크 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="divider-line" />
+                <span style={{ fontSize: 10, color: '#64748b', whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>외부 가입</span>
+                <div className="divider-line" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <a
+                  href="https://vigco.co/la-com-inv/2l6qPx7E"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: '10px', border: '1px solid #323a48', borderRadius: 3,
+                    fontSize: 12, fontWeight: 600, color: '#f59e0b', textDecoration: 'none',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.background = 'rgba(245,158,11,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#323a48'; e.currentTarget.style.background = 'transparent' }}
+                >
+                  Vantage 가입
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </a>
+                <a
+                  href="https://accounts.binance.com/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: '10px', border: '1px solid #323a48', borderRadius: 3,
+                    fontSize: 12, fontWeight: 600, color: '#f0b90b', textDecoration: 'none',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#f0b90b'; e.currentTarget.style.background = 'rgba(240,185,11,0.06)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#323a48'; e.currentTarget.style.background = 'transparent' }}
+                >
+                  바이낸스 가입
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </a>
+              </div>
             </div>
           </div>
 
