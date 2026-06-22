@@ -13,7 +13,6 @@ export type LegPosition = 'LEFT' | 'RIGHT'
 export interface Profile {
   id: string              // uuid — matches auth.users.id
   node_id: string         // 'RCT-00125'
-  ct_id: string           // '1000125'
   name: string
   rank: Rank
   referral_code: string   // 8 chars
@@ -99,7 +98,6 @@ export interface RankHistoryEntry {
 export interface DownlineRow {
   id: string
   node_id: string
-  ct_id: string
   mt5_account_id: string | null
   name: string
   rank: Rank

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
     const userId = authData.user.id
 
-    // ── 4. 프로필 생성 (trigger가 node_id / ct_id / referral_code 채움) ──
+    // ── 4. 프로필 생성 (trigger가 node_id / referral_code 채움) ──
     const { error: profileErr } = await adminSupabase.from('profiles').insert({
       id:             userId,
       name:           name.trim(),
@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
       owner_id:       userId,
       mt5_account_id: mt5AccountId?.trim() || null,
       node_id:        '',
-      ct_id:          '',
       referral_code:  '',
       sales:          0,
     })

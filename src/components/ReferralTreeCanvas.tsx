@@ -117,7 +117,6 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 6 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', letterSpacing: '0.04em', minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           {node.node_id}
-          {node.ct_id && <span style={{ marginLeft: 5, opacity: 0.5 }}>· {node.ct_id}</span>}
         </span>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
           {blank && <div style={{ width: 5, height: 5, borderRadius: '50%', background: sc, boxShadow: `0 0 4px ${sc}` }} />}
@@ -193,7 +192,6 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {[
           { label: 'Node ID',     value: node.node_id },
-          { label: 'CT ID',       value: node.ct_id || '—' },
           { label: 'MT5',         value: node.mt5_account_id || '—' },
           { label: 'Joined',      value: node.created_at.slice(0, 10) },
           ...(showGen ? [
@@ -307,7 +305,6 @@ export default function ReferralTreeCanvas({
     const t = q.trim().toUpperCase()
     const p = positions.find(pos =>
       pos.node.node_id.toUpperCase().includes(t) ||
-      pos.node.ct_id.toUpperCase().includes(t)   ||
       pos.node.name.includes(q.trim())
     )
     if (!p || !canvasRef.current) return

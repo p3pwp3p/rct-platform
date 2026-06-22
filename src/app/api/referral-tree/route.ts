@@ -16,7 +16,6 @@ const admin = createClient(
 export interface ReferralNode {
   id:             string
   node_id:        string
-  ct_id:          string
   name:           string
   rank:           string
   status:         string
@@ -45,11 +44,11 @@ export async function GET(req: NextRequest) {
     // 전체 profiles 로드 (referrer_id 포함)
     const { data: profiles, error } = await admin
       .from('profiles')
-      .select('id, node_id, ct_id, name, rank, status, mt5_account_id, referrer_id, created_at')
+      .select('id, node_id, name, rank, status, mt5_account_id, referrer_id, created_at')
 
     if (error) throw error
 
-    type Row = { id: string; node_id: string; ct_id: string; name: string; rank: string; status: string; mt5_account_id: string | null; referrer_id: string | null; created_at: string }
+    type Row = { id: string; node_id: string; name: string; rank: string; status: string; mt5_account_id: string | null; referrer_id: string | null; created_at: string }
     const all = profiles as Row[]
 
     // referrer_id → children 맵
@@ -82,7 +81,6 @@ export async function GET(req: NextRequest) {
       return {
         id:             row.id,
         node_id:        row.node_id,
-        ct_id:          row.ct_id,
         name:           row.name,
         rank:           row.rank,
         status:         row.status,
@@ -111,7 +109,6 @@ export async function GET(req: NextRequest) {
     const root: ReferralNode = {
       id:             rootRow.id,
       node_id:        rootRow.node_id,
-      ct_id:          rootRow.ct_id,
       name:           rootRow.name,
       rank:           rootRow.rank,
       status:         rootRow.status,

@@ -329,7 +329,6 @@ export default function MembersPage() {
     !search ||
     m.profile.name.includes(search) ||
     m.profile.node_id.includes(search) ||
-    m.profile.ct_id.includes(search) ||
     m.profile.referral_code.includes(search.toUpperCase())
   )
 
@@ -376,7 +375,7 @@ export default function MembersPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="이름, 노드ID, CT, 추천코드 검색"
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="이름, 노드ID, 추천코드 검색"
                 style={{ background:'var(--bg-surface)', border:'1px solid var(--border-secondary)', color:'var(--text-primary)', padding:'8px 14px 8px 32px', borderRadius:4, fontSize:12, fontFamily:'var(--font-main)', outline:'none', width:240 }}/>
             </div>
           </div>
@@ -431,12 +430,11 @@ export default function MembersPage() {
           <table style={{ width:'100%', minWidth:980, borderCollapse:'collapse', tableLayout:'fixed', verticalAlign:'middle' }}>
             <colgroup>
               <col style={{ width:40 }}/>
-              <col style={{ width:'16%' }}/>
-              <col style={{ width:'10%' }}/>
+              <col style={{ width:'18%' }}/>
               <col style={{ width:68 }}/>
               <col style={{ width:76 }}/>
-              <col style={{ width:'18%' }}/>
-              <col style={{ width:'10%' }}/>
+              <col style={{ width:'20%' }}/>
+              <col style={{ width:'12%' }}/>
               <col style={{ width:96 }}/>
               <col style={{ width:52 }}/>
               <col style={{ width:72 }}/>
@@ -447,7 +445,6 @@ export default function MembersPage() {
                 {[
                   { label:'',           align:'left'   },
                   { label:'회원 / 노드 ID', align:'left'   },
-                  { label:'CT ID',       align:'left'   },
                   { label:'직급',         align:'center' },
                   { label:'상태',         align:'center' },
                   { label:'TRC-20 지갑주소', align:'left' },
@@ -465,7 +462,7 @@ export default function MembersPage() {
               {loading
                 ? Array.from({length:6}).map((_,i) => (
                     <tr key={i} style={{ borderBottom:'1px solid var(--border-primary)' }}>
-                      {Array.from({length:11}).map((__,j) => <td key={j} style={{ padding:'14px 16px' }}><Shimmer/></td>)}
+                      {Array.from({length:10}).map((__,j) => <td key={j} style={{ padding:'14px 16px' }}><Shimmer/></td>)}
                     </tr>
                   ))
                 : filtered.map((m, mi) => {
@@ -487,7 +484,6 @@ export default function MembersPage() {
                             <div style={{ fontFamily:'var(--font-main)', fontSize:13, color: isBlank ? 'var(--text-tertiary)' : 'var(--text-primary)', fontWeight:500, marginBottom:2 }}>{profile.name}</div>
                             <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--accent-blue)' }}>{profile.node_id}</div>
                           </td>
-                          <td style={{ padding:'12px 16px', fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)' }}>{profile.ct_id}</td>
                           <td style={{ padding:'12px 16px', textAlign:'center' }}>
                             <span style={{ fontFamily:'var(--font-mono)', fontSize:11, fontWeight:700, color:rc, background:rc+'18', border:`1px solid ${rc}44`, padding:'2px 7px', borderRadius:4 }}>{profile.rank}</span>
                           </td>
@@ -517,7 +513,7 @@ export default function MembersPage() {
                         </tr>
                         {isExp && (
                           <tr style={{ borderBottom: mi < filtered.length-1 ? '1px solid var(--border-primary)' : 'none' }}>
-                            <td colSpan={11} style={{ padding:'0 16px 16px 56px', background:'rgba(10,12,16,0.3)' }}>
+                            <td colSpan={10} style={{ padding:'0 16px 16px 56px', background:'rgba(10,12,16,0.3)' }}>
                               <div style={{ paddingTop:12 }}>
                                 <div style={{ fontSize:10, fontFamily:'var(--font-main)', fontWeight:600, color:'var(--text-tertiary)', marginBottom:8 }}>보유 노드 ({ownedNodes.length})</div>
                                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>

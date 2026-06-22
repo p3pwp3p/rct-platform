@@ -3,7 +3,7 @@
  *
  * 로그인된 유저가 자신의 소유로 새 노드(프로필)를 추가.
  * - Auth 헤더로 현재 유저 확인 → owner_id 설정
- * - Service-role로 insert → DB 트리거가 node_id / ct_id / referral_code 채움
+ * - Service-role로 insert → DB 트리거가 node_id / referral_code 채움
  * - 후원인/추천인은 코드로 검증
  */
 import { NextRequest, NextResponse } from 'next/server'
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const referrer = (referrerRows ?? [])[0]
     if (!referrer) return NextResponse.json({ error: '추천인 코드가 존재하지 않습니다.' }, { status: 400 })
 
-    // ── 4. 프로필 생성 (트리거가 node_id / ct_id / referral_code 채움) ──
+    // ── 4. 프로필 생성 (트리거가 node_id / referral_code 채움) ──
     const { data: inserted, error: profileErr } = await adminClient
       .from('profiles')
       .insert({
@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
         owner_id:       ownerId,
         mt5_account_id: mt5AccountId?.trim() || null,
         sales:          0,
-        // node_id, ct_id, referral_code → DB 트리거 자동 생성
+        // node_id, referral_code → DB 트리거 자동 생성
       })
-      .select('id, node_id, ct_id')
+      .select('id, node_id')
       .single()
 
     if (profileErr) throw new Error(profileErr.message)

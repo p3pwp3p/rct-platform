@@ -19,7 +19,6 @@ function convertTree(node: TreeNode): NetNode {
   return {
     id:           node.id,
     nodeId:       node.node_id,
-    ctId:         node.ct_id,
     name:         node.name,
     rank:         node.rank,
     sales:        node.sales ?? 0,

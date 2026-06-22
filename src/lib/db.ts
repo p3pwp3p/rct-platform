@@ -391,8 +391,8 @@ export async function validateReferralCode(code: string): Promise<SponsorInfo | 
  * @param name         The new user's display name
  * @param legPosition  Which leg to place the new member under the sponsor
  *
- * The DB trigger (handle_new_profile) auto-generates node_id, ct_id,
- * and referral_code, so we only supply the relational fields.
+ * The DB trigger (handle_new_profile) auto-generates node_id and
+ * referral_code, so we only supply the relational fields.
  */
 export async function registerWithCode(
   code: string,
@@ -408,15 +408,14 @@ export async function registerWithCode(
   if (legPosition === 'LEFT'  && sponsor.left_taken)  throw new Error('Left leg is already occupied')
   if (legPosition === 'RIGHT' && sponsor.right_taken) throw new Error('Right leg is already occupied')
 
-  // 3. Insert the new profile (trigger fills node_id / ct_id / referral_code)
+  // 3. Insert the new profile (trigger fills node_id / referral_code)
   const { error } = await supabase.from('profiles').insert({
     id:           userId,
     name,
     parent_id:    sponsor.profile_id,
     leg_position: legPosition,
-    // node_id, ct_id, referral_code left blank → trigger fills them
+    // node_id, referral_code left blank → trigger fills them
     node_id:      '',
-    ct_id:        '',
     referral_code: '',
   })
 

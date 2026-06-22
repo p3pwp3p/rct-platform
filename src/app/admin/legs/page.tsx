@@ -57,7 +57,6 @@ export default function LegsPage() {
     .filter(l => !search ||
       l.profile.name.includes(search) ||
       l.profile.node_id.includes(search) ||
-      l.profile.ct_id.includes(search) ||
       (l.sponsor?.node_id ?? '').includes(search)
     )
     .sort((a, b) => {
@@ -186,7 +185,6 @@ export default function LegsPage() {
                     >
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-blue)', fontWeight: 600 }}>{profile.node_id}</div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2 }}>{profile.ct_id}</div>
                       </td>
                       <td style={{ padding: '12px 16px', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)' }}>{profile.name}</td>
                       <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>

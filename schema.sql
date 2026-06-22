@@ -10,7 +10,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Sequences
 -- =============================================================
 CREATE SEQUENCE IF NOT EXISTS node_seq    START 100     INCREMENT 1;
-CREATE SEQUENCE IF NOT EXISTS ct_seq      START 1000100 INCREMENT 1;
 
 -- =============================================================
 -- profiles
@@ -18,7 +17,6 @@ CREATE SEQUENCE IF NOT EXISTS ct_seq      START 1000100 INCREMENT 1;
 CREATE TABLE IF NOT EXISTS profiles (
   id              uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   node_id         text        UNIQUE NOT NULL DEFAULT '',   -- e.g. 'RCT-00125'
-  ct_id           text        UNIQUE NOT NULL DEFAULT '',   -- e.g. '1000125'
   name            text        NOT NULL DEFAULT '',
   rank            text        NOT NULL DEFAULT 'R0'
                               CHECK (rank IN ('R0','R1','R2','R3','R4','R5')),
@@ -37,7 +35,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- =============================================================
--- Trigger: auto-generate node_id / ct_id / referral_code
+-- Trigger: auto-generate node_id / referral_code
 -- =============================================================
 CREATE OR REPLACE FUNCTION handle_new_profile()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -49,11 +47,6 @@ BEGIN
   -- node_id
   IF NEW.node_id IS NULL OR NEW.node_id = '' THEN
     NEW.node_id := 'RCT-' || LPAD(nextval('node_seq')::text, 5, '0');
-  END IF;
-
-  -- ct_id
-  IF NEW.ct_id IS NULL OR NEW.ct_id = '' THEN
-    NEW.ct_id := nextval('ct_seq')::text;
   END IF;
 
   -- referral_code: random 8-char from safe charset, guaranteed unique
@@ -149,7 +142,6 @@ CREATE OR REPLACE FUNCTION get_downline(root_id uuid)
 RETURNS TABLE (
   id              uuid,
   node_id         text,
-  ct_id           text,
   mt5_account_id  text,
   name            text,
   rank            text,
@@ -163,14 +155,14 @@ RETURNS TABLE (
   depth           int
 ) LANGUAGE sql STABLE SECURITY DEFINER AS $$
   WITH RECURSIVE tree AS (
-    SELECT p.id, p.node_id, p.ct_id, p.mt5_account_id, p.name, p.rank, p.status, p.sales,
+    SELECT p.id, p.node_id, p.mt5_account_id, p.name, p.rank, p.status, p.sales,
            p.parent_id, p.leg_position, p.trc20_address, p.referrer_id, p.created_at, 0 AS depth
     FROM profiles p
     WHERE p.id = root_id
 
     UNION ALL
 
-    SELECT c.id, c.node_id, c.ct_id, c.mt5_account_id, c.name, c.rank, c.status, c.sales,
+    SELECT c.id, c.node_id, c.mt5_account_id, c.name, c.rank, c.status, c.sales,
            c.parent_id, c.leg_position, c.trc20_address, c.referrer_id, c.created_at, t.depth + 1
     FROM profiles c
     JOIN tree t ON c.parent_id = t.id
@@ -423,6 +415,13 @@ CREATE TABLE IF NOT EXISTS terms (
 -- =============================================================
 -- Migration: run these in Supabase SQL editor if DB already exists
 -- =============================================================
+-- 6. ct_id 완전 제거 (node_id로 일원화). 순서 중요: 함수/트리거 먼저, 그 다음 컬럼 DROP
+--    (a) get_downline 함수에서 ct_id 제거 — 위 CREATE OR REPLACE get_downline 블록 실행
+--    (b) handle_new_profile 트리거에서 ct_id 제거 — 위 CREATE OR REPLACE handle_new_profile 블록 실행
+--    (c) 컬럼/시퀀스 제거:
+-- ALTER TABLE profiles DROP COLUMN IF EXISTS ct_id;
+-- DROP SEQUENCE IF EXISTS ct_seq;
+
 -- 5. terms 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 4. popups 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 0. profit_reports.profile_id를 nullable로 변경 (미매칭 보고서 허용)

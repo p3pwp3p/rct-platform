@@ -275,7 +275,6 @@ export default function ProfilePage() {
                         </div>
                         <div style={{ display: 'flex', gap: 10 }}>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-blue)' }}>{n.node_id}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-tertiary)' }}>{n.ct_id}</span>
                         </div>
                       </div>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{n.created_at.slice(0,10)}</span>

@@ -40,7 +40,6 @@ export default function RequestsPage() {
     !search ||
     r.profile.name.includes(search) ||
     r.profile.node_id.includes(search.toUpperCase()) ||
-    r.profile.ct_id.includes(search) ||
     r.profile.referral_code.includes(search.toUpperCase()) ||
     (r.sponsor?.referral_code ?? '').includes(search.toUpperCase())
   )
@@ -100,7 +99,7 @@ export default function RequestsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
-                {['#', '신규 노드', 'CT ID', '후원인', '추천인', '레그', '발급 코드', '등록 일시'].map(h => (
+                {['#', '신규 노드', '후원인', '추천인', '레그', '발급 코드', '등록 일시'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -109,7 +108,7 @@ export default function RequestsPage() {
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                      {Array.from({ length: 8 }).map((__, j) => (
+                      {Array.from({ length: 7 }).map((__, j) => (
                         <td key={j} style={{ padding: '13px 16px' }}><Shimmer /></td>
                       ))}
                     </tr>
@@ -132,9 +131,6 @@ export default function RequestsPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-blue)', fontWeight: 600 }}>{profile.node_id}</div>
                           <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>{profile.name}</div>
-                        </td>
-                        <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>
-                          {profile.ct_id}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           {sponsor ? (

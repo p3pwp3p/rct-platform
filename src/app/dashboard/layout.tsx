@@ -165,7 +165,6 @@ function AccountSwitcher() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.node_id}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>CT {p.ct_id}</div>
                 </div>
                 {isActive && (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={prc} strokeWidth="2.5">

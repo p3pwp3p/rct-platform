@@ -13,7 +13,6 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 export interface NetNode {
   id:           string
   nodeId:       string
-  ctId:         string
   name:         string
   rank:         string
   sales:        number
@@ -151,7 +150,6 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {[
-          { label: 'CT ID',   value: node.ctId || '—',           mono: true },
           { label: 'MT5',     value: node.mt5AccountId || '—',   mono: true },
           { label: '매출',    value: fmt(node.sales),             mono: true },
           { label: 'Joined',  value: node.joined ? node.joined.slice(0, 10) : '—', mono: true },
@@ -236,7 +234,7 @@ export default function BinaryTreeCanvas({
 
   const focusNode = useCallback((q: string) => {
     const p = positions.find(pos =>
-      pos.node.nodeId.includes(q) || pos.node.ctId.includes(q) || pos.node.name.includes(q)
+      pos.node.nodeId.includes(q) || pos.node.name.includes(q)
     )
     if (!p || !canvasRef.current) return
     const r  = canvasRef.current.getBoundingClientRect()
