@@ -396,7 +396,7 @@ export default function MembersPage() {
               <div style={{ overflowX:'auto' }}>
                 <table style={{ width:'100%', minWidth:760, borderCollapse:'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'rgba(10,12,16,0.3)' }}>
+                    <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'var(--bg-header)' }}>
                       {['이름','이메일','전화번호','TRC-20 지갑','인증','가입일'].map((h,i) => (
                         <th key={i} style={{ padding:'9px 16px', textAlign:'left', fontSize:11, fontFamily:'var(--font-main)', color:'var(--text-tertiary)', fontWeight:600, whiteSpace:'nowrap' }}>{h}</th>
                       ))}
@@ -441,7 +441,7 @@ export default function MembersPage() {
               <col style={{ width:64 }}/>
             </colgroup>
             <thead>
-              <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'rgba(10,12,16,0.3)' }}>
+              <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'var(--bg-header)' }}>
                 {[
                   { label:'',           align:'left'   },
                   { label:'회원 / 노드 ID', align:'left'   },
@@ -513,7 +513,7 @@ export default function MembersPage() {
                         </tr>
                         {isExp && (
                           <tr style={{ borderBottom: mi < filtered.length-1 ? '1px solid var(--border-primary)' : 'none' }}>
-                            <td colSpan={10} style={{ padding:'0 16px 16px 56px', background:'rgba(10,12,16,0.3)' }}>
+                            <td colSpan={10} style={{ padding:'0 16px 16px 56px', background:'var(--bg-header)' }}>
                               <div style={{ paddingTop:12 }}>
                                 <div style={{ fontSize:10, fontFamily:'var(--font-main)', fontWeight:600, color:'var(--text-tertiary)', marginBottom:8 }}>보유 노드 ({ownedNodes.length})</div>
                                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>

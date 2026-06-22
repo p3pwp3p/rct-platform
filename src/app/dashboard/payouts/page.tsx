@@ -373,7 +373,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'rgba(10,12,16,0.3)' }}>
+            <tr style={{ background: 'var(--bg-header)' }}>
               {['기간','수당 종류','세대/압축','비율','수령액'].map(h => (
                 <th key={h} style={{ padding: '8px 16px', textAlign: 'left', fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
               ))}

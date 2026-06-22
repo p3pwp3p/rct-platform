@@ -127,7 +127,7 @@ export default function RankHistoryPage() {
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
                 {['변경 일시','회원 / 노드 ID','이전 직급','','새 직급'].map((h, i) => (
                   <th key={i} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)', fontWeight: 600 }}>{h}</th>
                 ))}

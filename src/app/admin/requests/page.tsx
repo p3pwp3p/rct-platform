@@ -89,7 +89,7 @@ export default function RequestsPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="이름, 노드ID, CT, 추천코드 검색..."
+            placeholder="이름, 노드ID, 추천코드 검색..."
             style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-main)', outline: 'none', boxSizing: 'border-box' as const }}
           />
         </div>
@@ -98,7 +98,7 @@ export default function RequestsPage() {
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
                 {['#', '신규 노드', '후원인', '추천인', '레그', '발급 코드', '등록 일시'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}

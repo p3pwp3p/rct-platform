@@ -364,7 +364,7 @@ export default function ReceiptsPage() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(10,12,16,0.3)' }}>
+                    <tr style={{ background: 'var(--bg-header)' }}>
                       {[
                         { h: '수당 종류', a: 'left'   },
                         { h: '구분',      a: 'left'   },

@@ -97,7 +97,7 @@ export default function LegsPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="이름, 노드ID, CT, 후원인 검색"
+            placeholder="이름, 노드ID, 후원인 검색"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '8px 14px 8px 32px', borderRadius: 4, fontSize: 12, fontFamily: 'var(--font-main)', outline: 'none', width: 230 }}
           />
         </div>
@@ -132,7 +132,7 @@ export default function LegsPage() {
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
+            <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
               {([
                 { label: '노드', key: 'node_id'   as SortKey, align: 'left',   width: 120 },
                 { label: '이름',      key: 'name'       as SortKey, align: 'left',   width: 100 },

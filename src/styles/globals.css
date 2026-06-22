@@ -17,6 +17,7 @@
   --text-primary: #e0e6ed;
   --text-secondary: #94a3b8;
   --text-tertiary: #64748b;
+  --bg-header: rgba(10, 12, 16, 0.3);   /* 테이블 헤더/서브틀 인셋 (다크 기준) */
   --font-main: 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'Geist Mono', 'JetBrains Mono', 'SF Mono', monospace;
 }
@@ -32,7 +33,8 @@
   --accent-purple: #7c3aed;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
+  --text-tertiary: #64748b;
+  --bg-header: #eef1f6;   /* 테이블 헤더: 흰 배경 위 옅은 회색 밴드 */
 }
 
 * {

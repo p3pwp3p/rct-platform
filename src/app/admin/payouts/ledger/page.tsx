@@ -112,7 +112,7 @@ export default function PayoutLedgerPage() {
           </div>
           <table style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
                 {[
                   { label: '회원 / 노드 ID', align: 'left'  },
                   { label: '직급',          align: 'center' },

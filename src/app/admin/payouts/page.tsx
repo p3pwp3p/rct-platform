@@ -1237,7 +1237,7 @@ export default function PayoutsPage() {
                 <col style={{ width: '14%' }} />
               </colgroup>
               <thead>
-                <tr style={{ background: 'rgba(10,12,16,0.3)', borderBottom: '1px solid var(--border-primary)' }}>
+                <tr style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-primary)' }}>
                   {['이름', 'MT5 계좌', 'TRC-20 주소', '노드 ID', '가입일', '낙전 사유'].map(h => (
                     <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)' }}>{h}</th>
                   ))}
@@ -1328,7 +1328,7 @@ export default function PayoutsPage() {
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: 'rgba(10,12,16,0.3)', borderBottom: '1px solid var(--border-primary)' }}>
+                <tr style={{ background: 'var(--bg-header)', borderBottom: '1px solid var(--border-primary)' }}>
                   {['발급일시', '포함 건수', '총 지급액', '메모'].map(h => (
                     <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.04em' }}>{h}</th>
                   ))}

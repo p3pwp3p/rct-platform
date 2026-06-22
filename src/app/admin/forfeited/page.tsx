@@ -287,7 +287,7 @@ export default function ForfeitedPage() {
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
                 {['발생일시','회원 / 노드 ID','회원 상태','사유','금액 (USDT)','정산 보고서'].map((h, i) => (
                   <th key={i} style={{ padding: '10px 16px', textAlign: i >= 4 ? 'right' : 'left', fontSize: 11, fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
