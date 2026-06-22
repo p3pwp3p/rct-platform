@@ -525,7 +525,7 @@ export default function MembersPage() {
                                     const lrc = RANK_COLOR[node.rank] ?? '#64748b'
                                     const isSelf = node.id === profile.id
                                     return (
-                                      <div key={node.id} style={{ display:'grid', gridTemplateColumns:'84px 1fr 90px 52px 80px 96px', gap:'0 16px', padding:'9px 14px', background:'var(--bg-surface)', border:`1px solid ${isSelf ? 'var(--accent-blue)' : 'var(--border-primary)'}`, borderRadius:5, alignItems:'center' }}>
+                                      <div key={node.id} style={{ display:'grid', gridTemplateColumns:'84px 1fr 104px 90px 52px 80px 96px', gap:'0 16px', padding:'9px 14px', background:'var(--bg-surface)', border:`1px solid ${isSelf ? 'var(--accent-blue)' : 'var(--border-primary)'}`, borderRadius:5, alignItems:'center' }}>
                                         <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'#60a5fa' }}>{node.leg_position === 'LEFT' ? '← LEFT' : node.leg_position === 'RIGHT' ? 'RIGHT →' : '— ROOT'}</div>
                                         <div style={{ minWidth:0 }}>
                                           <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -533,6 +533,11 @@ export default function MembersPage() {
                                             {isSelf && <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>(현재)</span>}
                                           </div>
                                           <div style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>{node.node_id}</div>
+                                        </div>
+                                        {/* 추천코드 */}
+                                        <div style={{ minWidth:0 }}>
+                                          <div style={{ fontFamily:'var(--font-main)', fontSize:8, color:'var(--text-tertiary)', marginBottom:2 }}>추천코드</div>
+                                          <span style={{ fontFamily:'var(--font-mono)', fontSize:11, fontWeight:600, letterSpacing:'0.04em', color:'#a78bfa' }}>{node.referral_code || '—'}</span>
                                         </div>
                                         <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', textAlign:'right' }}>{fmtSales(node.sales)}</div>
                                         <span style={{ justifySelf:'start', fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:lrc, background:lrc+'18', border:`1px solid ${lrc}44`, padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>{node.rank}</span>
