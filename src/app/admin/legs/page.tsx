@@ -134,7 +134,7 @@ export default function LegsPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.3)' }}>
               {([
-                { label: '노드 / CT', key: 'node_id'   as SortKey, align: 'left',   width: 120 },
+                { label: '노드', key: 'node_id'   as SortKey, align: 'left',   width: 120 },
                 { label: '이름',      key: 'name'       as SortKey, align: 'left',   width: 100 },
                 { label: '후원인',    key: 'sponsor'    as SortKey, align: 'left',   width: 110 },
                 { label: '추천인',    key: 'referrer'   as SortKey, align: 'left',   width: 110 },

@@ -367,7 +367,7 @@ export default function ReferralTreeCanvas({
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
-            placeholder="Node ID / CT / 이름 — Enter"
+            placeholder="Node ID / 이름 — Enter"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 12, fontFamily: 'var(--font-main)', outline: 'none', width: 200 }}
           />
         </div>

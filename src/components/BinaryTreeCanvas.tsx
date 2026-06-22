@@ -294,7 +294,7 @@ export default function BinaryTreeCanvas({
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
-            placeholder="Node ID / 이름 / CT — Enter"
+            placeholder="Node ID / 이름 — Enter"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 13, fontFamily: 'var(--font-main)', outline: 'none', width: 220 }}
           />
         </div>
