@@ -282,12 +282,28 @@ export default function MembersPage() {
   const [recalcBusy, setRecalcBusy] = useState(false)
   const [recalcMsg,  setRecalcMsg]  = useState('')
 
+  // 미등록 회원 (가입했지만 노드 없음)
+  type Unregistered = { id: string; email: string; name: string; phone: string | null; trc20: string | null; is_admin: boolean; confirmed: boolean; created_at: string }
+  const [unreg, setUnreg] = useState<Unregistered[]>([])
+  const [unregOpen, setUnregOpen] = useState(true)
+
+  async function loadUnregistered() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token ?? ''
+      const res = await fetch('/api/admin/unregistered-members', { headers: { Authorization: `Bearer ${token}` } })
+      const json = await res.json()
+      if (res.ok) setUnreg(json.members)
+    } catch { /* noop */ }
+  }
+
   function load() {
     setLoading(true)
     adminGetMembers()
       .then(setMembers)
       .catch(e => setError(e?.message ?? '로딩 오류'))
       .finally(() => setLoading(false))
+    loadUnregistered()
   }
   useEffect(() => { load() }, [])
 
@@ -368,21 +384,63 @@ export default function MembersPage() {
 
         {error && <div style={{ padding:'12px 16px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:6, fontFamily:'var(--font-main)', fontSize:13, color:'#f87171' }}>⚠ {error}</div>}
 
+        {/* 미등록 회원 (가입했지만 노드 없음) */}
+        {unreg.length > 0 && (
+          <div style={{ background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:8, overflow:'hidden' }}>
+            <button onClick={() => setUnregOpen(o => !o)}
+              style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'12px 16px', background:'rgba(251,191,36,0.06)', border:'none', borderBottom: unregOpen ? '1px solid var(--border-primary)' : 'none', cursor:'pointer', textAlign:'left' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" style={{ transition:'transform 0.2s', transform: unregOpen ? 'rotate(90deg)' : 'none' }}><polyline points="9 18 15 12 9 6"/></svg>
+              <span style={{ fontFamily:'var(--font-main)', fontSize:13, fontWeight:600, color:'#fbbf24' }}>미등록 회원 (가입했지만 노드 없음)</span>
+              <span style={{ fontFamily:'var(--font-mono)', fontSize:12, fontWeight:700, color:'#fbbf24', background:'rgba(251,191,36,0.12)', border:'1px solid rgba(251,191,36,0.35)', padding:'1px 8px', borderRadius:10 }}>{unreg.length}</span>
+            </button>
+            {unregOpen && (
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', minWidth:760, borderCollapse:'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'rgba(10,12,16,0.3)' }}>
+                      {['이름','이메일','전화번호','TRC-20 지갑','인증','가입일'].map((h,i) => (
+                        <th key={i} style={{ padding:'9px 16px', textAlign:'left', fontSize:11, fontFamily:'var(--font-main)', color:'var(--text-tertiary)', fontWeight:600, whiteSpace:'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unreg.map((u, i) => (
+                      <tr key={u.id} style={{ borderBottom: i < unreg.length-1 ? '1px solid var(--border-primary)' : 'none' }}>
+                        <td style={{ padding:'10px 16px', fontFamily:'var(--font-main)', fontSize:13, color:'var(--text-primary)', whiteSpace:'nowrap' }}>
+                          {u.name}
+                          {u.is_admin && <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:9, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
+                        </td>
+                        <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--text-secondary)' }}>{u.email}</td>
+                        <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:12, color: u.phone ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{u.phone ?? '—'}</td>
+                        <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:11, color: u.trc20 ? '#34d399' : 'var(--text-tertiary)', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.trc20 ?? '—'}</td>
+                        <td style={{ padding:'10px 16px' }}>
+                          <span style={{ fontFamily:'var(--font-main)', fontSize:11, fontWeight:600, color: u.confirmed ? '#34d399' : '#fbbf24' }}>{u.confirmed ? '완료' : '대기'}</span>
+                        </td>
+                        <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-tertiary)', whiteSpace:'nowrap' }}>{u.created_at.slice(0,10)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 테이블 */}
         <div style={{ background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:8, overflowX:'auto', overflowY:'hidden' }}>
           <table style={{ width:'100%', minWidth:980, borderCollapse:'collapse', tableLayout:'fixed', verticalAlign:'middle' }}>
             <colgroup>
-              <col style={{ width:40 }}/>           {/* 펼치기 */}
-              <col style={{ width:'16%' }}/>         {/* 회원/노드 */}
-              <col style={{ width:'10%' }}/>         {/* CT ID */}
-              <col style={{ width:68 }}/>            {/* 직급 */}
-              <col style={{ width:76 }}/>            {/* 상태 */}
-              <col style={{ width:'18%' }}/>         {/* TRC-20 */}
-              <col style={{ width:'10%' }}/>         {/* MT5 */}
-              <col style={{ width:96 }}/>            {/* 가입일 */}
-              <col style={{ width:52 }}/>            {/* 레그 */}
-              <col style={{ width:72 }}/>            {/* 전체 하위 */}
-              <col style={{ width:64 }}/>            {/* 편집 */}
+              <col style={{ width:40 }}/>
+              <col style={{ width:'16%' }}/>
+              <col style={{ width:'10%' }}/>
+              <col style={{ width:68 }}/>
+              <col style={{ width:76 }}/>
+              <col style={{ width:'18%' }}/>
+              <col style={{ width:'10%' }}/>
+              <col style={{ width:96 }}/>
+              <col style={{ width:52 }}/>
+              <col style={{ width:72 }}/>
+              <col style={{ width:64 }}/>
             </colgroup>
             <thead>
               <tr style={{ borderBottom:'1px solid var(--border-primary)', background:'rgba(10,12,16,0.3)' }}>
@@ -411,7 +469,7 @@ export default function MembersPage() {
                     </tr>
                   ))
                 : filtered.map((m, mi) => {
-                    const { profile, directLegs, totalDownline } = m
+                    const { profile, directLegs, ownedNodes, totalDownline } = m
                     const isExp = expanded === profile.id
                     const rc    = RANK_COLOR[profile.rank] ?? '#64748b'
                     const pStatus = profile.status ?? 'active'
@@ -459,30 +517,32 @@ export default function MembersPage() {
                         </tr>
                         {isExp && (
                           <tr style={{ borderBottom: mi < filtered.length-1 ? '1px solid var(--border-primary)' : 'none' }}>
-                            <td colSpan={10} style={{ padding:'0 16px 16px 56px', background:'rgba(10,12,16,0.3)' }}>
-                              {directLegs.length === 0
-                                ? <div style={{ padding:'16px 0', fontSize:12, color:'var(--text-tertiary)', fontFamily:'var(--font-main)' }}>하위 레그 없음</div>
-                                : <div style={{ paddingTop:12 }}>
-                                    <div style={{ fontSize:10, fontFamily:'var(--font-main)', fontWeight:600, color:'var(--text-tertiary)', marginBottom:8 }}>직속 레그 ({directLegs.length}/2)</div>
-                                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                                      {directLegs.map(leg => {
-                                        const lrc = RANK_COLOR[leg.rank] ?? '#64748b'
-                                        return (
-                                          <div key={leg.id} style={{ display:'grid', gridTemplateColumns:'84px 1fr 90px 52px 96px', gap:'0 16px', padding:'9px 14px', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:5, alignItems:'center' }}>
-                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'#60a5fa' }}>{leg.leg_position === 'LEFT' ? '← LEFT' : 'RIGHT →'}</div>
-                                            <div style={{ minWidth:0 }}>
-                                              <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{leg.name}</div>
-                                              <div style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>{leg.node_id}</div>
-                                            </div>
-                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', textAlign:'right' }}>{fmtSales(leg.sales)}</div>
-                                            <span style={{ justifySelf:'start', fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:lrc, background:lrc+'18', border:`1px solid ${lrc}44`, padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>{leg.rank}</span>
-                                            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-tertiary)', textAlign:'right', whiteSpace:'nowrap' }}>{leg.created_at.slice(0,10)}</div>
+                            <td colSpan={11} style={{ padding:'0 16px 16px 56px', background:'rgba(10,12,16,0.3)' }}>
+                              <div style={{ paddingTop:12 }}>
+                                <div style={{ fontSize:10, fontFamily:'var(--font-main)', fontWeight:600, color:'var(--text-tertiary)', marginBottom:8 }}>보유 노드 ({ownedNodes.length})</div>
+                                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                                  {ownedNodes.map(node => {
+                                    const lrc = RANK_COLOR[node.rank] ?? '#64748b'
+                                    const isSelf = node.id === profile.id
+                                    return (
+                                      <div key={node.id} style={{ display:'grid', gridTemplateColumns:'84px 1fr 90px 52px 80px 96px', gap:'0 16px', padding:'9px 14px', background:'var(--bg-surface)', border:`1px solid ${isSelf ? 'var(--accent-blue)' : 'var(--border-primary)'}`, borderRadius:5, alignItems:'center' }}>
+                                        <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'#60a5fa' }}>{node.leg_position === 'LEFT' ? '← LEFT' : node.leg_position === 'RIGHT' ? 'RIGHT →' : '— ROOT'}</div>
+                                        <div style={{ minWidth:0 }}>
+                                          <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                            {node.name}
+                                            {isSelf && <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>(현재)</span>}
                                           </div>
-                                        )
-                                      })}
-                                    </div>
-                                  </div>
-                              }
+                                          <div style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>{node.node_id}</div>
+                                        </div>
+                                        <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', textAlign:'right' }}>{fmtSales(node.sales)}</div>
+                                        <span style={{ justifySelf:'start', fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:lrc, background:lrc+'18', border:`1px solid ${lrc}44`, padding:'2px 6px', borderRadius:3, whiteSpace:'nowrap' }}>{node.rank}</span>
+                                        <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color: node.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{node.mt5_account_id ?? '—'}</div>
+                                        <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-tertiary)', textAlign:'right', whiteSpace:'nowrap' }}>{node.created_at.slice(0,10)}</div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
                             </td>
                           </tr>
                         )}

@@ -111,8 +111,14 @@ export async function adminGetStats(): Promise<AdminStats> {
 export interface AdminMember {
   profile:       Profile
   directLegs:    Profile[]   // direct children (max 2 in binary)
+  ownedNodes:    Profile[]   // 같은 소유자(owner)가 보유한 모든 노드 (자기 자신 포함)
   totalDownline: number      // full subtree count (excl self)
   depth:         number
+}
+
+// 노드의 소유자 키: owner_id 우선, 없으면 자기 자신(id) = 본인 소유 노드
+function ownerKey(p: Profile): string {
+  return p.owner_id ?? p.id
 }
 
 export async function adminGetMembers(): Promise<AdminMember[]> {
@@ -130,6 +136,15 @@ export async function adminGetMembers(): Promise<AdminMember[]> {
     }
   }
 
+  // Group by owner (소유자별 보유 노드)
+  const nodesByOwner = new Map<string, Profile[]>()
+  for (const p of profiles) {
+    const key = ownerKey(p)
+    const arr = nodesByOwner.get(key) ?? []
+    arr.push(p)
+    nodesByOwner.set(key, arr)
+  }
+
   // Count full subtree recursively
   function subtreeCount(id: string): number {
     const children = childrenOf.get(id) ?? []
@@ -139,6 +154,7 @@ export async function adminGetMembers(): Promise<AdminMember[]> {
   return profiles.map(p => ({
     profile:       p,
     directLegs:    childrenOf.get(p.id) ?? [],
+    ownedNodes:    nodesByOwner.get(ownerKey(p)) ?? [p],
     totalDownline: subtreeCount(p.id),
     depth:         depths.get(p.id) ?? 0,
   }))
