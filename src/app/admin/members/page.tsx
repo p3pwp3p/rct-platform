@@ -530,7 +530,7 @@ export default function MembersPage() {
                                         <div style={{ minWidth:0 }}>
                                           <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                             {node.name}
-                                            {isSelf && <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>(현재)</span>}
+                                            {isSelf && <span style={{ marginLeft:6, fontFamily:'var(--font-main)', fontSize:10, fontWeight:600, color:'var(--accent-blue)', background:'var(--accent-blue-dim)', padding:'1px 6px', borderRadius:4, verticalAlign:'middle' }}>현재</span>}
                                           </div>
                                           <div style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--accent-blue)' }}>{node.node_id}</div>
                                         </div>
