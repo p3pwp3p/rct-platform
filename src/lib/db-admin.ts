@@ -123,7 +123,6 @@ function ownerKey(p: Profile): string {
 
 export async function adminGetMembers(): Promise<AdminMember[]> {
   const profiles = await adminGetAllProfiles()
-  const byId     = new Map(profiles.map(p => [p.id, p]))
   const depths   = computeDepths(profiles)
 
   // Group by parent_id
