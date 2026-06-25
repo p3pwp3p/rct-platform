@@ -302,7 +302,7 @@ function UploadPanel({ onParsed }: { onParsed: (r: ParsedPdfReport) => void }) {
           <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' }}>
             Vantage 복사기 이익 공유 보고서 PDF를<br/>여기에 드래그하거나 클릭해서 업로드
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>.pdf 파일만 지원</span>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>.pdf 파일만 지원</span>
         </>
       )}
       {err && <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171', marginTop: 4 }}>⚠ {err}</span>}
@@ -714,7 +714,7 @@ function ReportCard({ report, onRefresh }: { report: ProfitReportWithItems; onRe
 
         {/* MT5 계좌 */}
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>MT5 계좌</div>
+          <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>MT5 계좌</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#60a5fa', marginTop: 2 }}>{report.items[0]?.mt5_account_id ?? '—'}</div>
         </div>
 
@@ -947,7 +947,7 @@ export default function PayoutsPage() {
           <div key={item.label} style={{ background: 'var(--bg-surface)', border: `1px solid ${item.color}30`, borderRadius: 10, padding: '16px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>{item.label}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: item.color, background: item.color + '18', border: `1px solid ${item.color}44`, padding: '1px 7px', borderRadius: 4 }}>{item.count}건</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: item.color, background: item.color + '18', border: `1px solid ${item.color}44`, padding: '1px 7px', borderRadius: 4 }}>{item.count}<span style={{ fontFamily: 'var(--font-main)' }}>건</span></span>
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: item.color }}>${loading ? '—' : fmt(item.value)}</div>
           </div>

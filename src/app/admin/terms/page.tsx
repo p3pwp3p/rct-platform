@@ -160,7 +160,7 @@ export default function AdminTermsPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>수정: {fmtDate(t.updated_at)}</div>
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>수정 <span style={{ fontFamily: 'var(--font-mono)' }}>{fmtDate(t.updated_at)}</span></div>
               </div>
               <button onClick={() => togglePublished(t)} title={t.published ? '미게시로' : '게시'}
                 style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-secondary)', background: 'transparent', color: 'var(--text-secondary)', fontFamily: 'var(--font-main)', fontSize: 12, cursor: 'pointer' }}>

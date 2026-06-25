@@ -386,7 +386,7 @@ export default function ReceiptsPage() {
                           </td>
                           <td style={{ padding: '12px 18px', fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{divisionLabel(r)}</td>
                           <td style={{ padding: '12px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#fbbf24' }}>{(r.rate * 100).toFixed(1)}%</td>
-                          <td style={{ padding: '12px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{r.count.toLocaleString('ko-KR')}건</td>
+                          <td style={{ padding: '12px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{r.count.toLocaleString('ko-KR')}<span style={{ fontFamily: 'var(--font-main)' }}>건</span></td>
                           <td style={{ padding: '12px 18px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>{fmt(r.amount)}</td>
                         </tr>
                       )

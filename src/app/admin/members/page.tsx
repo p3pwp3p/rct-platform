@@ -407,7 +407,7 @@ export default function MembersPage() {
                       <tr key={u.id} style={{ borderBottom: i < unreg.length-1 ? '1px solid var(--border-primary)' : 'none' }}>
                         <td style={{ padding:'10px 16px', fontFamily:'var(--font-main)', fontSize:13, color:'var(--text-primary)', whiteSpace:'nowrap' }}>
                           {u.name}
-                          {u.is_admin && <span style={{ marginLeft:6, fontFamily:'var(--font-mono)', fontSize:9, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
+                          {u.is_admin && <span style={{ marginLeft:6, fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
                         </td>
                         <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--text-secondary)' }}>{u.email}</td>
                         <td style={{ padding:'10px 16px', fontFamily:'var(--font-mono)', fontSize:12, color: u.phone ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{u.phone ?? '—'}</td>
