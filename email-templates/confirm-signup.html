@@ -1,0 +1,85 @@
+<!--
+  RCT Platform — 가입 이메일 인증 메일
+  Supabase Dashboard → Authentication → Email Templates → "Confirm signup" 에 붙여넣기
+  제목(Subject) 예시: [RCT Platform] 이메일 인증을 완료해 주세요
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#07080a;margin:0;padding:32px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="width:480px;max-width:480px;background-color:#11141b;border:1px solid #242a35;border-radius:10px;overflow:hidden;">
+
+        <!-- 헤더 / 브랜드 -->
+        <tr>
+          <td align="center" style="padding:32px 32px 8px 32px;">
+            <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:4px;color:#4db6ac;font-weight:700;">
+              R C T &nbsp; P L A T F O R M
+            </div>
+          </td>
+        </tr>
+
+        <!-- 본문 -->
+        <tr>
+          <td style="padding:24px 32px 8px 32px;">
+            <h1 style="margin:0 0 14px 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#e0e6ed;">
+              이메일 인증
+            </h1>
+            <p style="margin:0 0 8px 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.7;color:#94a3b8;">
+              RCT Platform 가입을 환영합니다.<br>
+              아래 버튼을 눌러 이메일 인증을 완료하시면 계정이 활성화됩니다.
+            </p>
+          </td>
+        </tr>
+
+        <!-- CTA 버튼 -->
+        <tr>
+          <td align="center" style="padding:18px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" bgcolor="#4db6ac" style="border-radius:6px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank"
+                     style="display:inline-block;padding:13px 36px;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#07080a;text-decoration:none;border-radius:6px;">
+                    이메일 인증 완료하기
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- 대체 링크 -->
+        <tr>
+          <td style="padding:14px 32px 4px 32px;">
+            <p style="margin:0 0 6px 0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#64748b;">
+              버튼이 동작하지 않으면 아래 링크를 복사해 브라우저에 붙여넣으세요.
+            </p>
+            <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;line-height:1.5;color:#4db6ac;word-break:break-all;">
+              {{ .ConfirmationURL }}
+            </p>
+          </td>
+        </tr>
+
+        <!-- 안내 -->
+        <tr>
+          <td style="padding:18px 32px 24px 32px;">
+            <div style="border-top:1px solid #242a35;padding-top:16px;">
+              <p style="margin:0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#64748b;">
+                · 이 링크는 일정 시간이 지나면 만료됩니다.<br>
+                · 본인이 가입을 신청하지 않았다면 이 메일을 무시하셔도 됩니다.
+              </p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 푸터 -->
+        <tr>
+          <td align="center" style="padding:16px 32px;background-color:#0a0c10;border-top:1px solid #242a35;">
+            <p style="margin:0;font-family:'Courier New',monospace;font-size:10px;letter-spacing:1px;color:#475569;">
+              RCT PLATFORM · 본 메일은 발신 전용입니다.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
