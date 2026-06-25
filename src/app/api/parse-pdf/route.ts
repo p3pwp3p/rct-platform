@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
     const file = form.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
 
+    // 크기·형식 제한 (메모리 고갈 방지) — 정산 보고서 PDF는 수 MB 이내
+    const MAX_BYTES = 10 * 1024 * 1024
+    if (file.size > MAX_BYTES) return NextResponse.json({ error: '파일이 너무 큽니다 (최대 10MB)' }, { status: 413 })
+    if (file.type && file.type !== 'application/pdf') return NextResponse.json({ error: 'PDF 파일만 업로드 가능합니다.' }, { status: 415 })
+
     const buf = Buffer.from(await file.arrayBuffer())
     const parser = new PDFParse({ data: new Uint8Array(buf), verbosity: 0 })
     // getText()가 내부적으로 문서를 로드하므로 별도 load() 호출 불필요
