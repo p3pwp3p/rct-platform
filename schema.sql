@@ -412,6 +412,11 @@ CREATE TABLE IF NOT EXISTS terms (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+-- popups / terms 는 모든 접근이 service-role API(/api/[admin/]popups·terms) 경유.
+-- RLS 활성 + 정책 없음 → anon/authenticated 직접 접근 전면 차단 (service-role 만 우회).
+ALTER TABLE popups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE terms  ENABLE ROW LEVEL SECURITY;
+
 -- =============================================================
 -- Migration: run these in Supabase SQL editor if DB already exists
 -- =============================================================
@@ -421,6 +426,10 @@ CREATE TABLE IF NOT EXISTS terms (
 --    (c) 컬럼/시퀀스 제거:
 -- ALTER TABLE profiles DROP COLUMN IF EXISTS ct_id;
 -- DROP SEQUENCE IF EXISTS ct_seq;
+
+-- 7. popups/terms RLS 활성화 (기존 DB 필수 — 미적용 시 anon 키로 직접 변조 가능):
+-- ALTER TABLE popups ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE terms  ENABLE ROW LEVEL SECURITY;
 
 -- 5. terms 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
 -- 4. popups 테이블 신규 생성 (기존 DB라면 위 CREATE TABLE 블록 실행)
