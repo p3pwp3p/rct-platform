@@ -4,6 +4,7 @@
  * 트리 뷰 — 후원 (바이너리) + 추천 (N-ary) 탭 통합 (어드민)
  */
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { adminGetTree } from '@/lib/db-admin'
 import type { TreeNode } from '@/lib/types'
 import BinaryTreeCanvas, { NetNode } from '@/components/BinaryTreeCanvas'
@@ -38,7 +39,10 @@ function SearchBar({ onSearch }: { onSearch: (profileId: string) => void }) {
     if (!query.trim()) return
     setBusy(true)
     try {
-      const res  = await fetch(`/api/admin/search-members?q=${encodeURIComponent(query.trim())}`)
+      const { data: { session } } = await supabase.auth.getSession()
+      const res  = await fetch(`/api/admin/search-members?q=${encodeURIComponent(query.trim())}`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      })
       const json = await res.json()
       setResults(json.members ?? [])
     } catch { setResults([]) } finally { setBusy(false) }
@@ -124,10 +128,14 @@ export default function AdminTreePage() {
 
   useEffect(() => {
     if (tab !== 'referral' || referralProfileId) return
-    fetch('/api/admin/search-members?root=true')
-      .then(r => r.json())
-      .then(json => { const first = json.members?.[0]; if (first) setReferralProfileId(first.id) })
-      .catch(() => {})
+    supabase.auth.getSession().then(({ data: { session } }) =>
+      fetch('/api/admin/search-members?root=true', {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      })
+        .then(r => r.json())
+        .then(json => { const first = json.members?.[0]; if (first) setReferralProfileId(first.id) })
+        .catch(() => {})
+    )
   }, [tab, referralProfileId])
 
   return (

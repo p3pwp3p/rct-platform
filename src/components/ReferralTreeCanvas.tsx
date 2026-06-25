@@ -4,6 +4,7 @@
  * 추천 트리 (N-ary) 캔버스 — BinaryTreeCanvas 와 완전히 동일한 UI/UX
  */
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import type { ReferralNode } from '@/app/api/referral-tree/route'
 
 const RANK_COLOR: Record<string, string> = {
@@ -262,11 +263,15 @@ export default function ReferralTreeCanvas({
   useEffect(() => {
     if (!profileId) { setData(null); setFetchError(null); setFetching(false); return }
     setFetching(true); setFetchError(null); setData(null); setSelected(null)
-    fetch(`/api/referral-tree?profileId=${profileId}&depth=4`)
-      .then(r => r.json())
-      .then(json => { if (json.error) throw new Error(json.error); setData({ root: json.root, totalReferrals: json.totalReferrals }) })
-      .catch(e => setFetchError(e?.message ?? '오류'))
-      .then(() => setFetching(false), () => setFetching(false))
+    supabase.auth.getSession().then(({ data: { session } }) =>
+      fetch(`/api/referral-tree?profileId=${profileId}&depth=4`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      })
+        .then(r => r.json())
+        .then(json => { if (json.error) throw new Error(json.error); setData({ root: json.root, totalReferrals: json.totalReferrals }) })
+        .catch(e => setFetchError(e?.message ?? '오류'))
+        .then(() => setFetching(false), () => setFetching(false))
+    )
   }, [profileId])
 
   const loading = externalLoading || fetching

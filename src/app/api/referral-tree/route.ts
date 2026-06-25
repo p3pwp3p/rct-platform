@@ -41,6 +41,24 @@ export async function GET(req: NextRequest) {
 
     if (!profileId) return NextResponse.json({ error: 'profileId required' }, { status: 400 })
 
+    // ── 인증 + 접근 권한 검증 ──────────────────────────────────────────
+    const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
+    if (!token) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
+    const { data: userData, error: authErr } = await admin.auth.getUser(token)
+    if (authErr || !userData.user) return NextResponse.json({ error: '인증 실패' }, { status: 401 })
+
+    const isAdmin = userData.user.user_metadata?.role === 'admin'
+    if (!isAdmin) {
+      // 관리자가 아니면 요청한 profileId가 본인 또는 본인 소유 노드여야 함
+      const { data: owned } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('id', profileId)
+        .or(`id.eq.${userData.user.id},owner_id.eq.${userData.user.id}`)
+        .maybeSingle()
+      if (!owned) return NextResponse.json({ error: '접근 권한 없음' }, { status: 403 })
+    }
+
     // 전체 profiles 로드 (referrer_id 포함)
     const { data: profiles, error } = await admin
       .from('profiles')

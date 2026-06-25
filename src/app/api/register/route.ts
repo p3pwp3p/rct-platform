@@ -9,6 +9,14 @@ const adminSupabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    // 관리자 전용 — service-role 계정 생성 엔드포인트이므로 인증 필수
+    const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
+    if (!token) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
+    const { data: authUser } = await adminSupabase.auth.getUser(token)
+    if (authUser.user?.user_metadata?.role !== 'admin') {
+      return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
+    }
+
     const { email, password, name, sponsorCode, referrerCode, leg, mt5AccountId } = await req.json()
 
     if (!email || !password || !name || !sponsorCode || !referrerCode || !leg) {
