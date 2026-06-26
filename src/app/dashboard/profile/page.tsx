@@ -32,7 +32,58 @@ export default function ProfilePage() {
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [nodes, setNodes]         = useState<Profile[]>([])
   const [authEmail, setAuthEmail] = useState('')
+  const [fullName, setFullName]   = useState('')
+  const [phone, setPhone]         = useState('')
   const [loading, setLoading]     = useState(true)
+
+  // 이름 수정 (계정 full_name + 본인 메인 프로필)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput]     = useState('')
+  const [nameBusy, setNameBusy]       = useState(false)
+  const [nameMsg, setNameMsg]         = useState('')
+
+  // 전화번호 수정 (계정 메타데이터)
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [phoneInput, setPhoneInput]     = useState('')
+  const [phoneBusy, setPhoneBusy]       = useState(false)
+  const [phoneMsg, setPhoneMsg]         = useState('')
+
+  const displayName = myProfile?.name || fullName || '—'
+
+  const handleSaveName = async () => {
+    const name = nameInput.trim()
+    if (!name) { setNameMsg('이름을 입력해주세요'); return }
+    if (name.length > 30) { setNameMsg('이름이 너무 깁니다'); return }
+    setNameBusy(true)
+    // 1. 계정 표시 이름
+    const { error: aErr } = await supabase.auth.updateUser({ data: { full_name: name } })
+    // 2. 본인 메인 프로필(있으면)
+    let pErr = null
+    if (myProfile) {
+      const { error } = await supabase.from('profiles').update({ name }).eq('id', myProfile.id)
+      pErr = error
+    }
+    setNameBusy(false)
+    if (aErr || pErr) { setNameMsg((aErr ?? pErr)!.message); return }
+    setFullName(name)
+    setMyProfile(p => p ? { ...p, name } : p)
+    setNodes(ns => ns.map(n => n.id === myProfile?.id ? { ...n, name } : n))
+    setEditingName(false)
+    setNameMsg('저장됐습니다')
+    setTimeout(() => setNameMsg(''), 2500)
+  }
+
+  const handleSavePhone = async () => {
+    const p = phoneInput.trim()
+    setPhoneBusy(true)
+    const { error } = await supabase.auth.updateUser({ data: { phone: p || null } })
+    setPhoneBusy(false)
+    if (error) { setPhoneMsg(error.message); return }
+    setPhone(p)
+    setEditingPhone(false)
+    setPhoneMsg('저장됐습니다')
+    setTimeout(() => setPhoneMsg(''), 2500)
+  }
 
 
   // Binance TRC-20 출금 주소 — 계정 단위 (메인 프로필에 저장, 모든 노드 수익 일괄 지급처)
@@ -71,6 +122,8 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
       setAuthEmail(user.email ?? '')
+      setFullName((user.user_metadata?.full_name as string) ?? '')
+      setPhone((user.user_metadata?.phone as string) ?? '')
 
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setMyProfile(profile as Profile)
@@ -152,12 +205,48 @@ export default function ProfilePage() {
 
             {/* 이름 */}
             <Row label="이름">
-              {loading ? <Sk w={80} h={15} /> : <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600 }}>{myProfile?.name}</span>}
+              {loading ? <Sk w={80} h={15} /> : editingName ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input className="pf-input" value={nameInput} maxLength={30} autoFocus
+                    onChange={e => { setNameInput(e.target.value); setNameMsg('') }}
+                    onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                    style={{ width: 160, fontSize: 13, padding: '5px 10px' }} />
+                  <button className="pf-btn pf-btn-primary" disabled={nameBusy} onClick={handleSaveName} style={{ padding: '4px 10px', fontSize: 11 }}>저장</button>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingName(false); setNameMsg('') }} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {nameMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: nameMsg.includes('저장') ? '#34d399' : '#f87171' }}>{nameMsg}</span>}
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingName(true); setNameInput(displayName === '—' ? '' : displayName) }} style={{ padding: '4px 10px', fontSize: 11 }}>수정</button>
+                </div>
+              )}
             </Row>
 
-            {/* 이메일 */}
+            {/* 이메일 (변경 불가) */}
             <Row label="이메일">
               {loading ? <Sk w={160} h={15} /> : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14 }}>{authEmail}</span>}
+            </Row>
+
+            {/* 전화번호 */}
+            <Row label="전화번호">
+              {loading ? <Sk w={120} h={15} /> : editingPhone ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input className="pf-input" value={phoneInput} type="tel" autoFocus
+                    onChange={e => { setPhoneInput(e.target.value.replace(/[^\d\-+\s]/g, '')); setPhoneMsg('') }}
+                    onKeyDown={e => e.key === 'Enter' && handleSavePhone()}
+                    placeholder="010-1234-5678"
+                    style={{ width: 160, fontSize: 13, padding: '5px 10px' }} />
+                  <button className="pf-btn pf-btn-primary" disabled={phoneBusy} onClick={handleSavePhone} style={{ padding: '4px 10px', fontSize: 11 }}>저장</button>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingPhone(false); setPhoneMsg('') }} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {phoneMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: phoneMsg.includes('저장') ? '#34d399' : '#f87171' }}>{phoneMsg}</span>}
+                  <span style={{ fontFamily: phone ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, color: phone ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{phone || '미등록'}</span>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingPhone(true); setPhoneInput(phone) }} style={{ padding: '4px 10px', fontSize: 11 }}>{phone ? '수정' : '등록'}</button>
+                </div>
+              )}
             </Row>
 
             {/* 최고 직급 */}
