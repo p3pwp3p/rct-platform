@@ -98,6 +98,7 @@ export interface RankHistoryEntry {
 export interface DownlineRow {
   id: string
   node_id: string
+  referral_code: string
   mt5_account_id: string | null
   name: string
   rank: Rank

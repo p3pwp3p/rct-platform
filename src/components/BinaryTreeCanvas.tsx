@@ -13,6 +13,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 export interface NetNode {
   id:           string
   nodeId:       string
+  referralCode: string
   name:         string
   rank:         string
   sales:        number
@@ -80,11 +81,12 @@ function Connectors({ positions, selectedId }: { positions: Pos[]; selectedId: s
   )
 }
 
-function NodeCard({ p, selected, maxSales, isMe, onSelect }: {
+function NodeCard({ p, selected, maxSales, isMe, labelMode, onSelect }: {
   p: Pos; selected: boolean; maxSales: number
-  isMe: boolean; onSelect: (n: NetNode) => void
+  isMe: boolean; labelMode: 'name' | 'code'; onSelect: (n: NetNode) => void
 }) {
   const { node } = p
+  const primary = labelMode === 'code' ? (node.referralCode || '—') : node.name
   const rc  = RANK_COLOR[node.rank] ?? '#64748b'
   const bar = node.sales > 0 ? Math.round((node.sales / maxSales) * 100) : 0
   return (
@@ -110,8 +112,8 @@ function NodeCard({ p, selected, maxSales, isMe, onSelect }: {
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4 }}>{node.rank}</span>
       </div>
       <div style={{ marginBottom: 'auto', minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {node.name}
+        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {primary}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           MT5 <span style={{ color: node.mt5AccountId ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5AccountId || '—'}</span>
@@ -127,8 +129,9 @@ function NodeCard({ p, selected, maxSales, isMe, onSelect }: {
   )
 }
 
-function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: () => void; onNavigate?: (n: NetNode) => void }) {
+function DetailPanel({ node, onClose, onNavigate, labelMode }: { node: NetNode; onClose: () => void; onNavigate?: (n: NetNode) => void; labelMode: 'name' | 'code' }) {
   const rc = RANK_COLOR[node.rank] ?? '#64748b'
+  const primary = labelMode === 'code' ? (node.referralCode || '—') : node.name
   return (
     <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 280, zIndex: 20, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', animation: 'slideInRight 0.22s cubic-bezier(0.16,1,0.3,1)' }}>
       <style>{`@keyframes slideInRight{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
@@ -144,7 +147,7 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 6, background: rc + '18', border: `1px solid ${rc}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: rc }}>{node.rank}</div>
         <div>
-          <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{node.name}</div>
+          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', marginBottom: 4 }}>{primary}</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{node.nodeId}</div>
         </div>
       </div>
@@ -177,7 +180,7 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
                 >
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: crc, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{child.name}</div>
+                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referralCode || '—') : child.name}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>{child.nodeId}</div>
                   </div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: crc, background: crc + '18', border: `1px solid ${crc}44`, padding: '1px 5px', borderRadius: 3 }}>{child.rank}</span>
@@ -195,11 +198,13 @@ function DetailPanel({ node, onClose, onNavigate }: { node: NetNode; onClose: ()
 export default function BinaryTreeCanvas({
   tree, loading, error,
   isMe = () => false,
+  labelMode = 'name',
 }: {
   tree:    NetNode | null
   loading: boolean
   error:   string | null
   isMe?:   (id: string) => boolean
+  labelMode?: 'name' | 'code'
 }) {
   const positions = tree ? layout(tree) : []
   const maxSales  = Math.max(...positions.map(p => p.node.sales), 1)
@@ -234,7 +239,7 @@ export default function BinaryTreeCanvas({
 
   const focusNode = useCallback((q: string) => {
     const p = positions.find(pos =>
-      pos.node.nodeId.includes(q) || pos.node.name.includes(q)
+      pos.node.nodeId.includes(q) || pos.node.referralCode.toUpperCase().includes(q.toUpperCase()) || pos.node.name.includes(q)
     )
     if (!p || !canvasRef.current) return
     const r  = canvasRef.current.getBoundingClientRect()
@@ -294,7 +299,7 @@ export default function BinaryTreeCanvas({
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
-            placeholder="Node ID / 이름 — Enter"
+            placeholder="Node ID / 코드 / 이름 — Enter"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 13, fontFamily: 'var(--font-main)', outline: 'none', width: 220 }}
           />
         </div>
@@ -337,7 +342,7 @@ export default function BinaryTreeCanvas({
               {positions.map(p => (
                 <NodeCard key={p.node.id} p={{ ...p, x: p.x + ox, y: p.y + oy }}
                   selected={selected?.id === p.node.id} maxSales={maxSales}
-                  isMe={isMe(p.node.id)} onSelect={setSelected}
+                  isMe={isMe(p.node.id)} labelMode={labelMode} onSelect={setSelected}
                 />
               ))}
               {Array.from({ length: maxDepth + 1 }, (_, d) => {
@@ -358,7 +363,7 @@ export default function BinaryTreeCanvas({
             ))}
           </div>
         </div>
-        {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} onNavigate={setSelected} />}
+        {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} onNavigate={setSelected} labelMode={labelMode} />}
       </div>
     </div>
   )

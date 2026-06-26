@@ -19,6 +19,7 @@ function convertTree(node: TreeNode): NetNode {
   return {
     id:           node.id,
     nodeId:       node.node_id,
+    referralCode: node.referral_code,
     name:         node.name,
     rank:         node.rank,
     sales:        node.sales ?? 0,
@@ -134,6 +135,7 @@ export default function TreePage() {
             loading={loading || profileLoading}
             error={error}
             isMe={isMe}
+            labelMode="code"
           />
         </div>
         {/* 추천 트리 */}
@@ -142,6 +144,7 @@ export default function TreePage() {
             profileId={activeProfile?.id ?? ''}
             loading={profileLoading}
             isMe={isMe}
+            labelMode="code"
           />
         </div>
       </div>

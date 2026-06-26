@@ -78,8 +78,8 @@ function Connectors({ positions, selectedId }: { positions: Pos[]; selectedId: s
   )
 }
 
-function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
-  p: Pos; selected: boolean; isMe: boolean; onSelect: (n: ReferralNode) => void; showGen?: boolean
+function NodeCard({ p, selected, isMe, onSelect, showGen = true, labelMode = 'name' }: {
+  p: Pos; selected: boolean; isMe: boolean; onSelect: (n: ReferralNode) => void; showGen?: boolean; labelMode?: 'name' | 'code'
 }) {
   const { node } = p
   const rc    = RANK_COLOR[node.rank]    ?? '#64748b'
@@ -133,8 +133,8 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
 
       {/* 이름 + MT5 */}
       <div style={{ marginBottom: 'auto', minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {node.name}
+        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', lineHeight: 1.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {labelMode === 'code' ? (node.referral_code || '—') : node.name}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           MT5 <span style={{ color: node.mt5_account_id ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5_account_id || '—'}</span>
@@ -157,8 +157,8 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true }: {
   )
 }
 
-function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
-  node: ReferralNode; onClose: () => void; onNavigate?: (n: ReferralNode) => void; showGen?: boolean
+function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'name' }: {
+  node: ReferralNode; onClose: () => void; onNavigate?: (n: ReferralNode) => void; showGen?: boolean; labelMode?: 'name' | 'code'
 }) {
   const rc = RANK_COLOR[node.rank]    ?? '#64748b'
   const gc = getGenColor(node.depth)
@@ -182,7 +182,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 6, background: rc + '18', border: `1px solid ${rc}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: rc }}>{node.rank}</div>
         <div>
-          <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{node.name}</div>
+          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', marginBottom: 4 }}>{labelMode === 'code' ? (node.referral_code || '—') : node.name}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: sc, background: sc + '15', border: `1px solid ${sc}44`, padding: '1px 6px', borderRadius: 3 }}>{statusLabel[node.status] ?? node.status}</span>
             {showGen && node.depth > 0 && <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>{node.depth}대 · {getGenRate(node.depth)}</span>}
@@ -224,7 +224,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true }: {
                 >
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: crc, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{child.name}</div>
+                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referral_code || '—') : child.name}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>{child.node_id}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
@@ -247,11 +247,13 @@ export default function ReferralTreeCanvas({
   loading: externalLoading = false,
   isMe = () => false,
   showGenerations = true,
+  labelMode = 'name',
 }: {
   profileId: string
   loading?:  boolean        // 부모에서 내려오는 로딩 (프로필 로딩 등)
   isMe?:     (id: string) => boolean
   showGenerations?: boolean // false: 세대(1대/2대)·수당률 표시 숨김 (관리자용)
+  labelMode?: 'name' | 'code'
 }) {
   type TreeData = { root: ReferralNode; totalReferrals: number }
 
@@ -310,6 +312,7 @@ export default function ReferralTreeCanvas({
     const t = q.trim().toUpperCase()
     const p = positions.find(pos =>
       pos.node.node_id.toUpperCase().includes(t) ||
+      pos.node.referral_code.toUpperCase().includes(t) ||
       pos.node.name.includes(q.trim())
     )
     if (!p || !canvasRef.current) return
@@ -372,7 +375,7 @@ export default function ReferralTreeCanvas({
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
-            placeholder="Node ID / 이름 — Enter"
+            placeholder="Node ID / 코드 / 이름 — Enter"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 12, fontFamily: 'var(--font-main)', outline: 'none', width: 200 }}
           />
         </div>
@@ -443,6 +446,7 @@ export default function ReferralTreeCanvas({
                   isMe={isMe(p.node.id)}
                   onSelect={setSelected}
                   showGen={showGenerations}
+                  labelMode={labelMode}
                 />
               ))}
               {/* 깊이 레이블 */}
@@ -481,7 +485,7 @@ export default function ReferralTreeCanvas({
           )}
         </div>
 
-        {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} onNavigate={setSelected} showGen={showGenerations} />}
+        {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} onNavigate={setSelected} showGen={showGenerations} labelMode={labelMode} />}
       </div>
     </div>
   )

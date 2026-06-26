@@ -142,6 +142,7 @@ CREATE OR REPLACE FUNCTION get_downline(root_id uuid)
 RETURNS TABLE (
   id              uuid,
   node_id         text,
+  referral_code   text,
   mt5_account_id  text,
   name            text,
   rank            text,
@@ -155,14 +156,14 @@ RETURNS TABLE (
   depth           int
 ) LANGUAGE sql STABLE SECURITY DEFINER AS $$
   WITH RECURSIVE tree AS (
-    SELECT p.id, p.node_id, p.mt5_account_id, p.name, p.rank, p.status, p.sales,
+    SELECT p.id, p.node_id, p.referral_code, p.mt5_account_id, p.name, p.rank, p.status, p.sales,
            p.parent_id, p.leg_position, p.trc20_address, p.referrer_id, p.created_at, 0 AS depth
     FROM profiles p
     WHERE p.id = root_id
 
     UNION ALL
 
-    SELECT c.id, c.node_id, c.mt5_account_id, c.name, c.rank, c.status, c.sales,
+    SELECT c.id, c.node_id, c.referral_code, c.mt5_account_id, c.name, c.rank, c.status, c.sales,
            c.parent_id, c.leg_position, c.trc20_address, c.referrer_id, c.created_at, t.depth + 1
     FROM profiles c
     JOIN tree t ON c.parent_id = t.id
@@ -426,6 +427,10 @@ ALTER TABLE terms  ENABLE ROW LEVEL SECURITY;
 --    (c) 컬럼/시퀀스 제거:
 -- ALTER TABLE profiles DROP COLUMN IF EXISTS ct_id;
 -- DROP SEQUENCE IF EXISTS ct_seq;
+
+-- 8. get_downline 에 referral_code 추가 (회원 트리뷰 레퍼럴 코드 표시):
+--    위 "DROP FUNCTION get_downline; CREATE FUNCTION ..." 블록을 referral_code 포함 버전으로 재실행
+--    (RETURNS TABLE 와 양쪽 SELECT 에 referral_code 포함된 현재 schema.sql 의 get_downline 정의 사용)
 
 -- 7. popups/terms RLS 활성화 (기존 DB 필수 — 미적용 시 anon 키로 직접 변조 가능):
 -- ALTER TABLE popups ENABLE ROW LEVEL SECURITY;
