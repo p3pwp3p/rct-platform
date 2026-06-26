@@ -57,9 +57,30 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. 노드를 owner_id(또는 id) 기준으로 그룹핑
+    // owner_id가 null이고 id도 auth user가 아닌 경우(placeholder 노드)는
+    // parent 체인을 따라 올라가 auth user를 찾는다
+    const authUserIds = new Set(authUsers.map(u => u.id))
+    const profileById = new Map(profiles.map(p => [p.id, p]))
+
+    function resolveOwner(p: typeof profiles[0]): string {
+      if (p.owner_id) return p.owner_id
+      if (authUserIds.has(p.id)) return p.id
+      // parent 체인 추적
+      let cur = p
+      for (let i = 0; i < 20; i++) {
+        if (!cur.parent_id) break
+        const parent = profileById.get(cur.parent_id)
+        if (!parent) break
+        if (parent.owner_id) return parent.owner_id
+        if (authUserIds.has(parent.id)) return parent.id
+        cur = parent
+      }
+      return p.id
+    }
+
     const nodesByOwner = new Map<string, typeof profiles>()
     for (const p of profiles) {
-      const key = p.owner_id ?? p.id
+      const key = resolveOwner(p)
       const arr = nodesByOwner.get(key) ?? []
       arr.push(p)
       nodesByOwner.set(key, arr)
