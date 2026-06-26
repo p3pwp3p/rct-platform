@@ -1,7 +1,43 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/lib/types'
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+type ToastType = 'success' | 'error'
+function Toast({ msg, type, onDone }: { msg: string; type: ToastType; onDone: () => void }) {
+  const color  = type === 'success' ? '#34d399' : '#f87171'
+  const bg     = type === 'success' ? 'rgba(52,211,153,0.10)' : 'rgba(248,113,113,0.10)'
+  const border = type === 'success' ? 'rgba(52,211,153,0.30)' : 'rgba(248,113,113,0.30)'
+  const icon   = type === 'success'
+    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+  useEffect(() => {
+    const t = setTimeout(onDone, 3000)
+    return () => clearTimeout(t)
+  }, [onDone])
+
+  return (
+    <div style={{
+      position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 9000, pointerEvents: 'none',
+      animation: 'toastIn 0.28s cubic-bezier(0.16,1,0.3,1)',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '11px 18px', borderRadius: 8,
+        background: bg, border: `1px solid ${border}`,
+        backdropFilter: 'blur(12px)',
+        boxShadow: `0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px ${border}`,
+        minWidth: 200, maxWidth: 360,
+      }}>
+        {icon}
+        <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color, whiteSpace: 'nowrap' }}>{msg}</span>
+      </div>
+    </div>
+  )
+}
 
 const RANK_COLOR: Record<string, string> = {
   R0: '#64748b', R1: '#34d399', R2: '#60a5fa',
@@ -37,41 +73,57 @@ export default function ProfilePage() {
   const [authTrc20, setAuthTrc20]   = useState('')  // auth 메타데이터 기준 TRC-20
   const [loading, setLoading]       = useState(true)
 
-  // 이름 수정 (계정 full_name + 본인 메인 프로필)
+  // ── 토스트 ────────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<{ msg: string; type: ToastType } | null>(null)
+  const toastKey = useRef(0)
+  const showToast = useCallback((msg: string, type: ToastType = 'success') => {
+    toastKey.current += 1
+    setToast({ msg, type })
+  }, [])
+
+  // 이름 수정
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput]     = useState('')
   const [nameBusy, setNameBusy]       = useState(false)
-  const [nameMsg, setNameMsg]         = useState('')
 
-  // 전화번호 수정 (계정 메타데이터)
+  // 전화번호 수정
   const [editingPhone, setEditingPhone] = useState(false)
   const [phoneInput, setPhoneInput]     = useState('')
   const [phoneBusy, setPhoneBusy]       = useState(false)
-  const [phoneMsg, setPhoneMsg]         = useState('')
+
+  // TRC-20 지갑
+  const [editingWallet, setEditingWallet] = useState(false)
+  const [walletInput, setWalletInput]     = useState('')
+  const [walletBusy, setWalletBusy]       = useState(false)
+
+  // 비밀번호
+  const [pwOpen, setPwOpen]   = useState(false)
+  const [pwCur, setPwCur]     = useState('')
+  const [pwNew, setPwNew]     = useState('')
+  const [pwConf, setPwConf]   = useState('')
+  const [pwBusy, setPwBusy]   = useState(false)
+  const [pwErr, setPwErr]     = useState('')
 
   const displayName = myProfile?.name || fullName || '—'
 
   const handleSaveName = async () => {
     const name = nameInput.trim()
-    if (!name) { setNameMsg('이름을 입력해주세요'); return }
-    if (name.length > 30) { setNameMsg('이름이 너무 깁니다'); return }
+    if (!name) { showToast('이름을 입력해주세요', 'error'); return }
+    if (name.length > 30) { showToast('이름이 너무 깁니다 (30자 이하)', 'error'); return }
     setNameBusy(true)
-    // 1. 계정 표시 이름
     const { error: aErr } = await supabase.auth.updateUser({ data: { full_name: name } })
-    // 2. 본인 메인 프로필(있으면)
     let pErr = null
     if (myProfile) {
       const { error } = await supabase.from('profiles').update({ name }).eq('id', myProfile.id)
       pErr = error
     }
     setNameBusy(false)
-    if (aErr || pErr) { setNameMsg((aErr ?? pErr)!.message); return }
+    if (aErr || pErr) { showToast((aErr ?? pErr)!.message, 'error'); return }
     setFullName(name)
     setMyProfile(p => p ? { ...p, name } : p)
     setNodes(ns => ns.map(n => n.id === myProfile?.id ? { ...n, name } : n))
     setEditingName(false)
-    setNameMsg('저장됐습니다')
-    setTimeout(() => setNameMsg(''), 2500)
+    showToast('이름이 저장됐습니다')
   }
 
   const handleSavePhone = async () => {
@@ -79,52 +131,32 @@ export default function ProfilePage() {
     setPhoneBusy(true)
     const { error } = await supabase.auth.updateUser({ data: { phone: p || null } })
     setPhoneBusy(false)
-    if (error) { setPhoneMsg(error.message); return }
+    if (error) { showToast(error.message, 'error'); return }
     setPhone(p)
     setEditingPhone(false)
-    setPhoneMsg('저장됐습니다')
-    setTimeout(() => setPhoneMsg(''), 2500)
+    showToast('전화번호가 저장됐습니다')
   }
-
-
-  // Binance TRC-20 출금 주소 — 계정 단위 (메인 프로필에 저장, 모든 노드 수익 일괄 지급처)
-  const [editingWallet, setEditingWallet] = useState(false)
-  const [walletInput, setWalletInput]     = useState('')
-  const [walletBusy, setWalletBusy]       = useState(false)
-  const [walletMsg, setWalletMsg]         = useState('')
 
   const handleSaveWallet = async () => {
     const addr = walletInput.trim()
     if (addr && !/^T[A-Za-z0-9]{33}$/.test(addr)) {
-      setWalletMsg('유효하지 않은 TRC-20 주소입니다')
-      return
+      showToast('유효하지 않은 TRC-20 주소입니다', 'error'); return
     }
     setWalletBusy(true)
-    // 1. auth 메타데이터 저장 (관리자 페이지가 여기서 읽음)
     const { error: aErr } = await supabase.auth.updateUser({ data: { trc20_address: addr || null } })
-    // 2. profiles 테이블 저장 (있으면)
     let pErr = null
     if (myProfile) {
       const { error } = await supabase.from('profiles').update({ trc20_address: addr || null }).eq('id', myProfile.id)
       pErr = error
     }
     setWalletBusy(false)
-    if (aErr) { setWalletMsg(aErr.message); return }
+    if (aErr) { showToast(aErr.message, 'error'); return }
     if (pErr) console.warn('profiles trc20 update:', pErr.message)
     setAuthTrc20(addr)
     setMyProfile(p => p ? { ...p, trc20_address: addr || null } : p)
     setEditingWallet(false)
-    setWalletMsg('저장됐습니다')
-    setTimeout(() => setWalletMsg(''), 2500)
+    showToast('지갑 주소가 저장됐습니다')
   }
-
-  const [pwOpen, setPwOpen]   = useState(false)
-  const [pwCur, setPwCur]     = useState('')
-  const [pwNew, setPwNew]     = useState('')
-  const [pwConf, setPwConf]   = useState('')
-  const [pwBusy, setPwBusy]   = useState(false)
-  const [pwMsg, setPwMsg]     = useState('')
-  const [pwErr, setPwErr]     = useState('')
 
   useEffect(() => {
     const run = async () => {
@@ -155,7 +187,7 @@ export default function ProfilePage() {
   const topRc = RANK_COLOR[topRank]
 
   const handlePwChange = async () => {
-    setPwErr(''); setPwMsg('')
+    setPwErr('')
     if (pwNew.length < 8)    { setPwErr('새 비밀번호는 8자 이상이어야 합니다.'); return }
     if (pwNew !== pwConf)     { setPwErr('비밀번호가 일치하지 않습니다'); return }
     setPwBusy(true)
@@ -176,15 +208,16 @@ export default function ProfilePage() {
       }
       return
     }
-    setPwMsg('변경 완료')
+    showToast('비밀번호가 변경됐습니다')
     setPwCur(''); setPwNew(''); setPwConf(''); setPwOpen(false)
-    setTimeout(() => setPwMsg(''), 3000)
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {toast && <Toast key={toastKey.current} msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       <style>{`
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-12px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
         .pf-input {
           width: 100%; padding: 9px 12px; border-radius: 6px;
           background: var(--bg-inset); border: 1px solid var(--border-primary);
@@ -218,15 +251,14 @@ export default function ProfilePage() {
               {loading ? <Sk w={80} h={15} /> : editingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input className="pf-input" value={nameInput} maxLength={30} autoFocus
-                    onChange={e => { setNameInput(e.target.value); setNameMsg('') }}
+                    onChange={e => setNameInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSaveName()}
                     style={{ width: 160, fontSize: 13, padding: '5px 10px' }} />
                   <button className="pf-btn pf-btn-primary" disabled={nameBusy} onClick={handleSaveName} style={{ padding: '4px 10px', fontSize: 11 }}>저장</button>
-                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingName(false); setNameMsg('') }} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => setEditingName(false)} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {nameMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: nameMsg.includes('저장') ? '#34d399' : '#f87171' }}>{nameMsg}</span>}
                   <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
                   <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingName(true); setNameInput(displayName === '—' ? '' : displayName) }} style={{ padding: '4px 10px', fontSize: 11 }}>수정</button>
                 </div>
@@ -243,16 +275,15 @@ export default function ProfilePage() {
               {loading ? <Sk w={120} h={15} /> : editingPhone ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input className="pf-input" value={phoneInput} type="tel" autoFocus
-                    onChange={e => { setPhoneInput(e.target.value.replace(/[^\d\-+\s]/g, '')); setPhoneMsg('') }}
+                    onChange={e => setPhoneInput(e.target.value.replace(/[^\d\-+\s]/g, ''))}
                     onKeyDown={e => e.key === 'Enter' && handleSavePhone()}
                     placeholder="010-1234-5678"
                     style={{ width: 160, fontSize: 13, padding: '5px 10px' }} />
                   <button className="pf-btn pf-btn-primary" disabled={phoneBusy} onClick={handleSavePhone} style={{ padding: '4px 10px', fontSize: 11 }}>저장</button>
-                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingPhone(false); setPhoneMsg('') }} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => setEditingPhone(false)} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {phoneMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: phoneMsg.includes('저장') ? '#34d399' : '#f87171' }}>{phoneMsg}</span>}
                   <span style={{ fontFamily: phone ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, color: phone ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{phone || '미등록'}</span>
                   <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingPhone(true); setPhoneInput(phone) }} style={{ padding: '4px 10px', fontSize: 11 }}>{phone ? '수정' : '등록'}</button>
                 </div>
@@ -292,7 +323,6 @@ export default function ProfilePage() {
                     </div>
                   ))}
                   {pwErr && <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6 }}>{pwErr}</div>}
-                  {pwMsg && <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#34d399' }}>{pwMsg}</div>}
                   <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                     <button className="pf-btn pf-btn-primary" disabled={pwBusy} onClick={handlePwChange}>{pwBusy ? '변경 중...' : '변경 완료'}</button>
                     <button className="pf-btn pf-btn-ghost" onClick={() => { setPwOpen(false); setPwErr(''); setPwCur(''); setPwNew(''); setPwConf('') }}>취소</button>
@@ -320,14 +350,13 @@ export default function ProfilePage() {
                   <input
                     className="pf-input"
                     value={walletInput}
-                    onChange={e => { setWalletInput(e.target.value); setWalletMsg('') }}
+                    onChange={e => setWalletInput(e.target.value)}
                     placeholder="T로 시작하는 34자리 주소"
                     style={{ flex: 1, fontSize: 12, padding: '5px 10px', fontFamily: 'var(--font-mono)' }}
                     autoFocus
                   />
-                  {walletMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: '#f87171', flexShrink: 0 }}>{walletMsg}</span>}
                   <button className="pf-btn pf-btn-primary" disabled={walletBusy} onClick={handleSaveWallet} style={{ padding: '4px 10px', fontSize: 11 }}>저장</button>
-                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingWallet(false); setWalletMsg('') }} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
+                  <button className="pf-btn pf-btn-ghost" onClick={() => setEditingWallet(false)} style={{ padding: '4px 10px', fontSize: 11 }}>취소</button>
                 </>
               ) : (
                 <>
@@ -338,7 +367,6 @@ export default function ProfilePage() {
                   ) : (
                     <span style={{ flex: 1, fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>미등록</span>
                   )}
-                  {walletMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: walletMsg.includes('유효') ? '#f87171' : '#34d399', flexShrink: 0 }}>{walletMsg}</span>}
                   <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingWallet(true); setWalletInput(authTrc20) }} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>
                     {authTrc20 ? '수정' : '등록'}
                   </button>
