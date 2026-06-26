@@ -31,10 +31,11 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export default function ProfilePage() {
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [nodes, setNodes]         = useState<Profile[]>([])
-  const [authEmail, setAuthEmail] = useState('')
-  const [fullName, setFullName]   = useState('')
-  const [phone, setPhone]         = useState('')
-  const [loading, setLoading]     = useState(true)
+  const [authEmail, setAuthEmail]   = useState('')
+  const [fullName, setFullName]     = useState('')
+  const [phone, setPhone]           = useState('')
+  const [authTrc20, setAuthTrc20]   = useState('')  // auth 메타데이터 기준 TRC-20
+  const [loading, setLoading]       = useState(true)
 
   // 이름 수정 (계정 full_name + 본인 메인 프로필)
   const [editingName, setEditingName] = useState(false)
@@ -93,16 +94,24 @@ export default function ProfilePage() {
   const [walletMsg, setWalletMsg]         = useState('')
 
   const handleSaveWallet = async () => {
-    if (!myProfile) return
     const addr = walletInput.trim()
     if (addr && !/^T[A-Za-z0-9]{33}$/.test(addr)) {
       setWalletMsg('유효하지 않은 TRC-20 주소입니다')
       return
     }
     setWalletBusy(true)
-    const { error } = await supabase.from('profiles').update({ trc20_address: addr || null }).eq('id', myProfile.id)
+    // 1. auth 메타데이터 저장 (관리자 페이지가 여기서 읽음)
+    const { error: aErr } = await supabase.auth.updateUser({ data: { trc20_address: addr || null } })
+    // 2. profiles 테이블 저장 (있으면)
+    let pErr = null
+    if (myProfile) {
+      const { error } = await supabase.from('profiles').update({ trc20_address: addr || null }).eq('id', myProfile.id)
+      pErr = error
+    }
     setWalletBusy(false)
-    if (error) { setWalletMsg(error.message); return }
+    if (aErr) { setWalletMsg(aErr.message); return }
+    if (pErr) console.warn('profiles trc20 update:', pErr.message)
+    setAuthTrc20(addr)
     setMyProfile(p => p ? { ...p, trc20_address: addr || null } : p)
     setEditingWallet(false)
     setWalletMsg('저장됐습니다')
@@ -124,6 +133,7 @@ export default function ProfilePage() {
       setAuthEmail(user.email ?? '')
       setFullName((user.user_metadata?.full_name as string) ?? '')
       setPhone((user.user_metadata?.phone as string) ?? '')
+      setAuthTrc20((user.user_metadata?.trc20_address as string) ?? '')
 
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setMyProfile(profile as Profile)
@@ -321,16 +331,16 @@ export default function ProfilePage() {
                 </>
               ) : (
                 <>
-                  {myProfile?.trc20_address ? (
+                  {authTrc20 ? (
                     <span style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {myProfile.trc20_address.slice(0, 8)}…{myProfile.trc20_address.slice(-6)}
+                      {authTrc20.slice(0, 8)}…{authTrc20.slice(-6)}
                     </span>
                   ) : (
                     <span style={{ flex: 1, fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>미등록</span>
                   )}
                   {walletMsg && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: walletMsg.includes('유효') ? '#f87171' : '#34d399', flexShrink: 0 }}>{walletMsg}</span>}
-                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingWallet(true); setWalletInput(myProfile?.trc20_address ?? '') }} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>
-                    {myProfile?.trc20_address ? '수정' : '등록'}
+                  <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingWallet(true); setWalletInput(authTrc20) }} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>
+                    {authTrc20 ? '수정' : '등록'}
                   </button>
                 </>
               )}
@@ -357,16 +367,22 @@ export default function ProfilePage() {
                       <div style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, background: nc + '18', border: `1px solid ${nc}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: nc }}>
                         {n.rank}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                           <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{n.name}</span>
                           {isMain && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: nc, background: nc + '18', border: `1px solid ${nc}33`, padding: '1px 6px', borderRadius: 3 }}>메인</span>}
                         </div>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-blue)' }}>{n.node_id}</span>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-blue)' }}>{n.node_id}</span>
+                          {n.referral_code && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)' }}>추천코드</span>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: '#4db6ac' }}>{n.referral_code}</span>
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{n.created_at.slice(0,10)}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', flexShrink: 0 }}>{n.created_at.slice(0,10)}</span>
                     </div>
                   </div>
                 )
