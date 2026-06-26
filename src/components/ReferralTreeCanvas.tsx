@@ -191,7 +191,9 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'n
           <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: labelMode === 'code' ? codeColor(node.referral_code) : 'var(--text-primary)', marginBottom: 4 }}>{labelMode === 'code' ? (node.referral_code || '—') : node.name}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: sc, background: sc + '15', border: `1px solid ${sc}44`, padding: '1px 6px', borderRadius: 3 }}>{statusLabel[node.status] ?? node.status}</span>
-            {showGen && node.depth > 0 && <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>{node.depth}대 · {getGenRate(node.depth)}</span>}
+            {showGen && node.depth > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{node.depth}</span><span style={{ fontFamily: 'var(--font-main)' }}>대 · </span><span style={{ fontFamily: 'var(--font-mono)' }}>{getGenRate(node.depth)}</span>
+            </span>}
           </div>
         </div>
       </div>
@@ -202,7 +204,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'n
           { label: 'MT5',         value: node.mt5_account_id || '—' },
           { label: 'Joined',      value: node.created_at.slice(0, 10) },
           ...(showGen ? [
-            { label: 'Generation',  value: node.depth === 0 ? 'Root' : `${node.depth}대` },
+            { label: 'Generation',  value: node.depth === 0 ? 'Root' : `${node.depth}` },
             { label: 'Bonus Rate',  value: node.depth > 0 ? (getGenRate(node.depth)) : '—' },
           ] : []),
           { label: 'Direct Refs', value: `${node.children.length}` },

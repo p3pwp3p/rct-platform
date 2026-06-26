@@ -163,7 +163,7 @@ function DetailPanel({ node, onClose, onNavigate, labelMode }: { node: NetNode; 
           { label: '매출',    value: fmt(node.sales),             mono: true },
           { label: 'Joined',  value: node.joined ? node.joined.slice(0, 10) : '—', mono: true },
           { label: 'Leg',     value: node.legPosition || '—',     mono: true },
-          { label: 'Sub Legs',value: `${node.children.length}개`, mono: true },
+          { label: 'Sub Legs',value: `${node.children.length}`, mono: true },
         ].map((r, i) => {
           const isKo = /[가-힣]/.test(r.label)  // 한글 라벨은 mono+uppercase 가 어색 → main 폰트
           return (
