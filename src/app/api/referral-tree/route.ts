@@ -38,7 +38,7 @@ const BONUS_RATES: Record<number, number> = {
 export async function GET(req: NextRequest) {
   try {
     const profileId = req.nextUrl.searchParams.get('profileId')
-    const maxDepth  = Math.min(parseInt(req.nextUrl.searchParams.get('depth') ?? '4'), 6)
+    const maxDepth  = Math.min(parseInt(req.nextUrl.searchParams.get('depth') ?? '20'), 20)
 
     if (!profileId) return NextResponse.json({ error: 'profileId required' }, { status: 400 })
 

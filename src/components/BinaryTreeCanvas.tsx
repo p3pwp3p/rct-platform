@@ -28,6 +28,12 @@ const RANK_COLOR: Record<string, string> = {
   R3: '#fbbf24', R4: '#f97316', R5: '#a78bfa',
 }
 
+function codeColor(code: string): string {
+  let h = 0
+  for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) & 0xffff
+  return `hsl(${h % 360}, 72%, 68%)`
+}
+
 function fmt(n: number) {
   return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
@@ -112,7 +118,7 @@ function NodeCard({ p, selected, maxSales, isMe, labelMode, onSelect }: {
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '22', border: `1px solid ${rc}55`, padding: '1px 6px', borderRadius: 4 }}>{node.rank}</span>
       </div>
       <div style={{ marginBottom: 'auto', minWidth: 0 }}>
-        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: labelMode === 'code' ? codeColor(node.referralCode) : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {primary}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -147,7 +153,7 @@ function DetailPanel({ node, onClose, onNavigate, labelMode }: { node: NetNode; 
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 6, background: rc + '18', border: `1px solid ${rc}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: rc }}>{node.rank}</div>
         <div>
-          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', marginBottom: 4 }}>{primary}</div>
+          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: labelMode === 'code' ? codeColor(node.referralCode) : 'var(--text-primary)', marginBottom: 4 }}>{primary}</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{node.nodeId}</div>
         </div>
       </div>
@@ -180,7 +186,7 @@ function DetailPanel({ node, onClose, onNavigate, labelMode }: { node: NetNode; 
                 >
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: crc, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referralCode || '—') : child.name}</div>
+                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: labelMode === 'code' ? codeColor(child.referralCode) : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referralCode || '—') : child.name}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>{child.nodeId}</div>
                   </div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: crc, background: crc + '18', border: `1px solid ${crc}44`, padding: '1px 5px', borderRadius: 3 }}>{child.rank}</span>

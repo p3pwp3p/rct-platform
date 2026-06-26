@@ -11,6 +11,12 @@ const RANK_COLOR: Record<string, string> = {
   R0: '#64748b', R1: '#34d399', R2: '#60a5fa',
   R3: '#fbbf24', R4: '#f97316', R5: '#a78bfa',
 }
+
+function codeColor(code: string): string {
+  let h = 0
+  for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) & 0xffff
+  return `hsl(${h % 360}, 72%, 68%)`
+}
 // depth 5+ fallback: 회색 계열 순환
 function getGenColor(depth: number): string {
   const FALLBACK = ['#94a3b8', '#78909c', '#607d8b', '#546e7a', '#455a64']
@@ -133,7 +139,7 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true, labelMode = 'na
 
       {/* 이름 + MT5 */}
       <div style={{ marginBottom: 'auto', minWidth: 0 }}>
-        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', lineHeight: 1.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 13, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', lineHeight: 1.5, color: labelMode === 'code' ? codeColor(node.referral_code) : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {labelMode === 'code' ? (node.referral_code || '—') : node.name}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -182,7 +188,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'n
       <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 6, background: rc + '18', border: `1px solid ${rc}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: rc }}>{node.rank}</div>
         <div>
-          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: 'var(--text-primary)', marginBottom: 4 }}>{labelMode === 'code' ? (node.referral_code || '—') : node.name}</div>
+          <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 14, fontWeight: labelMode === 'code' ? 700 : 600, letterSpacing: labelMode === 'code' ? '0.06em' : 'normal', color: labelMode === 'code' ? codeColor(node.referral_code) : 'var(--text-primary)', marginBottom: 4 }}>{labelMode === 'code' ? (node.referral_code || '—') : node.name}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: sc, background: sc + '15', border: `1px solid ${sc}44`, padding: '1px 6px', borderRadius: 3 }}>{statusLabel[node.status] ?? node.status}</span>
             {showGen && node.depth > 0 && <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: gc, background: gc + '15', border: `1px solid ${gc}44`, padding: '1px 6px', borderRadius: 3 }}>{node.depth}대 · {getGenRate(node.depth)}</span>}
@@ -224,7 +230,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'n
                 >
                   <div style={{ width: 5, height: 5, borderRadius: '50%', background: crc, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referral_code || '—') : child.name}</div>
+                    <div style={{ fontFamily: labelMode === 'code' ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, fontWeight: labelMode === 'code' ? 700 : 400, letterSpacing: labelMode === 'code' ? '0.05em' : 'normal', color: labelMode === 'code' ? codeColor(child.referral_code) : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelMode === 'code' ? (child.referral_code || '—') : child.name}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>{child.node_id}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
@@ -266,7 +272,7 @@ export default function ReferralTreeCanvas({
     if (!profileId) { setData(null); setFetchError(null); setFetching(false); return }
     setFetching(true); setFetchError(null); setData(null); setSelected(null)
     supabase.auth.getSession().then(({ data: { session } }) =>
-      fetch(`/api/referral-tree?profileId=${profileId}&depth=4`, {
+      fetch(`/api/referral-tree?profileId=${profileId}&depth=20`, {
         headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
       })
         .then(r => r.json())
@@ -360,12 +366,16 @@ export default function ReferralTreeCanvas({
       <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-primary)' }}>
         {!loading && tree && (
           <div style={{ display: 'flex', gap: 6 }}>
-            {[
-              { label: `전체 ${total}`,  color: 'var(--text-secondary)' },
-              ...(showGenerations ? [{ label: `${maxDepth}대`, color: '#a78bfa' }] : []),
-            ].map((s, i) => (
-              <span key={i} style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: s.color, padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>{s.label}</span>
-            ))}
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>
+              <span style={{ fontFamily: 'var(--font-main)' }}>전체 </span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{total}</span>
+            </span>
+            {showGenerations && (
+              <span style={{ fontSize: 13, color: '#a78bfa', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{maxDepth}</span>
+                <span style={{ fontFamily: 'var(--font-main)' }}>대</span>
+              </span>
+            )}
           </div>
         )}
         <div style={{ position: 'relative', marginLeft: 'auto' }}>
@@ -473,11 +483,16 @@ export default function ReferralTreeCanvas({
           <div style={{ position: 'absolute', bottom: 14, right: selected ? 296 : 14, display: 'flex', gap: 10, alignItems: 'center', background: 'rgba(10,12,16,0.8)', border: '1px solid var(--border-primary)', borderRadius: 6, padding: '6px 12px', transition: 'right 0.22s' }}>
             {Array.from({ length: Math.min(maxDepth + 1, 8) }, (_, d) => {
               const gc  = getGenColor(d)
-              const lbl = d === 0 ? 'Root' : `${d}대`
               return (
                 <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: gc, boxShadow: `0 0 4px ${gc}` }} />
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: gc }}>{lbl}</span>
+                  {d === 0
+                    ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: gc }}>Root</span>
+                    : <span style={{ fontSize: 11, fontWeight: 600, color: gc }}>
+                        <span style={{ fontFamily: 'var(--font-mono)' }}>{d}</span>
+                        <span style={{ fontFamily: 'var(--font-main)' }}>대</span>
+                      </span>
+                  }
                 </div>
               )
             })}
