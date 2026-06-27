@@ -618,6 +618,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showVantageWarn, setShowVantageWarn] = useState(false)
   const [vantageBusy, setVantageBusy] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // 라우트 이동 시 모바일 드로어 자동 닫기
+  useEffect(() => { setMobileNavOpen(false) }, [pathname])
 
   // vantage_ack은 auth 유저(계정) 단위. 유저가 소유한 프로필 중 하나라도 ack면 확인 완료로 간주.
   const vantageAcked = profiles.some(p => p.vantage_ack)
@@ -717,6 +721,37 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           background: var(--accent-blue-dim);
           border-left-color: var(--accent-blue);
         }
+        /* 햄버거: 데스크톱 숨김, 모바일 표시 */
+        .dash-hamburger { display: none; }
+        .dash-overlay { display: none; }
+        @media (max-width: 768px) {
+          .dash-hamburger {
+            display: flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; flex-shrink: 0;
+            background: none; border: none; cursor: pointer;
+            color: var(--text-secondary); padding: 0; margin-right: 2px;
+          }
+          /* 본문 그리드를 단일 컬럼으로 */
+          .dash-body { grid-template-columns: 1fr !important; }
+          /* 사이드바를 슬라이드 드로어로 */
+          .dash-sidebar {
+            position: fixed !important;
+            top: 48px; left: 0; bottom: 0;
+            width: 240px; z-index: 120;
+            transform: translateX(-100%);
+            transition: transform 0.22s ease;
+            box-shadow: 0 0 32px rgba(0,0,0,0.5);
+          }
+          .dash-sidebar.open { transform: translateX(0); }
+          /* 드로어 뒤 어둡게 */
+          .dash-overlay {
+            display: block;
+            position: fixed; inset: 48px 0 0 0; z-index: 110;
+            background: rgba(0,0,0,0.5);
+            animation: overlayFade 0.2s ease;
+          }
+          @keyframes overlayFade { from { opacity: 0 } to { opacity: 1 } }
+        }
       `}</style>
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
@@ -729,6 +764,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           background: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-primary)',
         }}>
+          <button className="dash-hamburger" onClick={() => setMobileNavOpen(o => !o)} aria-label="메뉴">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
@@ -758,10 +798,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* ── 바디 ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden' }}>
+        <div className="dash-body" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden', position: 'relative' }}>
+
+          {/* 모바일 드로어 오버레이 */}
+          {mobileNavOpen && <div className="dash-overlay" onClick={() => setMobileNavOpen(false)} />}
 
           {/* Left Sidebar */}
-          <aside style={{
+          <aside className={`dash-sidebar${mobileNavOpen ? ' open' : ''}`} style={{
             background: 'var(--bg-surface)',
             borderRight: '1px solid var(--border-primary)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',

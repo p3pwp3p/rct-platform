@@ -36,9 +36,9 @@ function TabBtn({ active, color, icon, label, badge, onClick }: {
   label: string; badge: string; onClick: () => void
 }) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className="tree-tab" style={{
       display: 'flex', alignItems: 'center', gap: 8,
-      height: '100%', padding: '0 22px',
+      height: '100%',
       background: 'none', border: 'none', cursor: 'pointer',
       borderBottom: active ? `2px solid ${color}` : '2px solid transparent',
       transition: 'all 0.15s',
@@ -56,7 +56,7 @@ function TabBtn({ active, color, icon, label, badge, onClick }: {
         {label}
       </span>
       {/* 배지: font-mono */}
-      <span style={{
+      <span className="tree-badge" style={{
         fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 500,
         letterSpacing: '0.03em',
         color:      active ? color + 'cc'  : 'var(--text-tertiary)',
@@ -107,9 +107,18 @@ export default function TreePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-base)' }}>
+      <style>{`
+        .tree-tab { padding: 0 22px; }
+        @media (max-width: 768px) {
+          .tree-tabbar { padding: 0 8px !important; }
+          .tree-title, .tree-divider { display: none !important; }
+          .tree-tab { padding: 0 12px; }
+          .tree-badge { display: none !important; }
+        }
+      `}</style>
 
       {/* ── 탭 바 ── */}
-      <div style={{
+      <div className="tree-tabbar" style={{
         height: 52, flexShrink: 0,
         display: 'flex', alignItems: 'center',
         padding: '0 20px', gap: 0,
@@ -117,10 +126,10 @@ export default function TreePage() {
         borderBottom: '1px solid var(--border-primary)',
       }}>
         {/* 타이틀 */}
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginRight: 24, whiteSpace: 'nowrap' }}>
+        <span className="tree-title" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginRight: 24, whiteSpace: 'nowrap' }}>
           Network Tree View
         </span>
-        <div style={{ width: 1, height: 20, background: 'var(--border-primary)', marginRight: 4, flexShrink: 0 }} />
+        <div className="tree-divider" style={{ width: 1, height: 20, background: 'var(--border-primary)', marginRight: 4, flexShrink: 0 }} />
 
         <TabBtn active={tab === 'sponsor'}  color="#60a5fa" icon={SPONSOR_ICON}  label="후원 트리" badge="Binary  L / R"   onClick={() => setTab('sponsor')} />
         <TabBtn active={tab === 'referral'} color="#a78bfa" icon={REFERRAL_ICON} label="추천 트리" badge="N-ary  Unlimited" onClick={() => setTab('referral')} />

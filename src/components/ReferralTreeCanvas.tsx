@@ -367,20 +367,20 @@ export default function ReferralTreeCanvas({
       {/* ── 툴바 (BinaryTreeCanvas 와 동일 구조/높이) ── */}
       <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-primary)' }}>
         {!loading && tree && (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, whiteSpace: 'nowrap' }}>
               <span style={{ fontFamily: 'var(--font-main)' }}>전체 </span>
               <span style={{ fontFamily: 'var(--font-mono)' }}>{total}</span>
             </span>
             {showGenerations && (
-              <span style={{ fontSize: 13, color: '#a78bfa', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>
+              <span style={{ fontSize: 13, color: '#a78bfa', padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, whiteSpace: 'nowrap' }}>
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{maxDepth}</span>
                 <span style={{ fontFamily: 'var(--font-main)' }}>대</span>
               </span>
             )}
           </div>
         )}
-        <div style={{ position: 'relative', marginLeft: 'auto' }}>
+        <div style={{ position: 'relative', marginLeft: 'auto', flex: '0 1 200px', minWidth: 0 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"
             style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -388,11 +388,11 @@ export default function ReferralTreeCanvas({
           <input value={search} onChange={e => setSearch(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
             placeholder="Node ID / 코드 / 이름 — Enter"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 12, fontFamily: 'var(--font-main)', outline: 'none', width: 200 }}
+            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 12, fontFamily: 'var(--font-main)', outline: 'none', width: '100%', boxSizing: 'border-box' }}
           />
         </div>
         <button onClick={resetView}
-          style={{ padding: '4px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-main)', cursor: 'pointer' }}>
+          style={{ padding: '4px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-main)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
           뷰 리셋
         </button>
       </div>

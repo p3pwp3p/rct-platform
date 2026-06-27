@@ -291,25 +291,25 @@ export default function BinaryTreeCanvas({
       {/* 툴바 */}
       <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-primary)' }}>
         {!loading && (
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
             {[
               { label: `전체 ${total}`,    color: 'var(--text-secondary)' },
               { label: `깊이 ${maxDepth}`, color: 'var(--accent-blue)' },
             ].map((s, i) => (
-              <span key={i} style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: s.color, padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4 }}>{s.label}</span>
+              <span key={i} style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: s.color, padding: '3px 8px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, whiteSpace: 'nowrap' }}>{s.label}</span>
             ))}
           </div>
         )}
-        <div style={{ position: 'relative', marginLeft: 'auto' }}>
+        <div style={{ position: 'relative', marginLeft: 'auto', flex: '0 1 220px', minWidth: 0 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') focusNode(search) }}
             placeholder="Node ID / 코드 / 이름 — Enter"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 13, fontFamily: 'var(--font-main)', outline: 'none', width: 220 }}
+            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', padding: '5px 10px 5px 26px', borderRadius: 4, fontSize: 13, fontFamily: 'var(--font-main)', outline: 'none', width: '100%', boxSizing: 'border-box' }}
           />
         </div>
-        <button onClick={resetView} style={{ padding: '4px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-main)', cursor: 'pointer' }}>뷰 리셋</button>
+        <button onClick={resetView} style={{ padding: '4px 10px', background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-main)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>뷰 리셋</button>
       </div>
 
       {/* 캔버스 */}
