@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV = [
@@ -70,6 +70,10 @@ function Icon({ name }: { name: string }) {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router   = useRouter()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // 라우트 이동 시 모바일 드로어 자동 닫기
+  useEffect(() => { setMobileNavOpen(false) }, [pathname])
 
   // ── 인증 가드 ──────────────────────────────────────────
   useEffect(() => {
@@ -124,6 +128,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           transition: background 0.15s, color 0.15s;
         }
         .admin-logout-btn:hover { background: rgba(148,163,184,0.05); color: var(--text-secondary); }
+        .admin-hamburger { display: none; }
+        .admin-overlay { display: none; }
+        @media (max-width: 768px) {
+          .admin-hamburger {
+            display: flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; flex-shrink: 0;
+            background: none; border: none; cursor: pointer;
+            color: var(--text-secondary); padding: 0; margin-right: 2px;
+          }
+          .admin-body { grid-template-columns: 1fr !important; }
+          .admin-sidebar {
+            position: fixed !important;
+            top: 48px; left: 0; bottom: 0;
+            width: 240px; z-index: 120;
+            transform: translateX(-100%);
+            transition: transform 0.22s ease;
+            box-shadow: 0 0 32px rgba(0,0,0,0.5);
+          }
+          .admin-sidebar.open { transform: translateX(0); }
+          .admin-overlay {
+            display: block;
+            position: fixed; inset: 48px 0 0 0; z-index: 110;
+            background: rgba(0,0,0,0.5);
+          }
+          /* 모든 admin 표를 가로 스크롤 가능하게 (셀 줄바꿈 방지) */
+          .admin-content table { display: block; overflow-x: auto; white-space: nowrap; max-width: 100%; }
+          /* KPI 등 repeat() 그리드를 2열로 접기 (인라인 오버라이드) */
+          .admin-content [style*="grid-template-columns: repeat("] { grid-template-columns: 1fr 1fr !important; }
+        }
       `}</style>
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
@@ -134,6 +167,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           background: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-primary)',
         }}>
+          <button className="admin-hamburger" onClick={() => setMobileNavOpen(o => !o)} aria-label="메뉴">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
@@ -158,9 +196,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden' }}>
+        <div className="admin-body" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {/* 모바일 드로어 오버레이 */}
+          {mobileNavOpen && <div className="admin-overlay" onClick={() => setMobileNavOpen(false)} />}
           {/* Sidebar */}
-          <aside style={{
+          <aside className={`admin-sidebar${mobileNavOpen ? ' open' : ''}`} style={{
             background: 'var(--bg-surface)',
             borderRight: '1px solid var(--border-primary)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
@@ -209,7 +249,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </aside>
 
           {/* Content */}
-          <main style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <main className="admin-content" style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
             {children}
           </main>
         </div>
