@@ -230,6 +230,7 @@ export default function BinaryTreeCanvas({
   const [search, setSearch]     = useState('')
   const isPanning = useRef(false)
   const lastPos   = useRef({ x: 0, y: 0 })
+  const pinchDist = useRef<number | null>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   const centered  = useRef(false)
 
@@ -276,6 +277,51 @@ export default function BinaryTreeCanvas({
   }, [])
   const handleMouseUp = useCallback(() => { isPanning.current = false }, [])
 
+  // ── 터치: 1지점 팬 + 2지점 핀치 줌 ──
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      isPanning.current = true
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      pinchDist.current = null
+    } else if (e.touches.length === 2) {
+      isPanning.current = false
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      pinchDist.current = Math.hypot(dx, dy)
+    }
+  }, [])
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchDist.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.hypot(dx, dy)
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top
+      const factor = dist / pinchDist.current
+      pinchDist.current = dist
+      setZoom(oldZ => {
+        const newZ = Math.min(3, Math.max(0.25, oldZ * factor))
+        setPan(p => ({ x: mx - (mx - p.x) * (newZ / oldZ), y: my - (my - p.y) * (newZ / oldZ) }))
+        return newZ
+      })
+    } else if (e.touches.length === 1 && isPanning.current) {
+      const t = e.touches[0]
+      const dx = t.clientX - lastPos.current.x, dy = t.clientY - lastPos.current.y
+      lastPos.current = { x: t.clientX, y: t.clientY }
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }))
+    }
+  }, [])
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0) { isPanning.current = false; pinchDist.current = null }
+    else if (e.touches.length === 1) {
+      pinchDist.current = null
+      isPanning.current = true
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+  }, [])
+
   const resetView = () => {
     setZoom(1)
     centered.current = false
@@ -315,9 +361,10 @@ export default function BinaryTreeCanvas({
       {/* 캔버스 */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
         <div ref={canvasRef}
-          style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 30%,#1a1e26 0%,#0f1115 100%)', cursor: 'grab' }}
+          style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 30%,#1a1e26 0%,#0f1115 100%)', cursor: 'grab', touchAction: 'none' }}
           onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={() => setSelected(null)}
+          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
         >
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(rgba(148,163,184,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.025) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
 
