@@ -144,13 +144,24 @@ export default function DashboardHome() {
           transition: border-color 0.15s, background 0.15s;
           cursor: pointer;
         }
+        @media (max-width: 768px) {
+          .home-root { flex-direction: column !important; overflow-y: auto !important; }
+          .home-main { flex: none !important; overflow: visible !important; padding: 16px !important; }
+          .home-aside {
+            width: 100% !important; flex: none !important; overflow: visible !important;
+            border-left: none !important; border-top: 1px solid var(--border-primary) !important;
+          }
+          .home-kpi { grid-template-columns: 1fr 1fr !important; }
+          .home-2col { grid-template-columns: 1fr !important; }
+          .home-quick { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* 루트: 좌우 분할 */}
-      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+      <div className="home-root" style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
         {/* ── 메인 콘텐츠 (스크롤) ── */}
-        <div className="home-scroll" style={{
+        <div className="home-scroll home-main" style={{
           flex: 1, overflowY: 'auto',
           padding: '24px 24px 40px 28px',
           boxSizing: 'border-box',
@@ -197,7 +208,7 @@ export default function DashboardHome() {
           </div>
 
           {/* KPI 4개 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          <div className="home-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             {[
               {
                 label: '역대 하위 매출', labelMono: false, color: rankColor,
@@ -236,7 +247,7 @@ export default function DashboardHome() {
           </div>
 
           {/* 2열: 달성 현황 + Leg 현황 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="home-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
             {/* 다음 직급 달성 현황 */}
             <div className="home-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -364,7 +375,7 @@ export default function DashboardHome() {
           </div>
 
           {/* 바로가기 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+          <div className="home-quick" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
             {[
               {
                 href: '/dashboard/tree', label: '네트워크 트리', desc: '내 네트워크 트리 시각화', color: '#60a5fa',
@@ -399,7 +410,7 @@ export default function DashboardHome() {
         </div>{/* /main */}
 
         {/* ── 우측 사이드바 ── */}
-        <aside className="home-scroll" style={{
+        <aside className="home-scroll home-aside" style={{
           width: 280, flexShrink: 0,
           borderLeft: '1px solid var(--border-primary)',
           background: 'var(--bg-surface)',

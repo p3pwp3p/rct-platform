@@ -180,7 +180,7 @@ function ParsePreview({
 
       {/* 전략 명세 테이블 */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="tbl-scroll"><table style={{ width: '100%', minWidth: 460, borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'rgba(10,12,16,0.4)', borderBottom: '1px solid var(--border-primary)' }}>
               {['전략명','기간','분배가능소득','P/F 비율','미지급 이익'].map(h => (
@@ -199,7 +199,7 @@ function ParsePreview({
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {err && <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171' }}>⚠ {err}</div>}
@@ -264,7 +264,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
       {/* 확장: 명세 */}
       {expanded && (
         <div style={{ borderTop: '1px solid var(--border-primary)', background: 'var(--bg-inset)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="tbl-scroll"><table style={{ width: '100%', minWidth: 460, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-primary)' }}>
                 {['전략명','분배가능소득','P/F 비율','미지급 이익'].map(h => (
@@ -282,7 +282,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>
@@ -371,7 +371,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
           수령 내역이 없습니다
         </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="tbl-scroll"><table style={{ width: '100%', minWidth: 460, borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-header)' }}>
               {['기간','수당 종류','세대/압축','비율','수령액'].map(h => (
@@ -406,7 +406,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
               )
             })}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   )
@@ -444,9 +444,14 @@ export default function MemberPayoutsPage() {
       <style>{`
         @keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes spin { to { transform: rotate(360deg) } }
+        .tbl-scroll { overflow-x: auto; }
+        @media (max-width: 768px) {
+          .pay-wrap { padding: 16px !important; }
+          .pay-kpi { grid-template-columns: 1fr 1fr !important; }
+        }
       `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-      <div style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div className="pay-wrap" style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 860, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* 헤더 */}
         <div>
@@ -469,7 +474,7 @@ export default function MemberPayoutsPage() {
         )}
 
         {/* KPI 요약 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="pay-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
             { label: '검토중',   value: totalPending,   color: '#fbbf24' },
             { label: '확인됨',   value: totalConfirmed, color: '#60a5fa' },

@@ -330,7 +330,7 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        width: 440, background: 'var(--bg-surface)',
+        width: 'min(440px, calc(100vw - 32px))', background: 'var(--bg-surface)',
         border: '1px solid var(--border-primary)',
         borderRadius: 12, overflow: 'hidden',
         animation: 'modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1)',
@@ -556,7 +556,7 @@ function VantageWarningModal({ busy, onProceed, onDismiss }: {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        width: 440, background: 'var(--bg-surface)',
+        width: 'min(440px, calc(100vw - 32px))', background: 'var(--bg-surface)',
         border: '1px solid var(--border-primary)',
         borderRadius: 12, overflow: 'hidden',
         animation: 'modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1)',

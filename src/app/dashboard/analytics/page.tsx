@@ -425,12 +425,19 @@ export default function AnalyticsPage() {
         .an-scroll::-webkit-scrollbar-track { background: transparent; }
         .an-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.12); border-radius: 2px; }
         .an-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.28); }
+        @media (max-width: 768px) {
+          .an-root { grid-template-columns: 1fr !important; overflow-y: auto !important; }
+          .an-main { padding: 16px !important; overflow: visible !important; }
+          .an-aside { border-left: none !important; border-top: 1px solid var(--border-primary) !important; overflow: visible !important; }
+          .an-kpi { grid-template-columns: 1fr 1fr !important; }
+          .an-2col { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', height: '100%', overflow: 'hidden' }}>
+      <div className="an-root" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', height: '100%', overflow: 'hidden' }}>
 
         {/* ── 메인 콘텐츠 ── */}
-        <main className="an-scroll" style={{ padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <main className="an-scroll an-main" style={{ padding: 24, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           <div>
             <h1 style={{ fontFamily: 'var(--font-main)', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
@@ -450,7 +457,7 @@ export default function AnalyticsPage() {
           )}
 
           {/* KPI 카드 4개 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          <div className="an-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             {[
               {
                 label: '역대 하위 매출',
@@ -520,7 +527,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 레그 밸런스 + 하위 분포 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="an-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
             <div className="an-card">
               <div className="an-card-title">Leg 밸런스 (노드 수)</div>
@@ -567,7 +574,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* L / R 레그 상세 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="an-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {([
               { label: 'LEFT LEG',  color: '#60a5fa', total: leftTotal,  active: leftActive,  topRank: leftTopRank  as RankKey, sales: leftSales,  latest: leftLatest  },
               { label: 'RIGHT LEG', color: '#a78bfa', total: rightTotal, active: rightActive, topRank: rightTopRank as RankKey, sales: rightSales, latest: rightLatest },
@@ -675,7 +682,7 @@ export default function AnalyticsPage() {
         </main>
 
         {/* ── 우측 사이드바 ── */}
-        <aside className="an-scroll" style={{
+        <aside className="an-scroll an-aside" style={{
           background: 'var(--bg-surface)',
           borderLeft: '1px solid var(--border-primary)',
           display: 'flex', flexDirection: 'column',

@@ -288,9 +288,10 @@ export default function ReceiptsPage() {
         .md-menu { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.2) transparent; }
         .md-menu::-webkit-scrollbar { width: 6px; }
         .md-menu::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 3px; }
+        @media (max-width: 768px) { .rcpt-wrap { padding: 16px !important; } }
       `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 900, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div className="rcpt-wrap" style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 900, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
           {/* 헤더 */}
           <div>
