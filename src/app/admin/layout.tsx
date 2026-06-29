@@ -170,8 +170,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             position: fixed; inset: 48px 0 0 0; z-index: 110;
             background: rgba(0,0,0,0.5);
           }
-          /* 모든 admin 표를 가로 스크롤 가능하게 (셀 줄바꿈 방지) */
+          /* 모든 admin 표를 가로 스크롤 가능하게 (셀 줄바꿈 방지) + 얇은 스크롤바 */
           .admin-content table { display: block; overflow-x: auto; white-space: nowrap; max-width: 100%; }
+          .admin-content table::-webkit-scrollbar { height: 6px; }
+          .admin-content table::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.3); border-radius: 3px; }
           /* KPI 등 repeat() 그리드를 2열로 접기 (인라인 오버라이드) */
           .admin-content [style*="grid-template-columns: repeat("] { grid-template-columns: 1fr 1fr !important; }
         }
