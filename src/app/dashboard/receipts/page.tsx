@@ -319,10 +319,7 @@ export default function ReceiptsPage() {
               </div>
               {loading
                 ? <Skeleton w={180} h={34} />
-                : <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: isMobile ? 32 : 38, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{fmt(scopeTotals.total)}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#34d399', fontWeight: 600 }}>USDT</span>
-                  </div>}
+                : <div style={{ fontFamily: 'var(--font-mono)', fontSize: isMobile ? 32 : 38, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{fmt(scopeTotals.total)}</div>}
             </div>
             {!loading && !isMobile && (
               <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>
