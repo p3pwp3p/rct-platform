@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 type LedgerRow = {
   profile_id: string
@@ -33,6 +34,7 @@ export default function PayoutLedgerPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
   const [query, setQuery]     = useState('')
+  const isMobile = useIsMobile()
 
   async function load() {
     setLoading(true); setError('')
@@ -65,7 +67,7 @@ export default function PayoutLedgerPage() {
   return (
     <>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
-      <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
@@ -95,7 +97,10 @@ export default function PayoutLedgerPage() {
             { label: '후원수당 합', value: totals.sponsor,  color: '#fbbf24' },
           ].map(k => (
             <div key={k.label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, padding: '16px 20px' }}>
-              <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>{k.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: k.color, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>{k.label}</span>
+              </div>
               {loading ? <Shimmer h={22}/> : (
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: k.color }}>
                   {fmt(k.value)} <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>USDT</span>
@@ -110,6 +115,39 @@ export default function PayoutLedgerPage() {
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-primary)', fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
             수령 노드 {!loading && `(${filtered.length}명)`}
           </div>
+
+          {/* 모바일 카드 */}
+          {isMobile && (
+            <div>
+              {loading
+                ? Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ padding: 14, borderBottom: '1px solid var(--border-primary)' }}><Shimmer/></div>)
+                : filtered.length === 0
+                  ? <div style={{ padding: '40px 16px', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>수령 내역이 없습니다. 먼저 수당을 계산해주세요.</div>
+                  : filtered.map((r, i) => {
+                      const rc = RANK_COLOR[r.rank] ?? '#64748b'
+                      return (
+                        <div key={r.profile_id} style={{ padding: '13px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '18', border: `1px solid ${rc}44`, padding: '2px 7px', borderRadius: 4, flexShrink: 0 }}>{r.rank}</span>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-blue)' }}>{r.node_id}</span>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: '#34d399', whiteSpace: 'nowrap' }}>{fmt(r.total)}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 14, borderTop: '1px solid var(--border-primary)', paddingTop: 8, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: r.referral > 0 ? '#c4b5fd' : 'var(--text-tertiary)' }}>추천 {r.referral > 0 ? fmt(r.referral) : '—'}</span>
+                            <span style={{ color: r.rank_bonus > 0 ? '#93c5fd' : 'var(--text-tertiary)' }}>직급 {r.rank_bonus > 0 ? fmt(r.rank_bonus) : '—'}</span>
+                            <span style={{ color: r.sponsor > 0 ? '#fcd34d' : 'var(--text-tertiary)' }}>후원 {r.sponsor > 0 ? fmt(r.sponsor) : '—'}</span>
+                          </div>
+                        </div>
+                      )
+                    })
+              }
+            </div>
+          )}
+
+          {!isMobile &&
           <table style={{ width: '100%', minWidth: 760, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
@@ -156,7 +194,7 @@ export default function PayoutLedgerPage() {
                     })
               }
             </tbody>
-          </table>
+          </table>}
         </div>
       </div>
     </>
