@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '@/lib/contexts/ProfileContext'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 import {
   memberSaveProfitReport,
   memberGetProfitReports,
@@ -296,6 +297,7 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!profileId) { setLoading(false); return }
@@ -369,6 +371,28 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
       ) : filtered.length === 0 ? (
         <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>
           수령 내역이 없습니다
+        </div>
+      ) : isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {filtered.map((row, i) => {
+            const c = BONUS_COLOR[row.bonus_type]
+            const period = row.profit_reports
+              ? `${row.profit_reports.date_from} ~ ${row.profit_reports.date_to}`
+              : row.created_at.slice(0, 10)
+            return (
+              <div key={row.id} style={{ padding: '13px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: c, background: c + '18', border: `1px solid ${c}44`, padding: '2px 8px', borderRadius: 4, whiteSpace: 'nowrap' }}>{BONUS_LABEL[row.bonus_type]}</span>
+                    {row.generation > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>{row.generation}대</span>}
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#fbbf24' }}>{(row.rate * 100).toFixed(1)}%</span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>{period}</div>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>{fmt(row.amount)}</div>
+              </div>
+            )
+          })}
         </div>
       ) : (
         <div className="tbl-scroll"><table style={{ width: '100%', minWidth: 460, borderCollapse: 'collapse' }}>
@@ -482,7 +506,10 @@ export default function MemberPayoutsPage() {
             { label: '전송실패', value: totalFailed,    color: '#f87171' },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: '16px 20px' }}>
-              <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: color, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>{label}</span>
+              </div>
               {loading
                 ? <Skeleton w="80%" h={24} />
                 : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color }}>{fmt(value)}</div>
