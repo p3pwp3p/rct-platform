@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { adminGetLegs, type AdminLeg } from '@/lib/db-admin'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 const RANK_COLOR: Record<string, string> = {
   'R0': '#64748b', R1: '#34d399', R2: '#60a5fa',
@@ -22,6 +23,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState('')
   const [search, setSearch] = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     adminGetLegs()
@@ -52,7 +54,7 @@ export default function RequestsPage() {
         .reg-row:hover { background: rgba(148,163,184,0.03); }
       `}</style>
 
-      <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -94,7 +96,72 @@ export default function RequestsPage() {
           />
         </div>
 
-        {/* Table */}
+        {/* 모바일 카드 */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}><Shimmer /><Shimmer /></div>
+                ))
+              : filtered.length === 0
+                ? <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>검색 결과가 없습니다</div>
+                : filtered.map((row, i) => {
+                    const { profile, sponsor, referrer } = row
+                    const sRc = RANK_COLOR[sponsor?.rank ?? 'R0'] ?? '#64748b'
+                    const legColor = profile.leg_position === 'LEFT' ? '#60a5fa' : '#a78bfa'
+                    return (
+                      <div key={profile.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+                        {/* 신규 노드 + 레그 */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--accent-blue)' }}>{profile.node_id}</span>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>#{String(i + 1).padStart(3, '0')}</span>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{profile.name}</div>
+                          </div>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: legColor, background: legColor + '18', border: `1px solid ${legColor}44`, padding: '2px 8px', borderRadius: 4, flexShrink: 0 }}>{profile.leg_position ?? '—'}</span>
+                        </div>
+                        {/* 발급코드 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)' }}>발급 코드</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em' }}>{profile.referral_code}</span>
+                        </div>
+                        {/* 후원인 / 추천인 */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid var(--border-primary)', paddingTop: 10 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontFamily: 'var(--font-main)', fontSize: 9, color: 'var(--text-tertiary)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>후원인</div>
+                            {sponsor ? (
+                              <>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sponsor.node_id}</span>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: sRc, background: sRc + '18', border: `1px solid ${sRc}44`, padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>{sponsor.rank}</span>
+                                </div>
+                                <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sponsor.name}</div>
+                              </>
+                            ) : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>—</span>}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontFamily: 'var(--font-main)', fontSize: 9, color: 'var(--text-tertiary)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>추천인</div>
+                            {referrer ? (
+                              <>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{referrer.node_id}</div>
+                                <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{referrer.name}</div>
+                              </>
+                            ) : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>—</span>}
+                          </div>
+                        </div>
+                        {/* 등록일시 */}
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>등록 {profile.created_at.slice(0, 10)}</div>
+                      </div>
+                    )
+                  })
+            }
+          </div>
+        )}
+
+        {/* Table — 데스크톱 */}
+        {!isMobile && (
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -178,6 +245,7 @@ export default function RequestsPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* 범례 */}
         <div style={{ display: 'flex', gap: 24, padding: '8px 0' }}>
