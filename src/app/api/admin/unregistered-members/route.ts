@@ -17,7 +17,7 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
   if (!token) return false
   const { data } = await admin.auth.getUser(token)
-  return data.user?.user_metadata?.role === 'admin'
+  return data.user?.app_metadata?.role === 'admin'
 }
 
 export async function GET(req: NextRequest) {
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. 전체 auth 유저
-    const users: { id: string; email?: string; created_at: string; email_confirmed_at?: string | null; user_metadata?: Record<string, unknown> }[] = []
+    const users: { id: string; email?: string; created_at: string; email_confirmed_at?: string | null; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }[] = []
     for (let page = 1; ; page++) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
       if (error) throw error
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         name:       (u.user_metadata?.full_name as string) ?? '(이름없음)',
         phone:      (u.user_metadata?.phone as string) ?? null,
         trc20:      (u.user_metadata?.trc20_address as string) ?? null,
-        is_admin:   u.user_metadata?.role === 'admin',
+        is_admin:   u.app_metadata?.role === 'admin',
         confirmed:  !!u.email_confirmed_at,
         created_at: u.created_at,
       }))

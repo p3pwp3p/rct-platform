@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     const { data: userData, error: authErr } = await admin.auth.getUser(token)
     if (authErr || !userData.user) return NextResponse.json({ error: '인증 실패' }, { status: 401 })
 
-    const isAdmin = userData.user.user_metadata?.role === 'admin'
+    const isAdmin = userData.user.app_metadata?.role === 'admin'
     if (!isAdmin) {
       // 관리자가 아니면 요청한 profileId가 본인 또는 본인 소유 노드여야 함
       const { data: owned } = await admin

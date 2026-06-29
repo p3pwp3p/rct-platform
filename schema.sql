@@ -105,13 +105,17 @@ CREATE POLICY "rh_select_own"
   USING (profile_id = auth.uid());
 
 -- =============================================================
--- Admin policies (role = 'admin' in auth.users user_metadata)
+-- Admin policies (role = 'admin' in auth.users app_metadata)
 -- =============================================================
 -- Helper: is the current user an admin?
+-- 주의: role 은 raw_app_meta_data(app_metadata)에서 읽는다.
+-- raw_user_meta_data(user_metadata)는 사용자가 supabase.auth.updateUser({data})로
+-- 직접 수정 가능하므로 권한 판정에 쓰면 자가 권한상승 취약점이 된다.
+-- app_metadata 는 service-role 만 쓸 수 있어 안전하다.
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT COALESCE(
-    (SELECT (raw_user_meta_data->>'role') = 'admin'
+    (SELECT (raw_app_meta_data->>'role') = 'admin'
      FROM auth.users WHERE id = auth.uid()),
     false
   );

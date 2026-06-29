@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
     if (!token) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
     const { data: authUser } = await adminSupabase.auth.getUser(token)
-    if (authUser.user?.user_metadata?.role !== 'admin') {
+    if (authUser.user?.app_metadata?.role !== 'admin') {
       return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
     }
 

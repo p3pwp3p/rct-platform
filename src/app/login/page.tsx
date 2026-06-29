@@ -109,7 +109,7 @@ export default function LoginPage() {
     }
 
     // 관리자 여부 확인 → 라우팅 분기
-    const role = data.user?.user_metadata?.role
+    const role = data.user?.app_metadata?.role
     if (role === 'admin') {
       router.push('/admin')
     } else {

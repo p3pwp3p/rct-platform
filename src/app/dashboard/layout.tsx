@@ -658,7 +658,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user }, error }) => {
       if (error || !user) { supabase.auth.signOut(); router.replace('/login'); return }
-      if (user.user_metadata?.role === 'admin') { router.replace('/admin'); return }
+      if (user.app_metadata?.role === 'admin') { router.replace('/admin'); return }
     })
 
     // 토큰 만료 / 리프레시 실패 시 자동 로그아웃

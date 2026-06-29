@@ -10,7 +10,7 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
   if (!token) return false
   const { data } = await admin.auth.getUser(token)
-  return data.user?.user_metadata?.role === 'admin'
+  return data.user?.app_metadata?.role === 'admin'
 }
 
 /**

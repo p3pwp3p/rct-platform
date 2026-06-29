@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     supabase.auth.getUser().then(({ data: { user }, error }) => {
       if (error || !user) { supabase.auth.signOut(); router.replace('/login'); return }
       // admin이 아닌 계정은 /dashboard로 강제 이동
-      if (user.user_metadata?.role !== 'admin') {
+      if (user.app_metadata?.role !== 'admin') {
         router.replace('/dashboard')
       }
     })

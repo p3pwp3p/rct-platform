@@ -12,7 +12,7 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
   if (!token) return false
   const { data } = await admin.auth.getUser(token)
-  return data.user?.user_metadata?.role === 'admin'
+  return data.user?.app_metadata?.role === 'admin'
 }
 
 // 승급 조건·직급 순서는 src/lib/ranks.ts 단일 소스를 사용한다.
