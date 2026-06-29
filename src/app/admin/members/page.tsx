@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type NodeRow = {
@@ -35,19 +36,6 @@ function fmtSales(n: number) {
 function abbrAddr(a: string) {
   return a.length > 14 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a
 }
-// ≤768px 여부 (모바일 카드 렌더 분기)
-function useIsMobile() {
-  const [m, setM] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)')
-    const on = () => setM(mq.matches)
-    on()
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [])
-  return m
-}
-
 // ── 모바일: 미등록 회원 카드 ──────────────────────────────────────────────────
 function UnregCard({ u }: { u: Unregistered }) {
   return (

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '@/lib/contexts/ProfileContext'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 interface BreakdownRow {
   bonus_type: 'referral' | 'rank' | 'sponsor'
@@ -236,6 +237,7 @@ function MonthlyChart({ monthly, selected, onSelect }: {
 export default function ReceiptsPage() {
   const { activeProfile, loading: profileLoading } = useProfile()
   const profileId = activeProfile?.id ?? ''
+  const isMobile = useIsMobile()
 
   const [breakdown, setBreakdown] = useState<BreakdownRow[]>([])
   const [totals, setTotals]       = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
@@ -305,19 +307,45 @@ export default function ReceiptsPage() {
             <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>
           )}
 
-          {/* KPI 카드 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
+          {/* 총 수령액 — 히어로 카드 */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(52,211,153,0.10), rgba(52,211,153,0.02))',
+            border: '1px solid rgba(52,211,153,0.28)', borderRadius: 14, padding: isMobile ? '18px 20px' : '20px 24px',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+          }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#34d399', fontWeight: 600, marginBottom: 8, letterSpacing: '0.02em' }}>
+                {month ? `${monthShort(month)} 수령액` : '총 수령액'}
+              </div>
+              {loading
+                ? <Skeleton w={180} h={34} />
+                : <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: isMobile ? 32 : 38, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{fmt(scopeTotals.total)}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#34d399', fontWeight: 600 }}>USDT</span>
+                  </div>}
+            </div>
+            {!loading && !isMobile && (
+              <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                {month ? monthLong(month) : '전체 기간'} · {scopeCount.toLocaleString('ko-KR')}건
+              </div>
+            )}
+          </div>
+
+          {/* 수당 유형별 KPI */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(auto-fit, minmax(170px, 1fr))', gap: isMobile ? 8 : 12 }}>
             {[
-              { label: month ? `${monthShort(month)} 수령액` : '총 수령액', value: scopeTotals.total, color: '#34d399' },
               { label: '추천수당', value: scopeTotals.referral, color: '#a78bfa' },
               { label: '직급수당', value: scopeTotals.rank,     color: '#60a5fa' },
               { label: '후원수당', value: scopeTotals.sponsor,  color: '#fbbf24' },
             ].map(k => (
-              <div key={k.label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: '16px 20px' }}>
-                <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{k.label}</div>
+              <div key={k.label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: isMobile ? '12px 13px' : '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: 2, background: k.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: isMobile ? 11 : 12, color: 'var(--text-tertiary)' }}>{k.label}</span>
+                </div>
                 {loading
-                  ? <Skeleton w="80%" h={22} />
-                  : <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: k.color }}>{fmt(k.value)}</div>}
+                  ? <Skeleton w="80%" h={20} />
+                  : <div style={{ fontFamily: 'var(--font-mono)', fontSize: isMobile ? 14 : 20, fontWeight: 700, color: k.color, lineHeight: 1.2 }}>{fmtInt(k.value)}</div>}
               </div>
             ))}
           </div>
@@ -360,6 +388,26 @@ export default function ReceiptsPage() {
             ) : filtered.length === 0 ? (
               <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>
                 {month ? `${monthLong(month)} 수령 내역이 없습니다` : '수령 내역이 없습니다'}
+              </div>
+            ) : isMobile ? (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {filtered.map((r, i) => {
+                  const c = BONUS_COLOR[r.bonus_type]
+                  return (
+                    <div key={i} style={{ padding: '13px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                          <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: c, background: c + '18', border: `1px solid ${c}44`, padding: '2px 8px', borderRadius: 4, whiteSpace: 'nowrap' }}>{BONUS_LABEL[r.bonus_type]}</span>
+                          <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)' }}>{divisionLabel(r)}</span>
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>
+                          지급률 {(r.rate * 100).toFixed(1)}% · {r.count.toLocaleString('ko-KR')}건
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>{fmt(r.amount)}</div>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
