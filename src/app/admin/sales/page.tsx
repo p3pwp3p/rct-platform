@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { adminGetAllProfiles } from '@/lib/db-admin'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 import type { Profile, ProfitReport, ProfitReportItem } from '@/lib/types'
 
 const RANK_COLOR: Record<string, string> = {
@@ -412,6 +413,7 @@ function RankChart({ profiles }: { profiles: Profile[] }) {
 function TopTable({ profiles }: { profiles: Profile[] }) {
   const totalSales = profiles.reduce((s,p) => s + p.sales, 0)
   const top = [...profiles].sort((a,b) => b.sales - a.sales).slice(0, 8)
+  const isMobile = useIsMobile()
 
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 12, overflow: 'hidden' }}>
@@ -419,6 +421,41 @@ function TopTable({ profiles }: { profiles: Profile[] }) {
         <span style={{ fontFamily: 'var(--font-main)', fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>상위 매출 노드 현황</span>
         <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>매출 상위 8개 노드</span>
       </div>
+
+      {/* 모바일 카드 */}
+      {isMobile && (
+        <div>
+          {top.map((p, i) => {
+            const rc = RANK_COLOR[p.rank]
+            const pct = totalSales > 0 ? (p.sales / totalSales * 100) : 0
+            const legC = p.leg_position === 'LEFT' ? '#3b82f6' : '#a78bfa'
+            return (
+              <div key={p.id} style={{ padding: '13px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', flexShrink: 0 }}>#{i+1}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-blue)' }}>{p.node_id}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: legC, background: legC + '18', border: `1px solid ${legC}44`, padding: '2px 6px', borderRadius: 4 }}>{p.leg_position ?? '—'}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '18', border: `1px solid ${rc}44`, padding: '2px 6px', borderRadius: 4 }}>{p.rank}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1, height: 5, background: 'var(--border-primary)', borderRadius: 3 }}>
+                    <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: '#4db6ac', borderRadius: 3 }}/>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', flexShrink: 0 }}>{pct.toFixed(1)}%</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', flexShrink: 0 }}>{fmt(p.sales)}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {!isMobile &&
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', whiteSpace: 'nowrap' }}>
           <thead>
@@ -465,7 +502,7 @@ function TopTable({ profiles }: { profiles: Profile[] }) {
             })}
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   )
 }
@@ -477,6 +514,7 @@ export default function SalesPage() {
   const [error,      setError]      = useState('')
   const [monthlyData, setMonthlyData] = useState<MonthPoint[]>([])
   const [legMonths,   setLegMonths]   = useState<LegMonth[]>([])
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const run = async () => {
@@ -543,7 +581,7 @@ export default function SalesPage() {
   const avgSales     = activeNodes > 0 ? totalSales / activeNodes : 0
 
   return (
-    <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
       <style>{`@keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
 
       {/* 헤더 */}
