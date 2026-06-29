@@ -619,6 +619,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showVantageWarn, setShowVantageWarn] = useState(false)
   const [vantageBusy, setVantageBusy] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  // 인증·권한 확정 전에는 회원 화면을 렌더하지 않는다 (관리자가 잠깐 회원
+  // 대시보드를 보고 /admin 으로 튕기는 깜빡임 방지)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // 라우트 이동 시 모바일 드로어 자동 닫기
   useEffect(() => { setMobileNavOpen(false) }, [pathname])
@@ -659,6 +662,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     supabase.auth.getUser().then(({ data: { user }, error }) => {
       if (error || !user) { supabase.auth.signOut(); router.replace('/login'); return }
       if (user.app_metadata?.role === 'admin') { router.replace('/admin'); return }
+      setAuthChecked(true)
     })
 
     // 토큰 만료 / 리프레시 실패 시 자동 로그아웃
@@ -678,6 +682,19 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  // 권한 확정 전: 차분한 전체 로더 (관리자는 이 화면만 보고 /admin 으로 이동)
+  if (!authChecked) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)' }}>
+        <style>{`@keyframes gateSpin { to { transform: rotate(360deg); } } @keyframes loaderFadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'loaderFadeIn 0.2s ease-out 0.15s both' }}>
+          <div style={{ width: 14, height: 14, border: '2px solid var(--border-secondary)', borderTopColor: 'var(--accent-blue)', borderRadius: '50%', animation: 'gateSpin 0.7s linear infinite' }} />
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>불러오는 중</span>
+        </div>
+      </div>
+    )
   }
 
   return (

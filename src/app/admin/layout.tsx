@@ -71,6 +71,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router   = useRouter()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  // 관리자 확정 전에는 관리자 화면을 렌더하지 않는다 (회원이 잠깐 admin
+  // 셸을 보고 /dashboard 로 튕기는 깜빡임 방지)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // 라우트 이동 시 모바일 드로어 자동 닫기
   useEffect(() => { setMobileNavOpen(false) }, [pathname])
@@ -82,7 +85,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       // admin이 아닌 계정은 /dashboard로 강제 이동
       if (user.app_metadata?.role !== 'admin') {
         router.replace('/dashboard')
+        return
       }
+      setAuthChecked(true)
     })
 
     // 토큰 만료 / 리프레시 실패 시 자동 로그아웃
@@ -99,6 +104,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  // 관리자 확정 전: 차분한 전체 로더 (회원은 이 화면만 보고 /dashboard 로 이동)
+  if (!authChecked) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)' }}>
+        <style>{`@keyframes gateSpin { to { transform: rotate(360deg); } } @keyframes loaderFadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'loaderFadeIn 0.2s ease-out 0.15s both' }}>
+          <div style={{ width: 14, height: 14, border: '2px solid var(--border-secondary)', borderTopColor: 'var(--accent-blue)', borderRadius: '50%', animation: 'gateSpin 0.7s linear infinite' }} />
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>불러오는 중</span>
+        </div>
+      </div>
+    )
   }
 
   return (
