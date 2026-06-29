@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 type RankHistoryRow = {
   id: string
@@ -33,6 +34,7 @@ export default function RankHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [search,  setSearch]  = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     async function load() {
@@ -87,7 +89,7 @@ export default function RankHistoryPage() {
   return (
     <>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
-      <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
@@ -123,7 +125,35 @@ export default function RankHistoryPage() {
 
         {error && <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>}
 
-        {/* 테이블 */}
+        {/* 모바일 카드 */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: 14 }}><Shimmer/></div>)
+              : filtered.length === 0
+                ? <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>{rows.length === 0 ? '직급 변경 이력이 없습니다' : '검색 결과 없음'}</div>
+                : filtered.map(r => (
+                    <div key={r.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: '12px 15px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profile_name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-blue)' }}>{r.profile_node_id}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)' }}>{r.changed_at.slice(0, 16).replace('T', ' ')}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <RankBadge rank={r.old_rank}/>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        <RankBadge rank={r.new_rank}/>
+                      </div>
+                    </div>
+                  ))
+            }
+          </div>
+        )}
+
+        {/* 테이블 — 데스크톱 */}
+        {!isMobile && (
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -166,6 +196,7 @@ export default function RankHistoryPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </>
   )
