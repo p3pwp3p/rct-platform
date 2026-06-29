@@ -489,8 +489,11 @@ export default function AnalyticsPage() {
               },
             ].map(k => (
               <div key={k.label} className="an-kpi">
-                <span style={{ fontFamily: (k as {isMono?: boolean}).isMono ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: (k as {isMono?: boolean}).isMono ? '0.06em' : '0.02em' }}>
-                  {k.label}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 2, background: k.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: (k as {isMono?: boolean}).isMono ? 'var(--font-mono)' : 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', letterSpacing: (k as {isMono?: boolean}).isMono ? '0.06em' : '0.02em' }}>
+                    {k.label}
+                  </span>
                 </span>
                 {k.value === null
                   ? <Sk w="60%" h={24} />

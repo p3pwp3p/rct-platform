@@ -232,11 +232,14 @@ export default function DashboardHome() {
               },
             ].map(k => (
               <div key={k.label} className="home-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{
-                  fontFamily: k.labelMono ? 'var(--font-mono)' : 'var(--font-main)',
-                  fontSize: 12, color: 'var(--text-tertiary)',
-                  letterSpacing: k.labelMono ? '0.05em' : 0,
-                }}>{k.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 2, background: k.color, flexShrink: 0 }} />
+                  <span style={{
+                    fontFamily: k.labelMono ? 'var(--font-mono)' : 'var(--font-main)',
+                    fontSize: 12, color: 'var(--text-tertiary)',
+                    letterSpacing: k.labelMono ? '0.05em' : 0,
+                  }}>{k.label}</span>
+                </span>
                 {k.value === null
                   ? <Skeleton w="60%" h={28} />
                   : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700, color: k.color, lineHeight: 1.1 }}>{k.value}</span>
