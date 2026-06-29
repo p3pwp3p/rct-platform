@@ -31,6 +31,139 @@ const STATUS_COLOR: Record<string, string> = { active:'#34d399', suspended:'#fbb
 function fmtSales(n: number) {
   return n > 0 ? n.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) : '—'
 }
+// 지갑주소 축약 (금융앱 표기: 앞 6 … 뒤 4)
+function abbrAddr(a: string) {
+  return a.length > 14 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a
+}
+// ≤768px 여부 (모바일 카드 렌더 분기)
+function useIsMobile() {
+  const [m, setM] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const on = () => setM(mq.matches)
+    on()
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return m
+}
+
+// ── 모바일: 미등록 회원 카드 ──────────────────────────────────────────────────
+function UnregCard({ u }: { u: Unregistered }) {
+  return (
+    <div style={{ padding:'13px 15px', borderBottom:'1px solid var(--border-primary)', display:'flex', flexDirection:'column', gap:8 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+        <span style={{ fontFamily:'var(--font-main)', fontSize:14, fontWeight:600, color:'var(--text-primary)' }}>{u.name}</span>
+        {u.is_admin && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
+        <span style={{ marginLeft:'auto', fontFamily:'var(--font-main)', fontSize:11, fontWeight:600, color: u.confirmed ? '#34d399' : '#fbbf24' }}>{u.confirmed ? '인증완료' : '인증대기'}</span>
+      </div>
+      <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
+      <div style={{ display:'flex', gap:16, fontSize:11 }}>
+        <span style={{ fontFamily:'var(--font-mono)', color: u.phone ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{u.phone ?? '전화 미등록'}</span>
+        <span style={{ fontFamily:'var(--font-mono)', color: u.trc20 ? '#34d399' : 'var(--text-tertiary)' }}>{u.trc20 ? abbrAddr(u.trc20) : '지갑 미등록'}</span>
+        <span style={{ marginLeft:'auto', fontFamily:'var(--font-mono)', color:'var(--text-tertiary)' }}>{u.created_at.slice(0,10)}</span>
+      </div>
+    </div>
+  )
+}
+
+// ── 모바일: 보유 노드 카드 ────────────────────────────────────────────────────
+function NodeCardMobile({ node, onEdit }: { node: NodeRow; onEdit: () => void }) {
+  const rc = RANK_COLOR[node.rank] ?? '#64748b'
+  const sc = STATUS_COLOR[node.status ?? 'active'] ?? '#34d399'
+  const isMain = !node.owner_id || node.owner_id === node.id
+  const leg = node.leg_position === 'LEFT' ? 'LEFT' : node.leg_position === 'RIGHT' ? 'RIGHT' : 'ROOT'
+  return (
+    <div style={{ background:'var(--bg-surface)', border:`1px solid ${isMain ? '#60a5fa44' : 'var(--border-primary)'}`, borderLeft:`3px solid ${sc}`, borderRadius:8, padding:'12px 14px', display:'flex', flexDirection:'column', gap:10 }}>
+      {/* 헤더: 이름/노드ID + 직급·상태 */}
+      <div style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
+        <div style={{ minWidth:0, flex:1 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontFamily:'var(--font-main)', fontSize:13, fontWeight:600, color:'var(--text-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{node.name}</span>
+            {isMain && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#60a5fa', background:'rgba(96,165,250,0.12)', border:'1px solid rgba(96,165,250,0.3)', padding:'1px 5px', borderRadius:3, flexShrink:0 }}>메인</span>}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3 }}>
+            <span style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'#60a5fa' }}>{node.node_id}</span>
+            <span style={{ fontFamily:'var(--font-mono)', fontSize:9, color:'var(--text-tertiary)', letterSpacing:'0.04em' }}>{leg}</span>
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:5, flexShrink:0 }}>
+          <span style={{ fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700, color:rc, background:rc+'18', border:`1px solid ${rc}44`, padding:'2px 7px', borderRadius:4 }}>{node.rank}</span>
+          <span style={{ fontFamily:'var(--font-main)', fontSize:10, fontWeight:600, color:sc, background:sc+'15', border:`1px solid ${sc}44`, padding:'2px 7px', borderRadius:4 }}>{STATUS_LABEL[node.status ?? 'active']}</span>
+        </div>
+      </div>
+      {/* 키-값 그리드 */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 12px', borderTop:'1px solid var(--border-primary)', paddingTop:10 }}>
+        <Field label="추천코드" value={node.referral_code || '—'} color="#a78bfa" />
+        <Field label="MT5 계좌" value={node.mt5_account_id ?? '—'} color={node.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)'} />
+        <Field label="매출" value={fmtSales(node.sales)} color="var(--text-primary)" />
+      </div>
+      <button onClick={onEdit}
+        style={{ alignSelf:'flex-end', padding:'7px 16px', borderRadius:6, border:`1px solid ${rc}55`, background:rc+'12', color:rc, fontFamily:'var(--font-main)', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+        편집
+      </button>
+    </div>
+  )
+}
+function Field({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ minWidth:0 }}>
+      <div style={{ fontFamily:'var(--font-main)', fontSize:9, color:'var(--text-tertiary)', marginBottom:3, textTransform:'uppercase', letterSpacing:'0.05em' }}>{label}</div>
+      <div style={{ fontFamily:'var(--font-mono)', fontSize:12, fontWeight:600, color, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{value}</div>
+    </div>
+  )
+}
+
+// ── 모바일: 계정 카드 ─────────────────────────────────────────────────────────
+function AccountCard({ acc, isExp, onToggle, onEdit }: {
+  acc: AdminAccount; isExp: boolean; onToggle: () => void; onEdit: (n: NodeRow) => void
+}) {
+  return (
+    <div style={{ background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:10, overflow:'hidden' }}>
+      <button onClick={onToggle}
+        style={{ width:'100%', textAlign:'left', background:'none', border:'none', cursor:'pointer', padding:'14px 16px', display:'flex', flexDirection:'column', gap:11 }}>
+        {/* 이름 + 배지 + 펼침 */}
+        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <span style={{ fontFamily:'var(--font-main)', fontSize:15, fontWeight:700, color:'var(--text-primary)' }}>{acc.name}</span>
+          {acc.is_admin && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
+          {!acc.confirmed && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#fbbf24', background:'rgba(251,191,36,0.1)', border:'1px solid rgba(251,191,36,0.3)', padding:'1px 5px', borderRadius:3 }}>미인증</span>}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ marginLeft:'auto', transition:'transform 0.2s', transform: isExp ? 'rotate(90deg)' : 'none', flexShrink:0 }}><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        {/* 이메일 */}
+        <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text-secondary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{acc.email}</div>
+        {/* 통계 스트립 */}
+        <div style={{ display:'flex', border:'1px solid var(--border-primary)', borderRadius:8, overflow:'hidden', background:'var(--bg-inset)' }}>
+          <StatCell label="보유 노드" value={String(acc.nodes.length)} accent={acc.nodes.length > 1 ? '#a78bfa' : undefined} />
+          <StatCell label="전체 하위" value={String(acc.totalDownline)} divider />
+          <StatCell label="가입일" value={acc.created_at.slice(0,10)} divider small />
+        </div>
+        {/* 지갑 */}
+        <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={acc.trc20 ? '#34d399' : 'var(--text-tertiary)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h.01M2 10h20"/></svg>
+          <span style={{ fontFamily:'var(--font-main)', fontSize:10, color:'var(--text-tertiary)' }}>TRC-20</span>
+          <span style={{ fontFamily:'var(--font-mono)', fontSize:11, color: acc.trc20 ? '#34d399' : 'var(--text-tertiary)' }}>{acc.trc20 ? abbrAddr(acc.trc20) : '미등록'}</span>
+        </div>
+      </button>
+      {/* 펼침: 보유 노드 */}
+      {isExp && (
+        <div style={{ borderTop:'1px solid var(--border-primary)', background:'var(--bg-header)', padding:'12px 14px', display:'flex', flexDirection:'column', gap:8 }}>
+          <div style={{ fontFamily:'var(--font-main)', fontSize:10, fontWeight:600, color:'var(--text-tertiary)', textTransform:'uppercase', letterSpacing:'0.06em' }}>보유 노드 ({acc.nodes.length})</div>
+          {acc.nodes.map(n => <NodeCardMobile key={n.id} node={n} onEdit={() => onEdit(n)} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+function StatCell({ label, value, accent, divider, small }: {
+  label: string; value: string; accent?: string; divider?: boolean; small?: boolean
+}) {
+  return (
+    <div style={{ flex:1, padding:'9px 10px', borderLeft: divider ? '1px solid var(--border-primary)' : 'none' }}>
+      <div style={{ fontFamily:'var(--font-main)', fontSize:9, color:'var(--text-tertiary)', marginBottom:3, whiteSpace:'nowrap' }}>{label}</div>
+      <div style={{ fontFamily:'var(--font-mono)', fontSize: small ? 11 : 16, fontWeight:700, color: accent ?? 'var(--text-primary)' }}>{value}</div>
+    </div>
+  )
+}
 function Shimmer() {
   return <div style={{ height:14, borderRadius:4, width:'70%', background:'linear-gradient(90deg,var(--bg-inset) 25%,rgba(148,163,184,0.06) 50%,var(--bg-inset) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite' }}/>
 }
@@ -102,7 +235,7 @@ function EditModal({ node, onClose, onSaved }: {
 
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(3px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width:460, background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:12, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:'min(460px, calc(100vw - 24px))', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:12, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
         <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border-primary)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
             <div style={{ fontFamily:'var(--font-main)', fontSize:15, fontWeight:700, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:8 }}>
@@ -233,6 +366,7 @@ export default function MembersPage() {
 
   const [unreg, setUnreg] = useState<Unregistered[]>([])
   const [unregOpen, setUnregOpen] = useState(true)
+  const isMobile = useIsMobile()
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -305,7 +439,7 @@ export default function MembersPage() {
 
       {editing && <EditModal node={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load() }} />}
 
-      <div style={{ padding:28, display:'flex', flexDirection:'column', gap:20, maxWidth:1600, margin:'0 auto', width:'100%', boxSizing:'border-box' }}>
+      <div style={{ padding: isMobile ? 16 : 28, display:'flex', flexDirection:'column', gap:20, maxWidth:1600, margin:'0 auto', width:'100%', boxSizing:'border-box' }}>
 
         {/* 헤더 */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
@@ -315,7 +449,7 @@ export default function MembersPage() {
               {loading ? '로딩 중...' : `전체 ${accounts.length}명 · 노드 ${accounts.reduce((s,a)=>s+a.nodes.length,0)}개`}
             </p>
           </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', width: isMobile ? '100%' : 'auto' }}>
             {recalcMsg && <span style={{ fontFamily:'var(--font-main)', fontSize:12, color: recalcMsg.includes('완료') ? '#34d399' : '#f87171' }}>{recalcMsg}</span>}
             <button onClick={handleRecalc} disabled={recalcBusy}
               style={{ padding:'8px 14px', borderRadius:6, border:'1px solid var(--border-secondary)', background:'transparent', color:'var(--text-secondary)', fontFamily:'var(--font-main)', fontSize:12, cursor: recalcBusy ? 'not-allowed' : 'pointer', display:'flex', alignItems:'center', gap:6, opacity: recalcBusy ? 0.5 : 1 }}>
@@ -324,12 +458,12 @@ export default function MembersPage() {
               </svg>
               {recalcBusy ? '계산 중...' : '직급 재계산'}
             </button>
-            <div style={{ position:'relative' }}>
+            <div style={{ position:'relative', flex: isMobile ? 1 : 'none', minWidth: isMobile ? 0 : undefined }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="이름, 이메일, 노드ID, 추천코드"
-                style={{ background:'var(--bg-surface)', border:'1px solid var(--border-secondary)', color:'var(--text-primary)', padding:'8px 14px 8px 32px', borderRadius:4, fontSize:12, fontFamily:'var(--font-main)', outline:'none', width:240 }}/>
+                style={{ background:'var(--bg-surface)', border:'1px solid var(--border-secondary)', color:'var(--text-primary)', padding:'8px 14px 8px 32px', borderRadius:4, fontSize:12, fontFamily:'var(--font-main)', outline:'none', width: isMobile ? '100%' : 240, boxSizing:'border-box' }}/>
             </div>
           </div>
         </div>
@@ -345,7 +479,12 @@ export default function MembersPage() {
               <span style={{ fontFamily:'var(--font-main)', fontSize:13, fontWeight:600, color:'#fbbf24' }}>미등록 회원 (가입했지만 노드 없음)</span>
               <span style={{ fontFamily:'var(--font-mono)', fontSize:12, fontWeight:700, color:'#fbbf24', background:'rgba(251,191,36,0.12)', border:'1px solid rgba(251,191,36,0.35)', padding:'1px 8px', borderRadius:10 }}>{unreg.length}</span>
             </button>
-            {unregOpen && (
+            {unregOpen && isMobile && (
+              <div>
+                {unreg.map(u => <UnregCard key={u.id} u={u} />)}
+              </div>
+            )}
+            {unregOpen && !isMobile && (
               <div style={{ overflowX:'auto' }}>
                 <table style={{ width:'100%', minWidth:700, borderCollapse:'collapse' }}>
                   <thead>
@@ -376,7 +515,28 @@ export default function MembersPage() {
           </div>
         )}
 
-        {/* 계정 테이블 */}
+        {/* 계정 목록 — 모바일 카드 */}
+        {isMobile && (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {loading
+              ? Array.from({length:4}).map((_,i) => (
+                  <div key={i} style={{ background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:10, padding:16, display:'flex', flexDirection:'column', gap:10 }}>
+                    <Shimmer/><Shimmer/>
+                  </div>
+                ))
+              : filtered.length === 0
+                ? <div style={{ padding:'40px 0', textAlign:'center', fontFamily:'var(--font-main)', fontSize:13, color:'var(--text-tertiary)' }}>검색 결과가 없습니다</div>
+                : filtered.map(acc => (
+                    <AccountCard key={acc.id} acc={acc} isExp={expanded === acc.id}
+                      onToggle={() => setExpanded(expanded === acc.id ? null : acc.id)}
+                      onEdit={setEditing} />
+                  ))
+            }
+          </div>
+        )}
+
+        {/* 계정 테이블 — 데스크톱 */}
+        {!isMobile && (
         <div style={{ background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:8, overflow:'hidden' }}>
           <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
             <colgroup>
@@ -504,6 +664,7 @@ export default function MembersPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </>
   )
