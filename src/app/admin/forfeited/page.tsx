@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 type ForfeitedRow = {
   id: string
@@ -46,6 +47,7 @@ export default function ForfeitedPage() {
   const [summary, setSummary] = useState<SummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
+  const isMobile = useIsMobile()
 
   // 회사 매출 집계 (service-role API)
   type Revenue = { totalProfit: number; companyBase: number; memberPool: number; totalPaid: number; forfeiture: number; forfeitRecorded: number; companyTotal: number; reportCount: number }
@@ -149,7 +151,7 @@ export default function ForfeitedPage() {
   return (
     <>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
-      <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -285,6 +287,40 @@ export default function ForfeitedPage() {
           <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-primary)', fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
             낙전 내역 {!loading && `(${rows.length}건)`}
           </div>
+
+          {/* 모바일 카드 */}
+          {isMobile && (
+            <div>
+              {loading
+                ? Array.from({ length: 4 }).map((_, i) => <div key={i} style={{ padding: 14, borderBottom: '1px solid var(--border-primary)' }}><Shimmer/></div>)
+                : rows.length === 0
+                  ? <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>낙전 내역이 없습니다</div>
+                  : rows.map((r, i) => {
+                      const rc = REASON_COLOR[r.reason] ?? '#94a3b8'
+                      const sc = r.profile_status === 'expelled' ? '#f87171' : r.profile_status === 'suspended' ? '#fbbf24' : '#34d399'
+                      const statusLabel = r.profile_status === 'expelled' ? '제명' : r.profile_status === 'suspended' ? '정지' : '정상'
+                      return (
+                        <div key={r.id} style={{ padding: '13px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.profile_name}</div>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-blue)' }}>{r.profile_node_id}</span>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: '#f87171', whiteSpace: 'nowrap' }}>{fmt(r.amount)}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, fontWeight: 600, color: sc, background: sc + '18', border: `1px solid ${sc}44`, padding: '2px 7px', borderRadius: 4 }}>{statusLabel}</span>
+                            <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: rc }}>{REASON_LABEL[r.reason] ?? r.reason}</span>
+                            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)' }}>{r.created_at.slice(0, 16).replace('T', ' ')}</span>
+                          </div>
+                        </div>
+                      )
+                    })
+              }
+            </div>
+          )}
+
+          {!isMobile &&
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-header)' }}>
@@ -338,7 +374,7 @@ export default function ForfeitedPage() {
                     })
               }
             </tbody>
-          </table>
+          </table>}
         </div>
       </div>
     </>

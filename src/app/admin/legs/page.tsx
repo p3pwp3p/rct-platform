@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { adminGetLegs, type AdminLeg } from '@/lib/db-admin'
+import { useIsMobile } from '@/lib/useIsMobile'
 
 const RANK_COLOR: Record<string, string> = {
   'R0': '#64748b', R1: '#34d399', R2: '#60a5fa',
@@ -34,6 +35,7 @@ export default function LegsPage() {
   const [sort, setSort]       = useState<SortKey>('created_at')
   const [dir, setDir]         = useState<SortDir>('desc')
   const [search, setSearch]   = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     adminGetLegs()
@@ -74,7 +76,7 @@ export default function LegsPage() {
     })
 
   return (
-    <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: isMobile ? 16 : 28, display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
 
       {/* Header */}
@@ -128,7 +130,55 @@ export default function LegsPage() {
         </span>
       </div>
 
-      {/* Table */}
+      {/* 모바일 카드 */}
+      {isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: 14 }}><Shimmer/></div>)
+            : list.length === 0
+              ? <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>검색 결과가 없습니다</div>
+              : list.map(leg => {
+                  const { profile, sponsor, referrer, depth } = leg
+                  const rc = RANK_COLOR[profile.rank] ?? '#64748b'
+                  const bar = profile.sales > 0 ? Math.round((profile.sales / maxSales) * 100) : 0
+                  const legColor = profile.leg_position === 'LEFT' ? '#60a5fa' : '#a78bfa'
+                  return (
+                    <div key={profile.id} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--accent-blue)' }}>{profile.node_id}</span>
+                          <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{profile.name}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '18', border: `1px solid ${rc}44`, padding: '2px 7px', borderRadius: 4 }}>{profile.rank}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: legColor, background: legColor + '18', border: `1px solid ${legColor}44`, padding: '2px 7px', borderRadius: 4 }}>{profile.leg_position}</span>
+                        </div>
+                      </div>
+                      {/* 매출 바 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ height: 6, background: 'var(--border-primary)', borderRadius: 4 }}>
+                          <div style={{ width: `${bar}%`, height: '100%', background: 'var(--accent-blue)', borderRadius: 4 }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)' }}>매출</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: profile.sales > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{fmtSales(profile.sales)}</span>
+                        </div>
+                      </div>
+                      {/* 후원/추천/깊이 */}
+                      <div style={{ display: 'flex', gap: 12, borderTop: '1px solid var(--border-primary)', paddingTop: 9, fontSize: 11 }}>
+                        <span style={{ fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)' }}>후원 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{sponsor?.node_id ?? '—'}</span></span>
+                        <span style={{ fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)' }}>추천 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{referrer?.node_id ?? '—'}</span></span>
+                        <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-main)', color: 'var(--text-tertiary)' }}>깊이 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{depth}</span></span>
+                      </div>
+                    </div>
+                  )
+                })
+          }
+        </div>
+      )}
+
+      {/* Table — 데스크톱 */}
+      {!isMobile && (
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -235,6 +285,7 @@ export default function LegsPage() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   )
 }
