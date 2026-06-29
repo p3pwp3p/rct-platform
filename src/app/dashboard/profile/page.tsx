@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsMobile } from '@/lib/useIsMobile'
 import type { Profile } from '@/lib/types'
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -57,9 +58,9 @@ function Sk({ w = '100%', h = 14 }: { w?: string | number; h?: number }) {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--border-primary)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '14px 0', borderBottom: '1px solid var(--border-primary)' }}>
       <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, color: 'var(--text-tertiary)', flexShrink: 0 }}>{label}</span>
-      <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, color: 'var(--text-primary)', textAlign: 'right' }}>{children}</div>
+      <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, color: 'var(--text-primary)', textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{children}</div>
     </div>
   )
 }
@@ -72,6 +73,7 @@ export default function ProfilePage() {
   const [phone, setPhone]           = useState('')
   const [authTrc20, setAuthTrc20]   = useState('')  // auth 메타데이터 기준 TRC-20
   const [loading, setLoading]       = useState(true)
+  const isMobile = useIsMobile()
 
   // ── 토스트 ────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<{ msg: string; type: ToastType } | null>(null)
@@ -236,7 +238,7 @@ export default function ProfilePage() {
       `}</style>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: isMobile ? '20px 16px 32px' : '32px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* 헤더 */}
           <div style={{ marginBottom: 4 }}>
@@ -334,7 +336,7 @@ export default function ProfilePage() {
 
           {/* ── 출금 지갑 (계정 단위) ── */}
           <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '13px 20px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '13px 16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 3 : 12 }}>
               <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>출금 지갑</span>
               <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>모든 노드 수익이 이 주소로 일괄 지급됩니다</span>
             </div>
