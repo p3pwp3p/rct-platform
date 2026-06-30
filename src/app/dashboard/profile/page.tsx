@@ -98,6 +98,11 @@ export default function ProfilePage() {
   const [walletInput, setWalletInput]     = useState('')
   const [walletBusy, setWalletBusy]       = useState(false)
 
+  // 노드별 MT5 계좌 (편집 중인 노드 id)
+  const [editingMt5, setEditingMt5] = useState<string | null>(null)
+  const [mt5Input, setMt5Input]     = useState('')
+  const [mt5Busy, setMt5Busy]       = useState(false)
+
   // 비밀번호
   const [pwOpen, setPwOpen]   = useState(false)
   const [pwCur, setPwCur]     = useState('')
@@ -137,6 +142,17 @@ export default function ProfilePage() {
     setPhone(p)
     setEditingPhone(false)
     showToast('전화번호가 저장됐습니다')
+  }
+
+  const handleSaveMt5 = async (nodeId: string) => {
+    const v = mt5Input.trim()
+    setMt5Busy(true)
+    const { error } = await supabase.from('profiles').update({ mt5_account_id: v || null }).eq('id', nodeId)
+    setMt5Busy(false)
+    if (error) { showToast(error.message, 'error'); return }
+    setNodes(ns => ns.map(n => n.id === nodeId ? { ...n, mt5_account_id: v || null } : n))
+    setEditingMt5(null)
+    showToast('MT5 계좌가 저장됐습니다')
   }
 
   const handleSaveWallet = async () => {
@@ -413,6 +429,36 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', flexShrink: 0 }}>{n.created_at.slice(0,10)}</span>
+                    </div>
+
+                    {/* MT5 계좌 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderTop: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.2)' }}>
+                      <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>MT5 계좌</span>
+                      {editingMt5 === n.id ? (
+                        <>
+                          <input
+                            className="pf-input"
+                            value={mt5Input}
+                            onChange={e => setMt5Input(e.target.value.replace(/\D/g, ''))}
+                            maxLength={12}
+                            placeholder="MT5 계좌 번호"
+                            autoFocus
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveMt5(n.id) }}
+                            style={{ flex: 1, minWidth: 0, fontSize: 12, padding: '5px 10px', fontFamily: 'var(--font-mono)' }}
+                          />
+                          <button className="pf-btn pf-btn-primary" disabled={mt5Busy} onClick={() => handleSaveMt5(n.id)} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>저장</button>
+                          <button className="pf-btn pf-btn-ghost" onClick={() => setEditingMt5(null)} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>취소</button>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ flex: 1, minWidth: 0, fontFamily: n.mt5_account_id ? 'var(--font-mono)' : 'var(--font-main)', fontSize: n.mt5_account_id ? 13 : 11, fontWeight: n.mt5_account_id ? 600 : 400, color: n.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {n.mt5_account_id || '미등록'}
+                          </span>
+                          <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingMt5(n.id); setMt5Input(n.mt5_account_id ?? '') }} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>
+                            {n.mt5_account_id ? '수정' : '등록'}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )
