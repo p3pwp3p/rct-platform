@@ -44,9 +44,13 @@ DECLARE
   code  text := '';
   i     int;
 BEGIN
-  -- node_id
+  -- node_id: 시퀀스가 수동 INSERT 등으로 뒤처져도 충돌하지 않도록
+  -- 사용 중이 아닌 번호가 나올 때까지 nextval 을 반복한다.
   IF NEW.node_id IS NULL OR NEW.node_id = '' THEN
-    NEW.node_id := 'RCT-' || LPAD(nextval('node_seq')::text, 5, '0');
+    LOOP
+      NEW.node_id := 'RCT-' || LPAD(nextval('node_seq')::text, 5, '0');
+      EXIT WHEN NOT EXISTS (SELECT 1 FROM profiles WHERE node_id = NEW.node_id);
+    END LOOP;
   END IF;
 
   -- referral_code: random 8-char from safe charset, guaranteed unique
