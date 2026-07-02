@@ -16,11 +16,13 @@ export default function SignupPage() {
   const [agreed, setAgreed]           = useState(false)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
+  const [dupEmail, setDupEmail]       = useState(false)  // 이미 가입된 이메일 감지
   const [success, setSuccess]         = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setDupEmail(false)
 
     if (!name || !email || !password) {
       setError('이름, 이메일, 비밀번호는 필수 항목입니다.')
@@ -40,7 +42,7 @@ export default function SignupPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -51,11 +53,21 @@ export default function SignupPage() {
     setLoading(false)
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        setError('이미 가입된 이메일 주소입니다.')
+      const m = error.message.toLowerCase()
+      if (m.includes('already registered') || m.includes('already been registered') || m.includes('user already exists')) {
+        setDupEmail(true)
+      } else if (m.includes('rate limit')) {
+        setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.')
       } else {
         setError(error.message)
       }
+      return
+    }
+
+    // Supabase는 계정 열거 방지를 위해, 이미 가입된 이메일로 가입해도
+    // 에러 없이 identities 가 빈 배열인 가짜 user 를 돌려준다. 이를 중복으로 처리.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setDupEmail(true)
       return
     }
 
@@ -242,6 +254,22 @@ export default function SignupPage() {
                     <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()} style={{ color: '#4db6ac', textDecoration: 'none' }}>개인정보 처리방침</Link>에 동의합니다.
                   </span>
                 </div>
+
+                {dupEmail && (
+                  <div style={{ padding: '12px 14px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <div style={{ fontSize: 12.5, color: '#fbbf24', lineHeight: 1.6 }}>
+                        <strong style={{ fontWeight: 700 }}>이미 가입된 이메일입니다.</strong><br />
+                        <span style={{ fontFamily: 'var(--font-mono)', color: '#e0e6ed', fontSize: 12 }}>{email}</span> 계정이 이미 있습니다. 새로 가입하지 마시고 로그인하거나, 비밀번호가 기억나지 않으면 재설정해 주세요.
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '9px', borderRadius: 3, background: '#4db6ac', color: '#07080a', fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>로그인</Link>
+                      <Link href="/forgot-password" style={{ flex: 1, textAlign: 'center', padding: '9px', borderRadius: 3, background: 'transparent', border: '1px solid #4db6ac', color: '#4db6ac', fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>비밀번호 찾기</Link>
+                    </div>
+                  </div>
+                )}
 
                 {error && (
                   <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 3 }}>
