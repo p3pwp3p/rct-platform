@@ -11,6 +11,16 @@ export default function ConfirmPage() {
     let cancelled = false
 
     const init = async () => {
+      // 0. PKCE 흐름: 쿼리스트링의 ?code= 를 세션으로 교환
+      const code = new URLSearchParams(window.location.search).get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        window.history.replaceState(null, '', window.location.pathname)
+        if (cancelled) return
+        setPhase(error ? 'invalid' : 'done')
+        return
+      }
+
       // 1. 인증 메일 링크의 URL 해시에서 토큰을 파싱해 세션 생성
       const hash = window.location.hash.slice(1)
       if (hash.includes('access_token')) {
