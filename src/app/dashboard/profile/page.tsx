@@ -103,6 +103,11 @@ export default function ProfilePage() {
   const [mt5Input, setMt5Input]     = useState('')
   const [mt5Busy, setMt5Busy]       = useState(false)
 
+  // 노드별 이름 (편집 중인 노드 id)
+  const [editingNodeName, setEditingNodeName] = useState<string | null>(null)
+  const [nodeNameInput, setNodeNameInput]     = useState('')
+  const [nodeNameBusy, setNodeNameBusy]       = useState(false)
+
   // 비밀번호
   const [pwOpen, setPwOpen]   = useState(false)
   const [pwCur, setPwCur]     = useState('')
@@ -144,6 +149,25 @@ export default function ProfilePage() {
     showToast('전화번호가 저장됐습니다')
   }
 
+  const handleSaveNodeName = async (nodeId: string) => {
+    const nm = nodeNameInput.trim()
+    if (!nm) { showToast('이름을 입력해주세요', 'error'); return }
+    if (nm.length > 30) { showToast('이름이 너무 깁니다 (30자 이하)', 'error'); return }
+    setNodeNameBusy(true)
+    const { error } = await supabase.from('profiles').update({ name: nm }).eq('id', nodeId)
+    // 메인 노드면 계정 표시 이름(auth full_name)도 동기화
+    if (!error && nodeId === myProfile?.id) {
+      await supabase.auth.updateUser({ data: { full_name: nm } })
+      setFullName(nm)
+      setMyProfile(p => p ? { ...p, name: nm } : p)
+    }
+    setNodeNameBusy(false)
+    if (error) { showToast(error.message, 'error'); return }
+    setNodes(ns => ns.map(n => n.id === nodeId ? { ...n, name: nm } : n))
+    setEditingNodeName(null)
+    showToast('노드 이름이 저장됐습니다')
+  }
+
   const handleSaveMt5 = async (nodeId: string) => {
     const v = mt5Input.trim()
     setMt5Busy(true)
@@ -152,7 +176,7 @@ export default function ProfilePage() {
     if (error) { showToast(error.message, 'error'); return }
     setNodes(ns => ns.map(n => n.id === nodeId ? { ...n, mt5_account_id: v || null } : n))
     setEditingMt5(null)
-    showToast('MT5 계좌가 저장됐습니다')
+    showToast('Vantage C.T 계정이 저장됐습니다')
   }
 
   const handleSaveWallet = async () => {
@@ -414,10 +438,27 @@ export default function ProfilePage() {
                         {n.rank}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                          <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{n.name}</span>
-                          {isMain && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: nc, background: nc + '18', border: `1px solid ${nc}33`, padding: '1px 6px', borderRadius: 3 }}>메인</span>}
-                        </div>
+                        {editingNodeName === n.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                            <input
+                              className="pf-input"
+                              value={nodeNameInput}
+                              onChange={e => setNodeNameInput(e.target.value)}
+                              maxLength={30}
+                              autoFocus
+                              onKeyDown={e => { if (e.key === 'Enter') handleSaveNodeName(n.id) }}
+                              style={{ flex: 1, minWidth: 0, fontSize: 13, padding: '5px 10px' }}
+                            />
+                            <button className="pf-btn pf-btn-primary" disabled={nodeNameBusy} onClick={() => handleSaveNodeName(n.id)} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>저장</button>
+                            <button className="pf-btn pf-btn-ghost" onClick={() => setEditingNodeName(null)} style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>취소</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                            <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{n.name}</span>
+                            {isMain && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: nc, background: nc + '18', border: `1px solid ${nc}33`, padding: '1px 6px', borderRadius: 3 }}>메인</span>}
+                            <button className="pf-btn pf-btn-ghost" onClick={() => { setEditingNodeName(n.id); setNodeNameInput(n.name) }} style={{ padding: '2px 8px', fontSize: 10, flexShrink: 0 }}>수정</button>
+                          </div>
+                        )}
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-blue)' }}>{n.node_id}</span>
                           {n.referral_code && (
@@ -431,9 +472,9 @@ export default function ProfilePage() {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', flexShrink: 0 }}>{n.created_at.slice(0,10)}</span>
                     </div>
 
-                    {/* MT5 계좌 */}
+                    {/* Vantage C.T 계정 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderTop: '1px solid var(--border-primary)', background: 'rgba(10,12,16,0.2)' }}>
-                      <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>MT5 계좌</span>
+                      <span style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>Vantage C.T</span>
                       {editingMt5 === n.id ? (
                         <>
                           <input
@@ -441,7 +482,7 @@ export default function ProfilePage() {
                             value={mt5Input}
                             onChange={e => setMt5Input(e.target.value.replace(/\D/g, ''))}
                             maxLength={12}
-                            placeholder="MT5 계좌 번호"
+                            placeholder="Vantage C.T 계정 번호"
                             autoFocus
                             onKeyDown={e => { if (e.key === 'Enter') handleSaveMt5(n.id) }}
                             style={{ flex: 1, minWidth: 0, fontSize: 12, padding: '5px 10px', fontFamily: 'var(--font-mono)' }}

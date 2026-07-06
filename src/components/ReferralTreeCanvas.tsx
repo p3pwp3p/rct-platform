@@ -143,7 +143,7 @@ function NodeCard({ p, selected, isMe, onSelect, showGen = true, labelMode = 'na
           {labelMode === 'code' ? (node.referral_code || '—') : node.name}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          MT5 <span style={{ color: node.mt5_account_id ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5_account_id || '—'}</span>
+C.T <span style={{ color: node.mt5_account_id ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5_account_id || '—'}</span>
         </div>
       </div>
 
@@ -201,7 +201,7 @@ function DetailPanel({ node, onClose, onNavigate, showGen = true, labelMode = 'n
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {[
           { label: 'Node ID',     value: node.node_id },
-          { label: 'MT5',         value: node.mt5_account_id || '—' },
+          { label: 'Vantage C.T', value: node.mt5_account_id || '—' },
           { label: 'Joined',      value: node.created_at.slice(0, 10) },
           ...(showGen ? [
             { label: 'Generation',  value: node.depth === 0 ? 'Root' : `${node.depth}` },

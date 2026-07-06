@@ -22,7 +22,7 @@ function Shimmer() {
   )
 }
 
-type SortKey = 'node_id' | 'name' | 'sponsor' | 'referrer' | 'sales' | 'rank' | 'leg' | 'depth' | 'created_at'
+type SortKey = 'node_id' | 'name' | 'mt5' | 'sponsor' | 'referrer' | 'sales' | 'rank' | 'leg' | 'depth' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
 const RANK_ORDER_MAP: Record<string, number> = { R0: 0, R1: 1, R2: 2, R3: 3, R4: 4, R5: 5 }
@@ -65,6 +65,7 @@ export default function LegsPage() {
       let v = 0
       if (sort === 'node_id')   v = a.profile.node_id.localeCompare(b.profile.node_id)
       else if (sort === 'name') v = a.profile.name.localeCompare(b.profile.name)
+      else if (sort === 'mt5')  v = (a.profile.mt5_account_id ?? '').localeCompare(b.profile.mt5_account_id ?? '', undefined, { numeric: true })
       else if (sort === 'sponsor') v = (a.sponsor?.node_id ?? '').localeCompare(b.sponsor?.node_id ?? '')
       else if (sort === 'referrer') v = (a.referrer?.node_id ?? '').localeCompare(b.referrer?.node_id ?? '')
       else if (sort === 'sales') v = a.profile.sales - b.profile.sales
@@ -148,6 +149,7 @@ export default function LegsPage() {
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--accent-blue)' }}>{profile.node_id}</span>
                           <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{profile.name}</div>
+                          <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 3 }}>Vantage C.T <span style={{ fontFamily: 'var(--font-mono)', color: profile.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)' }}>{profile.mt5_account_id ?? '—'}</span></div>
                         </div>
                         <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: rc, background: rc + '18', border: `1px solid ${rc}44`, padding: '2px 7px', borderRadius: 4 }}>{profile.rank}</span>
@@ -186,6 +188,7 @@ export default function LegsPage() {
               {([
                 { label: '노드', key: 'node_id'   as SortKey, align: 'left',   width: 120 },
                 { label: '이름',      key: 'name'       as SortKey, align: 'left',   width: 100 },
+                { label: 'Vantage C.T', key: 'mt5'     as SortKey, align: 'left',   width: 110 },
                 { label: '후원인',    key: 'sponsor'    as SortKey, align: 'left',   width: 110 },
                 { label: '추천인',    key: 'referrer'   as SortKey, align: 'left',   width: 110 },
                 { label: '매출',      key: 'sales'      as SortKey, align: 'left',   width: 160 },
@@ -237,6 +240,9 @@ export default function LegsPage() {
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-blue)', fontWeight: 600 }}>{profile.node_id}</div>
                       </td>
                       <td style={{ padding: '12px 16px', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)' }}>{profile.name}</td>
+                      <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12, color: profile.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)' }}>
+                        {profile.mt5_account_id ?? '—'}
+                      </td>
                       <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)' }}>
                         {sponsor ? sponsor.node_id : '—'}
                         {sponsor && <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 1 }}>{sponsor.name}</div>}

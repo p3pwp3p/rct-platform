@@ -122,7 +122,7 @@ function NodeCard({ p, selected, maxSales, isMe, labelMode, onSelect }: {
           {primary}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-tertiary)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          MT5 <span style={{ color: node.mt5AccountId ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5AccountId || '—'}</span>
+C.T <span style={{ color: node.mt5AccountId ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>{node.mt5AccountId || '—'}</span>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, marginTop: 'auto' }}>
@@ -159,7 +159,7 @@ function DetailPanel({ node, onClose, onNavigate, labelMode }: { node: NetNode; 
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {[
-          { label: 'MT5',     value: node.mt5AccountId || '—',   mono: true },
+          { label: 'Vantage C.T', value: node.mt5AccountId || '—',   mono: true },
           { label: '매출',    value: fmt(node.sales),             mono: true },
           { label: 'Joined',  value: node.joined ? node.joined.slice(0, 10) : '—', mono: true },
           { label: 'Leg',     value: node.legPosition || '—',     mono: true },

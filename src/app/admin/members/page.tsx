@@ -83,7 +83,7 @@ function NodeCardMobile({ node, onEdit }: { node: NodeRow; onEdit: () => void })
       {/* 키-값 그리드 */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px 12px', borderTop:'1px solid var(--border-primary)', paddingTop:10 }}>
         <Field label="추천코드" value={node.referral_code || '—'} color="#a78bfa" />
-        <Field label="MT5 계좌" value={node.mt5_account_id ?? '—'} color={node.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)'} />
+        <Field label="Vantage C.T" value={node.mt5_account_id ?? '—'} color={node.mt5_account_id ? '#60a5fa' : 'var(--text-tertiary)'} />
         <Field label="매출" value={fmtSales(node.sales)} color="var(--text-primary)" />
       </div>
       <button onClick={onEdit}
@@ -254,9 +254,9 @@ function EditModal({ node, onClose, onSaved }: {
           </div>
           {/* MT5 */}
           <div>
-            <label style={{ fontFamily:'var(--font-main)', fontSize:11, color:'var(--text-tertiary)', display:'block', marginBottom:6 }}>MT5 계좌 번호</label>
+            <label style={{ fontFamily:'var(--font-main)', fontSize:11, color:'var(--text-tertiary)', display:'block', marginBottom:6 }}>Vantage C.T 계정 번호</label>
             <input value={mt5} onChange={e => setMt5(e.target.value.replace(/\D/g,''))} maxLength={12}
-              placeholder="MT5 계좌 번호"
+              placeholder="Vantage C.T 계정 번호"
               style={{ width:'100%', padding:'9px 12px', boxSizing:'border-box', background:'var(--bg-inset)', border:'1px solid var(--border-secondary)', borderRadius:6, color:'var(--text-primary)', fontFamily:'var(--font-mono)', fontSize:13, outline:'none' }}
               onFocus={e => (e.currentTarget.style.borderColor='#60a5fa')}
               onBlur={e => (e.currentTarget.style.borderColor='var(--border-secondary)')}/>

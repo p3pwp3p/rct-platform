@@ -241,7 +241,7 @@ function ReportCard({ report }: { report: MemberReportWithItems }) {
 
         {/* MT5 계좌 */}
         <div>
-          <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>MT5 계좌</div>
+          <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>Vantage C.T</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#60a5fa', marginTop: 2 }}>{report.items[0]?.mt5_account_id ?? '—'}</div>
         </div>
 
@@ -493,7 +493,7 @@ export default function MemberPayoutsPage() {
         {!mt5AccountId && (
           <div style={{ padding: '12px 16px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 13, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            이 노드에 MT5 계좌 번호가 등록되지 않았습니다. 노드 추가 시 입력하거나 관리자에게 문의해주세요.
+            이 노드에 Vantage C.T 계정 번호가 등록되지 않았습니다. 내 프로필에서 등록하거나 관리자에게 문의해주세요.
           </div>
         )}
 

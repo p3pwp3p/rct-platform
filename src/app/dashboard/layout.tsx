@@ -289,7 +289,7 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
   const handleSubmit = async () => {
     if (!leg)           { setError('레그를 선택해주세요.'); return }
     if (!name.trim())   { setError('이름을 입력해주세요.'); return }
-    if (!mt5Id.trim())  { setError('MT5 계좌 번호를 입력해주세요.'); return }
+    if (!mt5Id.trim())  { setError('Vantage C.T 계정 번호를 입력해주세요.'); return }
     setBusy(true); setError('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -452,13 +452,13 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                 />
               </div>
 
-              {/* MT5 계좌 ID */}
+              {/* Vantage C.T 계정 번호 */}
               <div>
-                <label style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>MT5 계좌 번호</label>
+                <label style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Vantage C.T 계정 번호</label>
                 <input
                   value={mt5Id}
                   onChange={e => { setMt5Id(e.target.value.replace(/\D/g, '')); setError('') }}
-                  placeholder="MT5 계좌 번호"
+                  placeholder="Vantage C.T 계정 번호"
                   maxLength={12}
                   style={{
                     width: '100%', padding: '9px 12px', boxSizing: 'border-box',
