@@ -179,14 +179,18 @@ export default function SignupPage() {
             {success ? (
               <div style={{ padding: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(77,182,172,0.1)', border: '1px solid #4db6ac', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4db6ac" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4db6ac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                   </svg>
                 </div>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#e0e6ed', marginBottom: 6 }}>가입 완료</p>
-                  <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
-                    로그인 후 후원인 코드로<br />CT 노드를 등록하세요.
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#e0e6ed', marginBottom: 6 }}>인증 메일을 보냈습니다</p>
+                  <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.7 }}>
+                    <strong style={{ color: '#4db6ac' }}>{email}</strong> 으로 인증 링크를 보냈습니다.<br />
+                    메일의 링크를 클릭해 <strong style={{ color: '#e0e6ed' }}>이메일 인증을 완료</strong>해야<br />로그인할 수 있습니다.
+                  </p>
+                  <p style={{ fontSize: 11, color: '#64748b', lineHeight: 1.6, marginTop: 8 }}>
+                    메일이 안 보이면 <strong style={{ color: '#94a3b8' }}>스팸함</strong>도 확인해주세요.
                   </p>
                 </div>
                 <Link href="/login" style={{
