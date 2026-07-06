@@ -115,6 +115,7 @@ function AccountCard({ acc, isExp, onToggle, onEdit }: {
           <span style={{ fontFamily:'var(--font-main)', fontSize:15, fontWeight:700, color:'var(--text-primary)' }}>{acc.name}</span>
           {acc.is_admin && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
           {!acc.confirmed && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#fbbf24', background:'rgba(251,191,36,0.1)', border:'1px solid rgba(251,191,36,0.3)', padding:'1px 5px', borderRadius:3 }}>미인증</span>}
+          <AccountStatusBadges nodes={acc.nodes} />
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" style={{ marginLeft:'auto', transition:'transform 0.2s', transform: isExp ? 'rotate(90deg)' : 'none', flexShrink:0 }}><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         {/* 이메일 */}
@@ -154,6 +155,18 @@ function StatCell({ label, value, accent, divider, small }: {
 }
 function Shimmer() {
   return <div style={{ height:14, borderRadius:4, width:'70%', background:'linear-gradient(90deg,var(--bg-inset) 25%,rgba(148,163,184,0.06) 50%,var(--bg-inset) 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.4s infinite' }}/>
+}
+// 계정 하위 노드의 제명/정지 상태를 한눈에 보이는 배지 (관리자 목록용)
+function AccountStatusBadges({ nodes }: { nodes: NodeRow[] }) {
+  const exp  = nodes.filter(n => n.status === 'expelled').length
+  const susp = nodes.filter(n => n.status === 'suspended').length
+  if (!exp && !susp) return null
+  const chip = (label: string, count: number, color: string) => (
+    <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:700, color, background:color+'1a', border:`1px solid ${color}55`, padding:'1px 6px', borderRadius:3, whiteSpace:'nowrap' }}>
+      {label}{count > 1 ? ` ${count}` : ''}
+    </span>
+  )
+  return <>{exp > 0 && chip('제명', exp, '#f87171')}{susp > 0 && chip('정지', susp, '#fbbf24')}</>
 }
 
 // ── 노드 편집 모달 ────────────────────────────────────────────────────────────
@@ -574,6 +587,7 @@ export default function MembersPage() {
                               <span style={{ fontFamily:'var(--font-main)', fontSize:13, fontWeight:600, color:'var(--text-primary)' }}>{acc.name}</span>
                               {acc.is_admin && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#ef4444', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', padding:'1px 5px', borderRadius:3 }}>관리자</span>}
                               {!acc.confirmed && <span style={{ fontFamily:'var(--font-main)', fontSize:9, fontWeight:600, color:'#fbbf24', background:'rgba(251,191,36,0.1)', border:'1px solid rgba(251,191,36,0.3)', padding:'1px 5px', borderRadius:3 }}>미인증</span>}
+                              <AccountStatusBadges nodes={acc.nodes} />
                             </div>
                             {acc.phone && <div style={{ fontFamily:'var(--font-mono)', fontSize:10, color:'var(--text-tertiary)', marginTop:2 }}>{acc.phone}</div>}
                           </td>
