@@ -108,6 +108,10 @@ export default function ProfilePage() {
   const [nodeNameInput, setNodeNameInput]     = useState('')
   const [nodeNameBusy, setNodeNameBusy]       = useState(false)
 
+  // 노드 삭제 (확인 중인 노드 id)
+  const [confirmDeleteNode, setConfirmDeleteNode] = useState<string | null>(null)
+  const [deleteBusy, setDeleteBusy]               = useState(false)
+
   // 비밀번호
   const [pwOpen, setPwOpen]   = useState(false)
   const [pwCur, setPwCur]     = useState('')
@@ -147,6 +151,22 @@ export default function ProfilePage() {
     setPhone(p)
     setEditingPhone(false)
     showToast('전화번호가 저장됐습니다')
+  }
+
+  const handleDeleteNode = async (nodeId: string) => {
+    setDeleteBusy(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/delete-node', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodeId, accessToken: session?.access_token ?? '' }),
+    })
+    const json = await res.json().catch(() => ({}))
+    setDeleteBusy(false)
+    setConfirmDeleteNode(null)
+    if (!res.ok) { showToast(json.error ?? '삭제 실패', 'error'); return }
+    setNodes(ns => ns.filter(n => n.id !== nodeId))
+    showToast('노드가 삭제됐습니다')
   }
 
   const handleSaveNodeName = async (nodeId: string) => {
@@ -501,6 +521,22 @@ export default function ProfilePage() {
                         </>
                       )}
                     </div>
+
+                    {/* 노드 삭제 */}
+                    {confirmDeleteNode === n.id ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 16px', borderTop: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)' }}>
+                        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-main)', fontSize: 11, color: '#f87171', lineHeight: 1.5 }}>이 노드를 삭제할까요? 되돌릴 수 없습니다.</span>
+                        <button disabled={deleteBusy} onClick={() => handleDeleteNode(n.id)} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 700, borderRadius: 5, border: 'none', background: '#ef4444', color: '#fff', cursor: deleteBusy ? 'not-allowed' : 'pointer', opacity: deleteBusy ? 0.6 : 1, flexShrink: 0 }}>{deleteBusy ? '삭제 중…' : '삭제'}</button>
+                        <button onClick={() => setConfirmDeleteNode(null)} className="pf-btn pf-btn-ghost" style={{ padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>취소</button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px', borderTop: '1px solid var(--border-primary)' }}>
+                        <button onClick={() => setConfirmDeleteNode(n.id)} style={{ padding: '3px 10px', fontSize: 11, borderRadius: 5, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          노드 삭제
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}

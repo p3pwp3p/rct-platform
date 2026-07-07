@@ -180,6 +180,8 @@ function EditModal({ node, onClose, onSaved }: {
   const [busy,   setBusy]   = useState(false)
   const [err,    setErr]    = useState('')
   const [ok,     setOk]     = useState(false)
+  const [delConfirm, setDelConfirm] = useState(false)
+  const [delBusy,    setDelBusy]    = useState(false)
 
   type StatusHistRow = { id:string; old_status:string; new_status:string; reason:string|null; changed_at:string }
   const [history,     setHistory]     = useState<StatusHistRow[]|null>(null)
@@ -229,6 +231,24 @@ function EditModal({ node, onClose, onSaved }: {
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : '오류')
     } finally { setBusy(false) }
+  }
+
+  async function handleDelete() {
+    setDelBusy(true); setErr('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/delete-node', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodeId: node.id, accessToken: session?.access_token ?? '' }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? '삭제 실패')
+      onSaved(); onClose()
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : '삭제 오류')
+      setDelConfirm(false)
+    } finally { setDelBusy(false) }
   }
 
   const rc = RANK_COLOR[rank]
@@ -341,6 +361,23 @@ function EditModal({ node, onClose, onSaved }: {
           </div>
           {err && <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'#f87171', padding:'8px 12px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:6 }}>{err}</div>}
           {ok  && <div style={{ fontFamily:'var(--font-main)', fontSize:12, color:'#34d399' }}>✓ 저장됐습니다</div>}
+
+          {/* 위험 구역 — 노드 삭제 */}
+          <div style={{ borderTop:'1px solid var(--border-primary)', paddingTop:14, marginTop:2 }}>
+            {!delConfirm ? (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
+                <span style={{ fontFamily:'var(--font-main)', fontSize:11, color:'var(--text-tertiary)', lineHeight:1.5 }}>노드를 삭제하면 하위 노드가 위로 붙습니다(바이너리 자식 2개·수당 이력 있으면 불가).</span>
+                <button onClick={() => { setErr(''); setDelConfirm(true) }} style={{ padding:'6px 12px', borderRadius:6, border:'1px solid rgba(239,68,68,0.35)', background:'transparent', color:'#f87171', fontFamily:'var(--font-main)', fontSize:12, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>노드 삭제</button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:6 }}>
+                <span style={{ flex:1, minWidth:0, fontFamily:'var(--font-main)', fontSize:12, color:'#f87171', lineHeight:1.5 }}><strong>{node.node_id}</strong> 노드를 삭제합니다. 되돌릴 수 없습니다.</span>
+                <button disabled={delBusy} onClick={handleDelete} style={{ padding:'6px 14px', borderRadius:6, border:'none', background:'#ef4444', color:'#fff', fontFamily:'var(--font-main)', fontSize:12, fontWeight:700, cursor: delBusy ? 'not-allowed':'pointer', opacity: delBusy?0.6:1, flexShrink:0 }}>{delBusy ? '삭제 중…' : '삭제 확정'}</button>
+                <button onClick={() => setDelConfirm(false)} style={{ padding:'6px 12px', borderRadius:6, border:'1px solid var(--border-secondary)', background:'transparent', color:'var(--text-secondary)', fontFamily:'var(--font-main)', fontSize:12, cursor:'pointer', flexShrink:0 }}>취소</button>
+              </div>
+            )}
+          </div>
+
           <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:4 }}>
             <button onClick={onClose} style={{ padding:'9px 18px', borderRadius:6, border:'1px solid var(--border-secondary)', background:'transparent', color:'var(--text-secondary)', fontFamily:'var(--font-main)', fontSize:13, cursor:'pointer' }}>취소</button>
             <button onClick={handleSave} disabled={busy||ok}
