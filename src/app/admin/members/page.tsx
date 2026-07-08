@@ -1,7 +1,9 @@
 'use client'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { useToast } from '@/components/ToastProvider'
+import { useModalA11y } from '@/lib/useModalA11y'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type NodeRow = {
@@ -190,11 +192,8 @@ function EditModal({ node, onClose, onSaved }: {
   const origStatus = node.status ?? 'active'
   const statusChanged = status !== origStatus
 
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key==='Escape') onClose() }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [onClose])
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useModalA11y(dialogRef, onClose)
 
   async function loadHistory() {
     if (history !== null) { setHistOpen(o => !o); return }
@@ -256,7 +255,7 @@ function EditModal({ node, onClose, onSaved }: {
 
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(3px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width:'min(460px, calc(100vw - 24px))', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:12, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ width:'min(460px, calc(100vw - 24px))', background:'var(--bg-surface)', border:'1px solid var(--border-primary)', borderRadius:12, overflow:'hidden', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
         <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border-primary)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
             <div style={{ fontFamily:'var(--font-main)', fontSize:15, fontWeight:700, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:8 }}>
@@ -400,7 +399,7 @@ export default function MembersPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [editing,  setEditing]  = useState<NodeRow | null>(null)
   const [recalcBusy, setRecalcBusy] = useState(false)
-  const [recalcMsg,  setRecalcMsg]  = useState('')
+  const toast = useToast()
 
   const [unreg, setUnreg] = useState<Unregistered[]>([])
   const [unregOpen, setUnregOpen] = useState(true)
@@ -437,19 +436,18 @@ export default function MembersPage() {
   useEffect(() => { load() }, [])
 
   async function handleRecalc() {
-    setRecalcBusy(true); setRecalcMsg('')
+    setRecalcBusy(true)
     try {
       const token = await getToken()
       const res  = await fetch('/api/rank-check', { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ all:true }) })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
-      setRecalcMsg(`직급 재계산 완료 — ${json.upgraded.length}건 승급`)
+      toast(`직급 재계산 완료 — ${json.upgraded.length}건 승급`)
       load()
     } catch (e: unknown) {
-      setRecalcMsg(e instanceof Error ? e.message : '오류')
+      toast(e instanceof Error ? e.message : '오류', 'error')
     } finally {
       setRecalcBusy(false)
-      setTimeout(() => setRecalcMsg(''), 4000)
     }
   }
 
@@ -488,7 +486,6 @@ export default function MembersPage() {
             </p>
           </div>
           <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', width: isMobile ? '100%' : 'auto' }}>
-            {recalcMsg && <span style={{ fontFamily:'var(--font-main)', fontSize:12, color: recalcMsg.includes('완료') ? '#34d399' : '#f87171' }}>{recalcMsg}</span>}
             <button onClick={handleRecalc} disabled={recalcBusy}
               style={{ padding:'8px 14px', borderRadius:6, border:'1px solid var(--border-secondary)', background:'transparent', color:'var(--text-secondary)', fontFamily:'var(--font-main)', fontSize:12, cursor: recalcBusy ? 'not-allowed' : 'pointer', display:'flex', alignItems:'center', gap:6, opacity: recalcBusy ? 0.5 : 1 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ animation: recalcBusy ? 'spin 1s linear infinite' : 'none' }}>

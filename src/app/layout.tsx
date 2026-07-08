@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '@/styles/globals.css'
 import ThemeProvider from '@/components/ThemeProvider'
+import ToastProvider from '@/components/ToastProvider'
 
 export const metadata: Metadata = {
   title: 'RCT Platform',
@@ -23,7 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-bg-base text-text-primary font-main antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider><ToastProvider>{children}</ToastProvider></ThemeProvider>
       </body>
     </html>
   )

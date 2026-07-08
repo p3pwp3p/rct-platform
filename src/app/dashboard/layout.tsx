@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import PageTransition from '@/components/PageTransition'
 import { ProfileProvider, useProfile } from '@/lib/contexts/ProfileContext'
 import { validateReferralCode } from '@/lib/db'
+import { useModalA11y } from '@/lib/useModalA11y'
 import type { Profile, SponsorInfo } from '@/lib/types'
 import ThemeToggle from '@/components/ThemeToggle'
 
@@ -320,6 +321,8 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
 
   // 스텝 바 진행도
   const stepIdx = { sponsor: 0, referrer: 1, detail: 2, done: 3 }[step]
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useModalA11y(dialogRef, onClose)
 
   return (
     <div style={{
@@ -329,7 +332,7 @@ function AddNodeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
     }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{
+      <div ref={dialogRef} role="dialog" aria-modal="true" style={{
         width: 'min(440px, calc(100vw - 32px))', background: 'var(--bg-surface)',
         border: '1px solid var(--border-primary)',
         borderRadius: 12, overflow: 'hidden',

@@ -1,44 +1,9 @@
 'use client'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { useToast } from '@/components/ToastProvider'
 import type { Profile } from '@/lib/types'
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
-type ToastType = 'success' | 'error'
-function Toast({ msg, type, onDone }: { msg: string; type: ToastType; onDone: () => void }) {
-  const color  = type === 'success' ? '#34d399' : '#f87171'
-  const bg     = type === 'success' ? 'rgba(52,211,153,0.10)' : 'rgba(248,113,113,0.10)'
-  const border = type === 'success' ? 'rgba(52,211,153,0.30)' : 'rgba(248,113,113,0.30)'
-  const icon   = type === 'success'
-    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000)
-    return () => clearTimeout(t)
-  }, [onDone])
-
-  return (
-    <div style={{
-      position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 9000, pointerEvents: 'none',
-      animation: 'toastIn 0.28s cubic-bezier(0.16,1,0.3,1)',
-    }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '11px 18px', borderRadius: 8,
-        background: bg, border: `1px solid ${border}`,
-        backdropFilter: 'blur(12px)',
-        boxShadow: `0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px ${border}`,
-        minWidth: 200, maxWidth: 360,
-      }}>
-        {icon}
-        <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600, color, whiteSpace: 'nowrap' }}>{msg}</span>
-      </div>
-    </div>
-  )
-}
 
 const RANK_COLOR: Record<string, string> = {
   R0: '#64748b', R1: '#34d399', R2: '#60a5fa',
@@ -74,14 +39,7 @@ export default function ProfilePage() {
   const [authTrc20, setAuthTrc20]   = useState('')  // auth 메타데이터 기준 TRC-20
   const [loading, setLoading]       = useState(true)
   const isMobile = useIsMobile()
-
-  // ── 토스트 ────────────────────────────────────────────────────────────────
-  const [toast, setToast] = useState<{ msg: string; type: ToastType } | null>(null)
-  const toastKey = useRef(0)
-  const showToast = useCallback((msg: string, type: ToastType = 'success') => {
-    toastKey.current += 1
-    setToast({ msg, type })
-  }, [])
+  const showToast = useToast()
 
   // 이름 수정
   const [editingName, setEditingName] = useState(false)
@@ -276,7 +234,6 @@ export default function ProfilePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      {toast && <Toast key={toastKey.current} msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       <style>{`
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-12px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
