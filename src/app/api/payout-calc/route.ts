@@ -17,6 +17,7 @@ import {
   type PayoutNode,
   type EarnerItem,
 } from '@/lib/payout-engine'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 // payout-engine의 calcReferralBonus / calcRankBonus 반환 타입 변경에 맞춰
 // calcAllBonuses 가 { distributions, forfeited } 를 반환함
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
     if (!await verifyAdmin(req)) {
       return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
     }
+
+    // 무거운 계산 — 분당 10회 제한
+    if (!await rateLimit(`payout-calc:${clientIp(req)}`, 10, 60)) return NextResponse.json(tooMany, { status: 429 })
 
     const { reportId, preview = false } = await req.json()
     if (!reportId) return NextResponse.json({ error: 'reportId required' }, { status: 400 })

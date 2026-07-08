@@ -9,6 +9,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, tooMany } from '@/lib/rate-limit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
     }
     const user = userData.user
     const isAdmin = user.app_metadata?.role === 'admin'
+
+    // 레이트리밋: 사용자당 분당 20회
+    if (!await rateLimit(`delete-node:${user.id}`, 20, 60)) return NextResponse.json(tooMany, { status: 429 })
 
     // 2. 대상 노드 로드
     const { data: node, error: nodeErr } = await admin

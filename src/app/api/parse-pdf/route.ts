@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PDFParse } from 'pdf-parse'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, tooMany } from '@/lib/rate-limit'
 import type { ParsedPdfReport } from '@/lib/types'
 
 const adminClient = createClient(
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (!token) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
   const { data: { user } } = await adminClient.auth.getUser(token)
   if (!user) return NextResponse.json({ error: '인증 실패' }, { status: 401 })
+
+  // PDF 파싱은 CPU 부하가 크므로 사용자당 분당 20회로 제한
+  if (!await rateLimit(`parse-pdf:${user.id}`, 20, 60)) return NextResponse.json(tooMany, { status: 429 })
 
   try {
     const form = await req.formData()

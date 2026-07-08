@@ -8,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, tooMany } from '@/lib/rate-limit'
 
 const adminClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '인증 실패' }, { status: 401 })
     }
     const ownerId = userData.user.id
+
+    // 레이트리밋: 사용자당 분당 10회
+    if (!await rateLimit(`add-node:${ownerId}`, 10, 60)) return NextResponse.json(tooMany, { status: 429 })
 
     // ── 2. 후원인 검증 ──────────────────────────────────────────────
     const { data: sponsorRows, error: sErr } = await adminClient.rpc('validate_referral_code', {
