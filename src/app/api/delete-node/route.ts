@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, tooMany } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     // 2. 대상 노드 로드
     const { data: node, error: nodeErr } = await admin
       .from('profiles')
-      .select('id, owner_id, parent_id, referrer_id')
+      .select('id, node_id, name, owner_id, parent_id, referrer_id')
       .eq('id', nodeId)
       .single()
     if (nodeErr || !node) {
@@ -79,6 +80,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '연결된 데이터가 있어 삭제할 수 없습니다.' }, { status: 400 })
       throw new Error(m)
     }
+
+    // 감사 로그 (삭제는 파괴적 → 반드시 기록)
+    await logAudit({
+      actorId: user.id, actorEmail: user.email, action: 'delete_node',
+      targetType: 'node', targetId: node.node_id,
+      detail: { by: isAdmin ? 'admin' : 'member', name: node.name, binChildren: binCount, refChildren: refCount },
+    })
 
     // 6. 영향받은 상위(부모·추천인) 직급 재검사 — 삭제로 하위 구성이 바뀜
     const rankCheckUrl = new URL('/api/rank-check', req.url).toString()

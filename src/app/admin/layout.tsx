@@ -42,6 +42,7 @@ const NAV = [
     items: [
       { href: '/admin/history/rank',   label: '직급 변경 이력', icon: 'history' },
       { href: '/admin/history/status', label: '상태 변경 이력', icon: 'history' },
+      { href: '/admin/history/audit',  label: '감사 로그',      icon: 'history' },
     ],
   },
 ]

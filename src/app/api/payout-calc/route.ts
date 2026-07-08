@@ -18,6 +18,7 @@ import {
   type EarnerItem,
 } from '@/lib/payout-engine'
 import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit'
 
 // payout-engine의 calcReferralBonus / calcRankBonus 반환 타입 변경에 맞춰
 // calcAllBonuses 가 { distributions, forfeited } 를 반환함
@@ -220,6 +221,15 @@ export async function POST(req: NextRequest) {
         if (cfErr) console.error('[company forfeited insert]', cfErr)
       }
     }
+
+    // 감사 로그 (수당 지급 계산 저장 = 돈 관련 → 기록)
+    const auditTok = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
+    const { data: actor } = await admin.auth.getUser(auditTok)
+    await logAudit({
+      actorId: actor.user?.id, actorEmail: actor.user?.email, action: 'payout_calc',
+      targetType: 'report', targetId: reportId,
+      detail: { totalReferral, totalRank, totalSponsor, totalForfeited, companyForfeited, rows: distributions.length },
+    })
 
     return NextResponse.json({ ...result, saved: true })
   } catch (e: unknown) {

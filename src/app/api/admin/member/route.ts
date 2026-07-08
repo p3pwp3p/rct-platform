@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logAudit } from '@/lib/audit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,6 +66,14 @@ export async function PATCH(req: NextRequest) {
 
     const { error } = await admin.from('profiles').update(updates).eq('id', id)
     if (error) throw error
+
+    // 감사 로그
+    const auditTok = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
+    const { data: actor } = await admin.auth.getUser(auditTok)
+    await logAudit({
+      actorId: actor.user?.id, actorEmail: actor.user?.email, action: 'member_update',
+      targetType: 'node', targetId: id, detail: updates as Record<string, unknown>,
+    })
 
     return NextResponse.json({ success: true })
   } catch (e: unknown) {
