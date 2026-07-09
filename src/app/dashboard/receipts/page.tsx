@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '@/lib/contexts/ProfileContext'
-import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { useApi } from '@/lib/swr'
 
 interface BreakdownRow {
   bonus_type: 'referral' | 'rank' | 'sponsor'
@@ -239,40 +239,29 @@ export default function ReceiptsPage() {
   const profileId = activeProfile?.id ?? ''
   const isMobile = useIsMobile()
 
-  const [breakdown, setBreakdown] = useState<BreakdownRow[]>([])
-  const [totals, setTotals]       = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
-  const [monthly, setMonthly]     = useState<MonthRow[]>([])
-  const [byMonth, setByMonth]     = useState<Record<string, BreakdownRow[]>>({})
-  const [rowCount, setRowCount]   = useState(0)
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState<string | null>(null)
-  const [filter, setFilter]       = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
-  const [month, setMonth]         = useState<string | null>(null)  // null = 전체
+  const [filter, setFilter] = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
+  const [month, setMonth]   = useState<string | null>(null)  // null = 전체
 
-  useEffect(() => {
-    if (profileLoading) return
-    if (!profileId) { setLoading(false); return }
-    setLoading(true)
-    setError(null)
-    setMonth(null)
-    supabase.auth.getSession()
-      .then(({ data: { session } }) =>
-        fetch(`/api/my-payouts?profileId=${profileId}`, { headers: { Authorization: `Bearer ${session?.access_token ?? ''}` } }))
-      .then(async r => {
-        const d = await r.json().catch(() => ({}))
-        if (!r.ok) throw new Error(d?.error ?? `요청 실패 (${r.status})`)
-        return d
-      })
-      .then(d => {
-        setBreakdown(d.breakdown ?? [])
-        setTotals(d.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 })
-        setMonthly(d.monthly ?? [])
-        setByMonth(d.breakdownByMonth ?? {})
-        setRowCount(d.rowCount ?? 0)
-      })
-      .catch(e => { console.error('[receipts]', e); setError('수령 내역을 불러오지 못했습니다.') })
-      .finally(() => setLoading(false))
-  }, [profileId, profileLoading])
+  type PayoutData = {
+    breakdown?: BreakdownRow[]
+    totals?: { referral: number; rank: number; sponsor: number; total: number }
+    monthly?: MonthRow[]
+    breakdownByMonth?: Record<string, BreakdownRow[]>
+    rowCount?: number
+  }
+  const { data, isLoading, error: swrError } = useApi<PayoutData>(
+    !profileLoading && profileId ? `/api/my-payouts?profileId=${profileId}` : null
+  )
+  const loading  = profileLoading || isLoading
+  const error    = swrError ? '수령 내역을 불러오지 못했습니다.' : null
+  const breakdown = data?.breakdown ?? []
+  const totals    = data?.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 }
+  const monthly   = data?.monthly ?? []
+  const byMonth   = data?.breakdownByMonth ?? {}
+  const rowCount  = data?.rowCount ?? 0
+
+  // 계정 전환 시 선택 월 초기화
+  useEffect(() => { setMonth(null) }, [profileId])
 
   // 선택 월에 따른 scope
   const monthData = month ? monthly.find(m => m.month === month) : null

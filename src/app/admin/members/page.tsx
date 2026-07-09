@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useToast } from '@/components/ToastProvider'
 import { useModalA11y } from '@/lib/useModalA11y'
+import { useApi } from '@/lib/swr'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type NodeRow = {
@@ -392,17 +393,12 @@ function EditModal({ node, onClose, onSaved }: {
 
 // ── 메인 페이지 ───────────────────────────────────────────────────────────────
 export default function MembersPage() {
-  const [accounts, setAccounts] = useState<AdminAccount[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
   const [search,   setSearch]   = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [editing,  setEditing]  = useState<NodeRow | null>(null)
   const [recalcBusy, setRecalcBusy] = useState(false)
-  const toast = useToast()
-
-  const [unreg, setUnreg] = useState<Unregistered[]>([])
   const [unregOpen, setUnregOpen] = useState(true)
+  const toast = useToast()
   const isMobile = useIsMobile()
 
   const getToken = useCallback(async () => {
@@ -410,30 +406,16 @@ export default function MembersPage() {
     return session?.access_token ?? ''
   }, [])
 
-  async function loadAccounts() {
-    setLoading(true); setError('')
-    try {
-      const token = await getToken()
-      const res  = await fetch('/api/admin/accounts', { headers: { Authorization: `Bearer ${token}` } })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setAccounts(json.accounts)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '로딩 오류')
-    } finally { setLoading(false) }
-  }
+  const { data: accData, isLoading, error: accErr, mutate: mutateAcc } =
+    useApi<{ accounts: AdminAccount[] }>('/api/admin/accounts')
+  const { data: unregData, mutate: mutateUnreg } =
+    useApi<{ members: Unregistered[] }>('/api/admin/unregistered-members')
 
-  async function loadUnregistered() {
-    try {
-      const token = await getToken()
-      const res  = await fetch('/api/admin/unregistered-members', { headers: { Authorization: `Bearer ${token}` } })
-      const json = await res.json()
-      if (res.ok) setUnreg(json.members)
-    } catch { /* noop */ }
-  }
-
-  function load() { loadAccounts(); loadUnregistered() }
-  useEffect(() => { load() }, [])
+  const accounts = accData?.accounts ?? []
+  const unreg    = unregData?.members ?? []
+  const loading  = isLoading
+  const error    = accErr ? (accErr instanceof Error ? accErr.message : '로딩 오류') : ''
+  const load     = useCallback(() => { mutateAcc(); mutateUnreg() }, [mutateAcc, mutateUnreg])
 
   async function handleRecalc() {
     setRecalcBusy(true)
