@@ -4,6 +4,7 @@ import { useProfile } from '@/lib/contexts/ProfileContext'
 import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useApi } from '@/lib/swr'
+import { useRealtime } from '@/lib/useRealtime'
 import {
   memberSaveProfitReport,
   memberGetProfitReports,
@@ -296,9 +297,11 @@ function ReceivedPayoutsPanel({ profileId }: { profileId: string }) {
   const [filter, setFilter] = useState<'all' | 'referral' | 'rank' | 'sponsor'>('all')
   const isMobile = useIsMobile()
 
-  const { data, isLoading, error: swrError } = useApi<{ rows?: PayoutRow[]; totals?: { referral: number; rank: number; sponsor: number; total: number } }>(
+  const { data, isLoading, error: swrError, mutate } = useApi<{ rows?: PayoutRow[]; totals?: { referral: number; rank: number; sponsor: number; total: number } }>(
     profileId ? `/api/my-payouts?profileId=${profileId}` : null
   )
+  // 관리자 수당 정산 시 즉시 반영 (RLS 로 본인 행만 수신)
+  useRealtime('payout_distributions', () => { mutate() }, { enabled: !!profileId })
   const rows    = data?.rows ?? []
   const totals  = data?.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 }
   const loading = isLoading

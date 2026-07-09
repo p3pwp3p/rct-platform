@@ -5,6 +5,7 @@ import { useIsMobile } from '@/lib/useIsMobile'
 import { useToast } from '@/components/ToastProvider'
 import { useModalA11y } from '@/lib/useModalA11y'
 import { useApi } from '@/lib/swr'
+import { useRealtime } from '@/lib/useRealtime'
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type NodeRow = {
@@ -416,6 +417,8 @@ export default function MembersPage() {
   const loading  = isLoading
   const error    = accErr ? (accErr instanceof Error ? accErr.message : '로딩 오류') : ''
   const load     = useCallback(() => { mutateAcc(); mutateUnreg() }, [mutateAcc, mutateUnreg])
+  // 새 노드 추가·수정·삭제가 다른 관리자/회원에 의해 발생해도 즉시 목록 반영
+  useRealtime('profiles', load)
 
   async function handleRecalc() {
     setRecalcBusy(true)

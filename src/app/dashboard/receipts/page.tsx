@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '@/lib/contexts/ProfileContext'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useApi } from '@/lib/swr'
+import { useRealtime } from '@/lib/useRealtime'
 
 interface BreakdownRow {
   bonus_type: 'referral' | 'rank' | 'sponsor'
@@ -249,9 +250,11 @@ export default function ReceiptsPage() {
     breakdownByMonth?: Record<string, BreakdownRow[]>
     rowCount?: number
   }
-  const { data, isLoading, error: swrError } = useApi<PayoutData>(
+  const { data, isLoading, error: swrError, mutate } = useApi<PayoutData>(
     !profileLoading && profileId ? `/api/my-payouts?profileId=${profileId}` : null
   )
+  // 관리자가 수당 정산을 실행하면 즉시 반영 (RLS 로 본인 행만 수신)
+  useRealtime('payout_distributions', () => { mutate() }, { enabled: !!profileId })
   const loading  = profileLoading || isLoading
   const error    = swrError ? '수령 내역을 불러오지 못했습니다.' : null
   const breakdown = data?.breakdown ?? []
