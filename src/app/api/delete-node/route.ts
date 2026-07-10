@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, tooMany } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
+import { internalHeaders } from '@/lib/internal-auth'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     const affected = [...new Set([node.parent_id, node.referrer_id].filter(Boolean))] as string[]
     await Promise.allSettled(
       affected.map(id =>
-        fetch(rankCheckUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: id }) })
+        fetch(rankCheckUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', ...internalHeaders() }, body: JSON.stringify({ profileId: id }) })
       )
     )
 

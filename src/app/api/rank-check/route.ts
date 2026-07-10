@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { RANK_ORDER, RANK_REQUIREMENTS } from '@/lib/ranks'
 import type { Rank } from '@/lib/types'
 import { createNotifications } from '@/lib/notify'
+import { isInternalCall } from '@/lib/internal-auth'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -113,7 +115,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // all: true 는 관리자만 사용 가능
+    // ── 인증: 서버 내부 호출(내부 시크릿) 또는 관리자만 허용 ──────────────
+    // add-node / delete-node 의 자동 승급 호출은 내부 시크릿으로 통과,
+    // 그 외 외부 요청은 관리자 토큰이 있어야 한다(익명 차단).
+    const internal = isInternalCall(req)
+    const admin_ = internal ? true : await verifyAdmin(req)
+    if (!admin_) {
+      return NextResponse.json({ error: '권한 필요' }, { status: 401 })
+    }
+    // 레이트리밋(외부 호출만): IP 당 분당 30회
+    if (!internal && !await rateLimit(`rank-check:${clientIp(req)}`, 30, 60)) {
+      return NextResponse.json(tooMany, { status: 429 })
+    }
+
+    // all: true(전체 재계산)는 실제 관리자만 — 내부 시크릿 호출엔 허용하지 않음
     if (body.all && !await verifyAdmin(req)) {
       return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
     }
