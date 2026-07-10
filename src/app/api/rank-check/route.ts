@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { RANK_ORDER, RANK_REQUIREMENTS } from '@/lib/ranks'
 import type { Rank } from '@/lib/types'
+import { createNotifications } from '@/lib/notify'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -90,6 +91,15 @@ async function tryUpgrade(profile: Profile, all: Profile[]): Promise<boolean> {
     changed_at:  new Date().toISOString(),
   })
   if (histErr) console.error('[rank_history insert]', histErr)  // 이력 실패해도 승급은 유지
+
+  // 인앱 알림: 승급 (best-effort)
+  await createNotifications([{
+    profileId: profile.id,
+    type: 'rank_up',
+    title: '직급이 승급되었습니다',
+    body: `${profile.rank} → ${nextRank} 승급을 축하합니다`,
+    metadata: { oldRank: profile.rank, newRank: nextRank },
+  }])
 
   return true
 }

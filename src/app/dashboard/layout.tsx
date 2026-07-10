@@ -9,6 +9,7 @@ import { validateReferralCode } from '@/lib/db'
 import { useModalA11y } from '@/lib/useModalA11y'
 import type { Profile, SponsorInfo } from '@/lib/types'
 import ThemeToggle from '@/components/ThemeToggle'
+import NotificationBell from '@/components/NotificationBell'
 
 // ─── 상수 ─────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -800,6 +801,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             {currentPageName}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <NotificationBell />
             <ThemeToggle />
             <span style={{
               fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px',

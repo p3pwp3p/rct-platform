@@ -19,6 +19,7 @@ import {
 } from '@/lib/payout-engine'
 import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
+import { createNotifications } from '@/lib/notify'
 
 // payout-engine의 calcReferralBonus / calcRankBonus 반환 타입 변경에 맞춰
 // calcAllBonuses 가 { distributions, forfeited } 를 반환함
@@ -230,6 +231,23 @@ export async function POST(req: NextRequest) {
       targetType: 'report', targetId: reportId,
       detail: { totalReferral, totalRank, totalSponsor, totalForfeited, companyForfeited, rows: distributions.length },
     })
+
+    // 인앱 알림: 수령자별 합계 1건씩 (best-effort, 실패해도 정산은 유지)
+    const perRecipient = new Map<string, number>()
+    for (const d of distributions) {
+      perRecipient.set(d.recipient_id, (perRecipient.get(d.recipient_id) ?? 0) + d.amount)
+    }
+    await createNotifications(
+      [...perRecipient.entries()]
+        .filter(([, amt]) => amt > 0)
+        .map(([recipientId, amt]) => ({
+          profileId: recipientId,
+          type: 'payout' as const,
+          title: '수당이 지급되었습니다',
+          body: `${reportMonth} 정산 · 총 ₩${Math.round(amt).toLocaleString('ko-KR')}`,
+          metadata: { reportId, amount: amt, month: reportMonth },
+        })),
+    )
 
     return NextResponse.json({ ...result, saved: true })
   } catch (e: unknown) {
