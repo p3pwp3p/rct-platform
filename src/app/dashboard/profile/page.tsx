@@ -132,15 +132,22 @@ export default function ProfilePage() {
     if (!nm) { showToast('이름을 입력해주세요', 'error'); return }
     if (nm.length > 30) { showToast('이름이 너무 깁니다 (30자 이하)', 'error'); return }
     setNodeNameBusy(true)
-    const { error } = await supabase.from('profiles').update({ name: nm }).eq('id', nodeId)
+    // 소유 노드는 RLS 로 직접 UPDATE 가 막히므로 서버 API(소유권 검증 + 화이트리스트) 사용
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/update-node', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+      body: JSON.stringify({ nodeId, name: nm }),
+    })
+    const json = await res.json().catch(() => ({}))
     // 메인 노드면 계정 표시 이름(auth full_name)도 동기화
-    if (!error && nodeId === myProfile?.id) {
+    if (res.ok && nodeId === myProfile?.id) {
       await supabase.auth.updateUser({ data: { full_name: nm } })
       setFullName(nm)
       setMyProfile(p => p ? { ...p, name: nm } : p)
     }
     setNodeNameBusy(false)
-    if (error) { showToast(error.message, 'error'); return }
+    if (!res.ok) { showToast(json.error ?? '저장 실패', 'error'); return }
     setNodes(ns => ns.map(n => n.id === nodeId ? { ...n, name: nm } : n))
     setEditingNodeName(null)
     showToast('노드 이름이 저장됐습니다')
@@ -149,9 +156,16 @@ export default function ProfilePage() {
   const handleSaveMt5 = async (nodeId: string) => {
     const v = mt5Input.trim()
     setMt5Busy(true)
-    const { error } = await supabase.from('profiles').update({ mt5_account_id: v || null }).eq('id', nodeId)
+    // 소유 노드는 RLS 로 직접 UPDATE 가 막히므로 서버 API(소유권 검증 + 화이트리스트) 사용
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/update-node', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+      body: JSON.stringify({ nodeId, mt5AccountId: v }),
+    })
+    const json = await res.json().catch(() => ({}))
     setMt5Busy(false)
-    if (error) { showToast(error.message, 'error'); return }
+    if (!res.ok) { showToast(json.error ?? '저장 실패', 'error'); return }
     setNodes(ns => ns.map(n => n.id === nodeId ? { ...n, mt5_account_id: v || null } : n))
     setEditingMt5(null)
     showToast('Vantage C.T 계정이 저장됐습니다')
