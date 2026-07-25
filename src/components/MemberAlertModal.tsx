@@ -34,23 +34,16 @@ export default function MemberAlertModal() {
         const res = await fetch('/api/member-alerts', { headers: { Authorization: `Bearer ${token}` } })
         const json = await res.json()
         if (cancelled) return
-        const list: Alert[] = json.alerts ?? []
-        if (list.length && sessionStorage.getItem('member_alert_seen') !== signature(list)) {
-          setAlerts(list)
-        }
+        setAlerts(json.alerts ?? [])
       } catch { /* 무시 */ }
     })()
     return () => { cancelled = true }
   }, [])
 
-  const signature = (list: Alert[]) => list.map(a => `${a.nodeId}:${a.kind}`).join(',')
-
   if (closed || alerts.length === 0) return null
 
-  const close = () => {
-    sessionStorage.setItem('member_alert_seen', signature(alerts))
-    setClosed(true)
-  }
+  // 확인을 누르면 이번 화면에서만 닫힘. 로그인/새로고침하면 상태가 남아있는 한 다시 뜬다.
+  const close = () => setClosed(true)
 
   const hasSuspended = alerts.some(a => a.kind === 'suspended')
   const accent = hasSuspended ? '#f87171' : '#fbbf24'
