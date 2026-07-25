@@ -16,9 +16,20 @@ function daysLeft(iso: string | null): number | null {
   return ms <= 0 ? 0 : Math.ceil(ms / 86400_000)
 }
 
+// 알림 구성(노드+상태)이 바뀌면 다시 보여주기 위한 서명
+const signature = (list: Alert[]) => list.map(a => `${a.nodeId}:${a.kind}`).join(',')
+const DISMISS_KEY = 'member_alert_dismiss'
+function isDismissedToday(sig: string): boolean {
+  try {
+    const v = JSON.parse(localStorage.getItem(DISMISS_KEY) || '{}')
+    return v.date === new Date().toDateString() && v.sig === sig
+  } catch { return false }
+}
+
 /**
  * 로그인 시 본인 노드에 "정지 예정 / 정지됨"이 있으면 중앙 모달로 안내.
- * 확인을 누르면 이번 세션 동안 닫힘(sessionStorage). 상태가 남아있으면 다음 로그인에 다시 뜸.
+ * '확인'은 이번 화면에서만 닫음. '오늘 하루 보지 않기'는 오늘 동안(같은 구성) 억제.
+ * 상태가 남아있으면 다음 날/새 노드 발생 시 다시 뜸.
  */
 export default function MemberAlertModal() {
   const [alerts, setAlerts] = useState<Alert[]>([])
@@ -34,7 +45,9 @@ export default function MemberAlertModal() {
         const res = await fetch('/api/member-alerts', { headers: { Authorization: `Bearer ${token}` } })
         const json = await res.json()
         if (cancelled) return
-        setAlerts(json.alerts ?? [])
+        const list: Alert[] = json.alerts ?? []
+        if (list.length && isDismissedToday(signature(list))) return   // 오늘 하루 보지 않기
+        setAlerts(list)
       } catch { /* 무시 */ }
     })()
     return () => { cancelled = true }
@@ -42,8 +55,15 @@ export default function MemberAlertModal() {
 
   if (closed || alerts.length === 0) return null
 
-  // 확인을 누르면 이번 화면에서만 닫힘. 로그인/새로고침하면 상태가 남아있는 한 다시 뜬다.
+  // 확인: 이번 화면에서만 닫힘(새로고침하면 다시 뜸)
   const close = () => setClosed(true)
+  // 오늘 하루 보지 않기: 오늘 동안 같은 구성이면 억제
+  const dismissToday = () => {
+    try {
+      localStorage.setItem(DISMISS_KEY, JSON.stringify({ date: new Date().toDateString(), sig: signature(alerts) }))
+    } catch { /* 무시 */ }
+    setClosed(true)
+  }
 
   const hasSuspended = alerts.some(a => a.kind === 'suspended')
   // 브랜드 컬러(틸)로 통일. 정지됨(하드 스톱)만 레드로 구분.
@@ -98,9 +118,13 @@ export default function MemberAlertModal() {
           })}
         </div>
 
-        <div style={{ padding: '12px 22px 18px' }}>
+        <div style={{ padding: '12px 22px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={dismissToday} style={{
+            flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)',
+          }}>오늘 하루 보지 않기</button>
           <button onClick={close} style={{
-            width: '100%', padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            flex: 1, padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer',
             background: 'var(--accent-blue)', color: '#07080a', fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700,
           }}>확인</button>
         </div>
