@@ -190,7 +190,7 @@ export default function NotificationBell() {
                       {n.body}
                     </div>
                   )}
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
                     {timeAgo(n.created_at)}
                   </div>
                 </div>

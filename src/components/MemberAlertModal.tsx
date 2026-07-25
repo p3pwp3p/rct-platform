@@ -46,7 +46,9 @@ export default function MemberAlertModal() {
   const close = () => setClosed(true)
 
   const hasSuspended = alerts.some(a => a.kind === 'suspended')
-  const accent = hasSuspended ? '#f87171' : '#fbbf24'
+  // 브랜드 컬러(틸)로 통일. 정지됨(하드 스톱)만 레드로 구분.
+  const accent = hasSuspended ? '#f87171' : 'var(--accent-blue)'
+  const accentSoft = hasSuspended ? 'rgba(248,113,113,0.12)' : 'var(--accent-blue-dim)'
 
   return (
     <div style={{
@@ -63,7 +65,7 @@ export default function MemberAlertModal() {
         <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-            background: `${accent}1a`, border: `1px solid ${accent}`, color: accent,
+            background: accentSoft, border: `1px solid ${accent}`, color: accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 700,
           }}>!</div>
           <h3 style={{ fontFamily: 'var(--font-main)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -79,8 +81,9 @@ export default function MemberAlertModal() {
                 padding: '12px 14px', borderRadius: 8, background: 'var(--bg-inset)',
                 border: '1px solid var(--border-primary)',
               }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: accent, fontWeight: 700 }}>
-                  {a.nodeId} {a.name ? `· ${a.name}` : ''}
+                <div style={{ fontSize: 13, color: accent, fontWeight: 700 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{a.nodeId}</span>
+                  {a.name ? <span style={{ fontFamily: 'var(--font-main)' }}> · {a.name}</span> : null}
                 </div>
                 <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.6 }}>
                   {a.kind === 'suspended'
