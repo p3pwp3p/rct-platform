@@ -34,6 +34,7 @@ function isDismissedToday(sig: string): boolean {
 export default function MemberAlertModal() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [closed, setClosed] = useState(false)
+  const [dontShowToday, setDontShowToday] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -55,13 +56,14 @@ export default function MemberAlertModal() {
 
   if (closed || alerts.length === 0) return null
 
-  // 확인: 이번 화면에서만 닫힘(새로고침하면 다시 뜸)
-  const close = () => setClosed(true)
-  // 오늘 하루 보지 않기: 오늘 동안 같은 구성이면 억제
-  const dismissToday = () => {
-    try {
-      localStorage.setItem(DISMISS_KEY, JSON.stringify({ date: new Date().toDateString(), sig: signature(alerts) }))
-    } catch { /* 무시 */ }
+  // 확인: 체크박스가 켜져 있으면 '오늘 하루 보지 않기'(오늘 동안 같은 구성 억제),
+  //       아니면 이번 화면에서만 닫힘(새로고침하면 다시 뜸).
+  const confirm = () => {
+    if (dontShowToday) {
+      try {
+        localStorage.setItem(DISMISS_KEY, JSON.stringify({ date: new Date().toDateString(), sig: signature(alerts) }))
+      } catch { /* 무시 */ }
+    }
     setClosed(true)
   }
 
@@ -118,13 +120,21 @@ export default function MemberAlertModal() {
           })}
         </div>
 
-        <div style={{ padding: '12px 22px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={dismissToday} style={{
-            flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)',
-          }}>오늘 하루 보지 않기</button>
-          <button onClick={close} style={{
-            flex: 1, padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer',
+        <div style={{ padding: '12px 22px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+            fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)',
+          }}>
+            <input
+              type="checkbox"
+              checked={dontShowToday}
+              onChange={e => setDontShowToday(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--accent-blue)', cursor: 'pointer' }}
+            />
+            오늘 하루 보지 않기
+          </label>
+          <button onClick={confirm} style={{
+            width: '100%', padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer',
             background: 'var(--accent-blue)', color: '#07080a', fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700,
           }}>확인</button>
         </div>
