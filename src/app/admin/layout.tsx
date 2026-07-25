@@ -20,6 +20,7 @@ const NAV = [
       { href: '/admin/legs',     label: '전체 레그 현황', icon: 'network', exact: true },
       { href: '/admin/legs/tree', label: '트리 뷰',        icon: 'tree' },
       { href: '/admin/sales',    label: '매출 관리',       icon: 'sales' },
+      { href: '/admin/node-control', label: '노드 통제 현황', icon: 'network' },
     ],
   },
   {
