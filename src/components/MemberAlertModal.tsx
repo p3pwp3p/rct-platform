@@ -63,12 +63,14 @@ export default function MemberAlertModal() {
     }}>
       <div style={{
         width: 420, maxWidth: '100%', background: 'var(--bg-surface)',
-        border: `1px solid ${accent}`, borderRadius: 12, overflow: 'hidden',
+        border: '1px solid var(--border-primary)', borderRadius: 12, overflow: 'hidden',
+        borderTop: `3px solid ${accent}`,
+        fontFamily: 'var(--font-main)',
       }}>
         <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-            background: 'var(--bg-primary)', border: `1px solid ${accent}`, color: accent,
+            background: `${accent}1a`, border: `1px solid ${accent}`, color: accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 700,
           }}>!</div>
           <h3 style={{ fontFamily: 'var(--font-main)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -81,7 +83,7 @@ export default function MemberAlertModal() {
             const d = daysLeft(a.graceUntil)
             return (
               <div key={a.nodeId} style={{
-                padding: '12px 14px', borderRadius: 8, background: 'var(--bg-primary)',
+                padding: '12px 14px', borderRadius: 8, background: 'var(--bg-inset)',
                 border: '1px solid var(--border-primary)',
               }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: accent, fontWeight: 700 }}>
@@ -103,7 +105,7 @@ export default function MemberAlertModal() {
         <div style={{ padding: '12px 22px 18px' }}>
           <button onClick={close} style={{
             width: '100%', padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer',
-            background: accent, color: '#07080a', fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700,
+            background: 'var(--accent-blue)', color: '#07080a', fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700,
           }}>확인</button>
         </div>
       </div>

@@ -138,11 +138,11 @@ export default function NotificationBell() {
           {popups.map(pp => (
             <div key={`pp-${pp.id}`} style={{
               display: 'flex', gap: 10, padding: '12px 14px',
-              borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-primary)',
+              borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-inset)',
             }}>
               <div style={{
                 width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                background: 'var(--bg-primary)', border: '1px solid #fbbf24', color: '#fbbf24',
+                background: 'var(--bg-inset)', border: '1px solid #fbbf24', color: '#fbbf24',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
               }}>📢</div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -175,7 +175,7 @@ export default function NotificationBell() {
               }}>
                 <div style={{
                   width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--bg-primary)', border: `1px solid ${ICON_COLOR[n.type]}`,
+                  background: 'var(--bg-inset)', border: `1px solid ${ICON_COLOR[n.type]}`,
                   color: ICON_COLOR[n.type], display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: 'var(--font-mono)', fontSize: 13,
                 }}>
