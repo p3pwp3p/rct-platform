@@ -1,0 +1,10 @@
+.env
+.venv/
+copiers.json
+copiers.csv
+debug.png
+debug.html
+__pycache__/
+.userdata/
+.chrome-profile/
+reconciliation.json
