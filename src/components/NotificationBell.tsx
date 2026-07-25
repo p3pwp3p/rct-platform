@@ -14,6 +14,14 @@ type Notification = {
   created_at: string
 }
 
+type CompanyPopup = {
+  id: string
+  title: string
+  body: string
+  link_url: string | null
+  link_label: string | null
+}
+
 const ICON: Record<Notification['type'], string> = {
   payout: '₩',
   rank_up: '★',
@@ -40,6 +48,10 @@ export default function NotificationBell() {
   const { data, mutate } = useApi<{ notifications: Notification[]; unread: number }>('/api/notifications')
   const items  = data?.notifications ?? []
   const unread = data?.unread ?? 0
+
+  // 회사 공통 팝업(프로모션·공지)도 벨에 함께 표시
+  const { data: popupData } = useApi<{ popups: CompanyPopup[] }>('/api/popups')
+  const popups = popupData?.popups ?? []
 
   // 실시간: 새 알림 도착 시 즉시 반영
   useRealtime('notifications', () => { mutate() })
@@ -122,7 +134,35 @@ export default function NotificationBell() {
             알림
           </div>
 
-          {items.length === 0 ? (
+          {/* 회사 공통 팝업(공지·프로모션) */}
+          {popups.map(pp => (
+            <div key={`pp-${pp.id}`} style={{
+              display: 'flex', gap: 10, padding: '12px 14px',
+              borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-primary)',
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                background: 'var(--bg-primary)', border: '1px solid #fbbf24', color: '#fbbf24',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+              }}>📢</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#fbbf24', border: '1px solid #fbbf24', borderRadius: 3, padding: '0 4px' }}>공지</span>
+                  <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{pp.title}</span>
+                </div>
+                {pp.body && (
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, whiteSpace: 'pre-wrap' }}>{pp.body}</div>
+                )}
+                {pp.link_url && (
+                  <a href={pp.link_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--accent-blue)', marginTop: 4, display: 'inline-block' }}>
+                    {pp.link_label?.trim() || '자세히 보기'} →
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {items.length === 0 && popups.length === 0 ? (
             <div style={{ padding: '28px 14px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
               새 알림이 없습니다
             </div>

@@ -10,6 +10,7 @@ import { useModalA11y } from '@/lib/useModalA11y'
 import type { Profile, SponsorInfo } from '@/lib/types'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import MemberAlertModal from '@/components/MemberAlertModal'
 
 // ─── 상수 ─────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -801,6 +802,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             {currentPageName}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <MemberAlertModal />
             <NotificationBell />
             <ThemeToggle />
             <span style={{
