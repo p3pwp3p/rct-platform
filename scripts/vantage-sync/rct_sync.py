@@ -78,7 +78,8 @@ READY_JS = "(() => /ID:\\s*\\d{5,}/.test(document.body.innerText))()"
 # ── CDP 클라이언트 ───────────────────────────────────────────────────────────
 class CDP:
     def __init__(self, ws_url, timeout=30):
-        self.ws = create_connection(ws_url, max_size=None)
+        # 최신 Chrome 은 Origin 헤더가 있으면 ws 연결을 거부(403) → Origin 을 안 보냄
+        self.ws = create_connection(ws_url, max_size=None, suppress_origin=True)
         self.ws.settimeout(timeout)
         self._id = 0
     def cmd(self, method, params=None, timeout=30):
@@ -123,6 +124,7 @@ def launch_chrome(cfg, log):
         profile = os.path.join(base_dir(), profile)
     log(f"Chrome 실행(포트 {cfg['debug_port']})…")
     subprocess.Popen([chrome, f"--remote-debugging-port={cfg['debug_port']}",
+                      "--remote-allow-origins=*",
                       f"--user-data-dir={profile}", cfg["login_url"]])
     for _ in range(20):
         if debug_alive(cfg["debug_port"]):
