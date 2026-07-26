@@ -31,6 +31,27 @@ def base_dir():
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
+def export_dir():
+    d = os.path.join(base_dir(), "exports")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+def list_exports():
+    """exports 폴더의 엑셀 파일을 최신순으로 (파일명, 경로, 수정시각, 크기KB) 반환."""
+    d = export_dir()
+    items = []
+    for name in os.listdir(d):
+        if not name.lower().endswith(".xlsx"):
+            continue
+        p = os.path.join(d, name)
+        try:
+            st = os.stat(p)
+            items.append((name, p, st.st_mtime, round(st.st_size / 1024, 1)))
+        except OSError:
+            pass
+    items.sort(key=lambda x: x[2], reverse=True)
+    return items
+
 def load_config():
     cfg = configparser.ConfigParser()
     path = os.path.join(base_dir(), "config.ini")
@@ -227,13 +248,15 @@ def run_sync(cfg, log, allow_launch=True):
             return None
         rows = cdp.evaluate(EXTRACT_JS) or []
         log(f"추출된 카피자: {len(rows)}명")
-        # 파일 저장 (JSON + 엑셀)
+        # 파일 저장 (JSON 최신본 + 날짜별 엑셀 누적)
         out = os.path.join(base_dir(), "copiers.json")
         with open(out, "w", encoding="utf-8") as f:
             json.dump(rows, f, ensure_ascii=False, indent=2)
-        xlsx = save_excel(rows, os.path.join(base_dir(), "copiers.xlsx"), log)
+        exdir = export_dir()
+        stamp = time.strftime("%Y-%m-%d_%H%M")
+        xlsx = save_excel(rows, os.path.join(exdir, f"카피자_{stamp}.xlsx"), log)
         if xlsx:
-            log(f"엑셀 저장: {os.path.basename(xlsx)}")
+            log(f"엑셀 저장: exports/{os.path.basename(xlsx)}")
         if rows:
             send_to_server(cfg, rows, log)
         log("완료.")
@@ -267,8 +290,11 @@ def run_gui(cfg):
     chrome_btn = tk.Button(btns, text="Chrome 열기", bg="#242a35", fg="#e0e6ed",
                            font=("Malgun Gothic", 10), relief="flat", padx=14, pady=8)
     chrome_btn.pack(side="right", padx=(0, 8))
+    list_btn = tk.Button(btns, text="📁 엑셀 목록", bg="#242a35", fg="#e0e6ed",
+                         font=("Malgun Gothic", 9), relief="flat", padx=10, pady=6)
+    list_btn.pack(side="left")
     status = tk.Label(btns, text="대기 중", fg="#64748b", bg="#11141b", font=("Malgun Gothic", 9))
-    status.pack(side="left")
+    status.pack(side="left", padx=(10, 0))
 
     # 로그(가운데, 남는 공간 채움)
     logbox = scrolledtext.ScrolledText(root, bg="#0a0c10", fg="#94a3b8", insertbackground="#94a3b8",
@@ -312,8 +338,43 @@ def run_gui(cfg):
                 busy["v"] = False
         threading.Thread(target=work, daemon=True).start()
 
+    def show_exports():
+        win = tk.Toplevel(root); win.title("엑셀 목록 (날짜별)"); win.geometry("460x420"); win.configure(bg="#11141b")
+        tk.Label(win, text="저장된 카피자 엑셀 (최신순)", fg="#e0e6ed", bg="#11141b",
+                 font=("Malgun Gothic", 11, "bold")).pack(anchor="w", padx=14, pady=(12, 6))
+        lb = tk.Listbox(win, bg="#0a0c10", fg="#94a3b8", font=("Consolas", 9), relief="flat",
+                        selectbackground="#4db6ac", selectforeground="#07080a", activestyle="none")
+        lb.pack(fill="both", expand=True, padx=14, pady=6)
+        files = list_exports()
+        cur_date = None
+        rowmap = {}  # listbox index → 파일 경로
+        for name, path, mtime, kb in files:
+            d = time.strftime("%Y-%m-%d", time.localtime(mtime))
+            if d != cur_date:
+                lb.insert("end", f"── {d} ──"); lb.itemconfig("end", fg="#64748b"); cur_date = d
+            t = time.strftime("%H:%M", time.localtime(mtime))
+            idx = lb.size()
+            lb.insert("end", f"   {t}   {name}   ({kb} KB)")
+            rowmap[idx] = path
+        if not files:
+            lb.insert("end", "저장된 엑셀이 없습니다. 동기화를 먼저 실행하세요.")
+
+        def open_selected(_=None):
+            sel = lb.curselection()
+            if sel and sel[0] in rowmap:
+                try: os.startfile(rowmap[sel[0]])
+                except Exception as e: log(f"열기 실패: {e}")
+        lb.bind("<Double-Button-1>", open_selected)
+
+        bar = tk.Frame(win, bg="#11141b"); bar.pack(fill="x", padx=14, pady=(4, 14))
+        tk.Button(bar, text="폴더 열기", bg="#242a35", fg="#e0e6ed", font=("Malgun Gothic", 9),
+                  relief="flat", padx=12, pady=6, command=lambda: os.startfile(export_dir())).pack(side="left")
+        tk.Button(bar, text="선택 파일 열기", bg="#4db6ac", fg="#07080a", font=("Malgun Gothic", 9, "bold"),
+                  relief="flat", padx=12, pady=6, command=open_selected).pack(side="right")
+
     run_btn.config(command=do_run)
     chrome_btn.config(command=do_chrome)
+    list_btn.config(command=show_exports)
 
     log("준비됨. 처음이면 [Chrome 열기] → 로그인 → [동기화 실행] 순서로 하세요.")
     log(f"서버: {cfg['api_url']}  · 적용기본: {cfg.get('apply')}")
