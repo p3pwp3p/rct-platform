@@ -66,7 +66,7 @@ def load_config():
         "profile_dir": ".chrome-profile",
     }
     if os.path.exists(path):
-        cfg.read(path, encoding="utf-8")
+        cfg.read(path, encoding="utf-8-sig")   # BOM 있어도 안전
         if cfg.has_section("rct"):
             for k in defaults:
                 if cfg.has_option("rct", k):
