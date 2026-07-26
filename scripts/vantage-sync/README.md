@@ -1,5 +1,32 @@
 # Vantage 카피자 크롤러
 
+## ⭐ 단일 프로그램 (rct_sync.py → exe)
+Playwright 없이 Chrome 디버그 포트(CDP)에 직접 붙는 **가벼운 단일 프로그램**.
+`websocket-client` 하나만 의존. GUI 모드 + 자동 모드(--auto) 지원.
+
+**빌드 (exe 만들기)**
+```powershell
+cd "scripts/vantage-sync"
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy config.ini.example config.ini   # config.ini 에 internal_secret 등 입력
+build_exe.bat                        # → dist\RCT카피자동기화.exe
+```
+
+**사용**
+- `dist\RCT카피자동기화.exe` 를 `config.ini` 와 같은 폴더에 두고 실행.
+- GUI 창 → "동기화 실행". 처음엔 뜬 Chrome 에서 Vantage 로그인(1회, 세션 유지).
+- "실제 적용" 체크를 켜면 정지/재활성이 실제 반영(기본은 시뮬레이션).
+
+**매시간 자동 실행 (작업 스케줄러)**
+- 프로그램: `...\dist\RCT카피자동기화.exe`, 인수: `--auto`
+- 창 없이 조용히 1회 실행, 결과는 `sync_log.txt` 에 기록.
+- 전제: config.ini 의 apply=true(자동 적용 원할 때) + 로그인된 Chrome 프로필 유지.
+
+---
+
+## (구) Playwright 스크립트 버전
+
 Vantage 포털에서 카피자 목록(계정번호·수수료 잔고·실현수익)을 긁어오는 스크립트.
 API가 없어서 실제 브라우저(Playwright)로 로그인 후 화면을 읽는다.
 

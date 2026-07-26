@@ -8,3 +8,7 @@ __pycache__/
 .userdata/
 .chrome-profile/
 reconciliation.json
+config.ini
+dist/
+build/
+*.spec

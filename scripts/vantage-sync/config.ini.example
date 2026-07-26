@@ -1,0 +1,10 @@
+; 이 파일을 config.ini 로 복사한 뒤 값을 채우세요. (exe 옆에 두면 됨)
+[rct]
+api_url = http://localhost:3000
+internal_secret = 프로젝트 .env.local 의 INTERNAL_API_SECRET 과 동일 값
+strategy_url = https://secure.vantagemarkets.com/copyTrading/discover/discoverDetail?strategyId=1289377&tab=2
+login_url = https://secure.vantagemarkets.com/login
+apply = false
+debug_port = 9222
+chrome_path = C:\Program Files\Google\Chrome\Application\chrome.exe
+profile_dir = .chrome-profile

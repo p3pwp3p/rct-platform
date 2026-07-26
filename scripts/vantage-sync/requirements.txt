@@ -1,2 +1,5 @@
+websocket-client==1.8.0
+pyinstaller==6.11.1
+# (구 Playwright 크롤러용 — 새 CDP 버전은 위 두 개만 필요)
 playwright==1.48.0
 python-dotenv==1.0.1
