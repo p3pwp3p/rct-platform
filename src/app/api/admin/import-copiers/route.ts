@@ -19,14 +19,12 @@ import { createClient } from '@supabase/supabase-js'
 import { isInternalCall } from '@/lib/internal-auth'
 import { createNotifications } from '@/lib/notify'
 import { logAudit } from '@/lib/audit'
+import { computeAllowedNodes, planEnforcement } from '@/lib/node-enforcement'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
-
-const MIN_PER_NODE = 3000
-const GRACE_DAYS = 7
 
 async function isAdminToken(req: NextRequest): Promise<boolean> {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
@@ -96,13 +94,9 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // 허용노드 = floor(잔고/3000). 유예 ON 이면 추정예치금(잔고-실현손익) 기준도 인정(더 큰 값).
-      const strictAllowed = Math.floor(bal / MIN_PER_NODE)
-      const realized = Number.isFinite(Number(c.realizedProfit)) ? Number(c.realizedProfit) : 0
-      const depositAllowed = Math.floor((bal - realized) / MIN_PER_NODE)
-      const allowed = acc.is_exempt
-        ? null
-        : (graceByDeposit ? Math.max(strictAllowed, depositAllowed) : strictAllowed)
+      const allowed = computeAllowedNodes({
+        feeBalance: bal, realizedProfit: c.realizedProfit, isExempt: acc.is_exempt, graceByDeposit,
+      })
 
       // 잔고/허용노드 갱신
       if (apply) {
@@ -115,92 +109,21 @@ export async function POST(req: NextRequest) {
       }
 
       const nodes = (nodesByOwner.get(acc.user_id) ?? [])
-        .slice()
-        .sort((a, b) => a.node_id.localeCompare(b.node_id))   // 낮은 node_id(=메인) 우선
       const active = nodes.filter(n => n.status === 'active')
-      const suspended = nodes.filter(n => n.status === 'suspended')  // expelled 는 건드리지 않음
 
-      let action: ReconRow['action'] = 'none'
-      const affected: string[] = []
-      const now = Date.now()
-      const graceUntilIso = new Date(now + GRACE_DAYS * 86400_000).toISOString()
-
-      if (acc.is_exempt) {
-        action = 'none'                                 // 예외회원: 통제 제외
-      } else if (active.length > (allowed ?? 0)) {
-        // 초과 → 뒤쪽(높은 node_id, 최근) 노드부터 대상. 즉시 정지가 아니라 "예고 후 정지".
-        const excess = active.slice(allowed ?? 0)
-        for (const n of excess) {
-          const graceExpired = n.pending_action === 'suspend' && n.grace_until != null
-            && new Date(n.grace_until).getTime() <= now
-          if (n.pending_action !== 'suspend') {
-            // 1단계: 유예 예고 시작 (7일)
-            action = 'grace_start'; affected.push(n.node_id)
-            if (apply) {
-              await admin.from('profiles').update({
-                pending_action: 'suspend', grace_until: graceUntilIso,
-                pending_reason: `증거금 부족(${Math.round(bal).toLocaleString('ko-KR')}$)`,
-              }).eq('id', n.id)
-              notifications.push({ profileId: n.id, type: 'system',
-                title: `${n.node_id} 노드 정지 예정 안내`,
-                body: `증거금 부족으로 ${GRACE_DAYS}일 후 정지됩니다. 그 전에 증거금을 3,000$ 이상으로 보충하세요.` })
-            }
-          } else if (graceExpired) {
-            // 2단계: 유예 만료 → 실제 정지
-            action = 'suspend'; affected.push(n.node_id)
-            if (apply) {
-              await admin.from('profiles').update({
-                status: 'suspended', pending_action: null, grace_until: null, pending_reason: null,
-              }).eq('id', n.id)
-              notifications.push({ profileId: n.id, type: 'system',
-                title: `${n.node_id} 노드가 정지되었습니다`,
-                body: `증거금 미충족으로 정지됨. 증거금 보충 시 자동 해제됩니다.` })
-            }
-          } else {
-            // 유예 진행 중 — 변화 없음
-            if (action === 'none') action = 'grace_start'
-            affected.push(n.node_id)
-          }
-        }
-      } else {
-        // 한도 내 — 예고 걸린 노드가 있으면 예고 해제(회복)
-        const pendingActive = active.filter(n => n.pending_action === 'suspend')
-        if (pendingActive.length) {
-          action = 'grace_cancel'
-          for (const n of pendingActive) {
-            affected.push(n.node_id)
-            if (apply) {
-              await admin.from('profiles').update({
-                pending_action: null, grace_until: null, pending_reason: null,
-              }).eq('id', n.id)
-              notifications.push({ profileId: n.id, type: 'system',
-                title: `${n.node_id} 노드 정지 예정 해제`,
-                body: `증거금이 회복되어 정지 예정이 취소되었습니다.` })
-            }
-          }
-        }
-        // 여유가 생겼고 정지된 노드가 있으면 재활성
-        const slots = (allowed ?? 0) - active.length
-        if (slots > 0 && suspended.length) {
-          const toReactivate = suspended.slice(0, slots)
-          action = 'reactivate'
-          for (const n of toReactivate) affected.push(n.node_id)
-          if (apply) {
-            await admin.from('profiles').update({ status: 'active' })
-              .in('id', toReactivate.map(n => n.id))
-            for (const n of toReactivate) {
-              notifications.push({ profileId: n.id, type: 'system',
-                title: `${n.node_id} 노드가 재활성되었습니다`,
-                body: `증거금 보충으로 다시 활성화되었습니다.` })
-            }
-          }
+      // ── 순수 함수로 조치 결정 → apply 시 실제 반영 ──
+      const plan = planEnforcement({ allowed, isExempt: acc.is_exempt, nodes, feeBalance: bal, nowMs: Date.now() })
+      if (apply) {
+        for (const u of plan.updates) {
+          await admin.from('profiles').update(u.set).eq('id', u.id)
+          notifications.push({ profileId: u.id, type: 'system', title: u.notify.title, body: u.notify.body })
         }
       }
 
       recon.push({
         vantageCt: ct, userId: acc.user_id, name: active[0]?.name ?? nodes[0]?.name ?? null,
         feeBalance: bal, allowedNodes: allowed, activeNodes: active.length,
-        action, affectedNodeIds: affected,
+        action: plan.action, affectedNodeIds: plan.affected,
       })
     }
 
