@@ -4,9 +4,13 @@ REM 사전: pip install -r requirements.txt  (websocket-client, pyinstaller)
 
 cd /d "%~dp0"
 echo PyInstaller 로 exe 빌드 중...
-pyinstaller --onefile --noconsole --name "RCT카피자동기화" rct_sync.py
+pyinstaller --onefile --noconsole --collect-submodules openpyxl --name "RCT카피자동기화" rct_sync.py
 
 echo.
-echo 완료: dist\RCT카피자동기화.exe
-echo config.ini 를 exe 와 같은 폴더에 두고 실행하세요.
+echo config.ini 를 exe 옆에 복사...
+if exist config.ini copy /Y config.ini dist\config.ini
+
+echo.
+echo 완료: dist\RCT카피자동기화.exe  (config.ini 동봉됨)
+echo 직원 배포 시 dist\ 폴더의 exe + config.ini 를 함께 주세요.
 pause
