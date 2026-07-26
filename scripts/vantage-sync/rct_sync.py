@@ -130,7 +130,7 @@ def launch_chrome(cfg, log):
         if debug_alive(cfg["debug_port"]):
             return
         time.sleep(1)
-    raise RuntimeError("Chrome 디버그 포트가 열리지 않았습니다.")
+    raise RuntimeError("Chrome 디버그 포트가 안 열렸습니다. 열려있는 모든 Chrome 창(작업관리자 chrome.exe 포함)을 닫고 다시 시도하세요.")
 
 def find_page_ws(port):
     with urllib.request.urlopen(f"http://localhost:{port}/json", timeout=5) as r:
@@ -168,11 +168,13 @@ def send_to_server(cfg, rows, log):
     return body
 
 # ── 동기화 1회 ───────────────────────────────────────────────────────────────
-def run_sync(cfg, log):
+def run_sync(cfg, log, allow_launch=True):
     if create_connection is None:
         raise RuntimeError("websocket-client 미설치. pip install websocket-client")
     port = cfg["debug_port"]
     if not debug_alive(port):
+        if not allow_launch:
+            raise RuntimeError("Chrome 이 열려있지 않습니다. 먼저 [Chrome 열기] 를 눌러 로그인한 뒤 다시 실행하세요.")
         launch_chrome(cfg, log)
         log("※ 처음이면 열린 Chrome 에서 Vantage 로그인 후 다시 실행하세요.")
     ws = find_page_ws(port)
@@ -230,6 +232,9 @@ def run_gui(cfg):
     run_btn = tk.Button(btns, text="동기화 실행", bg="#4db6ac", fg="#07080a",
                         font=("Malgun Gothic", 10, "bold"), relief="flat", padx=18, pady=8)
     run_btn.pack(side="right")
+    chrome_btn = tk.Button(btns, text="Chrome 열기", bg="#242a35", fg="#e0e6ed",
+                           font=("Malgun Gothic", 10), relief="flat", padx=14, pady=8)
+    chrome_btn.pack(side="right", padx=(0, 8))
     status = tk.Label(btns, text="대기 중", fg="#64748b", bg="#11141b", font=("Malgun Gothic", 9))
     status.pack(side="left")
 
@@ -249,7 +254,7 @@ def run_gui(cfg):
         run_cfg = dict(cfg); run_cfg["apply"] = "true" if apply_var.get() else "false"
         def work():
             try:
-                run_sync(run_cfg, log)
+                run_sync(run_cfg, log, allow_launch=False)   # GUI 에선 [Chrome 열기] 버튼으로 명시 실행
                 status.config(text="완료", fg="#34d399")
             except Exception as e:
                 log(f"오류: {e}"); status.config(text="오류", fg="#f87171")
@@ -257,9 +262,28 @@ def run_gui(cfg):
                 busy["v"] = False
         threading.Thread(target=work, daemon=True).start()
 
-    run_btn.config(command=do_run)
+    def do_chrome():
+        if busy["v"]:
+            return
+        busy["v"] = True; status.config(text="Chrome 여는 중…", fg="#4db6ac")
+        def work():
+            try:
+                if debug_alive(cfg["debug_port"]):
+                    log("Chrome 이 이미 열려있습니다(디버그 포트 활성).")
+                else:
+                    launch_chrome(cfg, log)
+                    log("Chrome 을 열었습니다. Vantage 에 로그인한 뒤 '동기화 실행'을 누르세요.")
+                status.config(text="대기 중", fg="#64748b")
+            except Exception as e:
+                log(f"오류: {e}"); status.config(text="오류", fg="#f87171")
+            finally:
+                busy["v"] = False
+        threading.Thread(target=work, daemon=True).start()
 
-    log("준비됨. '동기화 실행'을 누르세요.")
+    run_btn.config(command=do_run)
+    chrome_btn.config(command=do_chrome)
+
+    log("준비됨. 처음이면 [Chrome 열기] → 로그인 → [동기화 실행] 순서로 하세요.")
     log(f"서버: {cfg['api_url']}  · 적용기본: {cfg.get('apply')}")
     root.mainloop()
 
