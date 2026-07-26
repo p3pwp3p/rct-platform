@@ -62,7 +62,8 @@ export default function ProfitCsvImportPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: 24, fontFamily: 'var(--font-main)' }}>
+    <div className="pfimp-page" style={{ maxWidth: 900, margin: '0 auto', padding: 24, fontFamily: 'var(--font-main)' }}>
+      <style>{`@media(max-width:768px){.pfimp-page{padding:16px 12px!important}}`}</style>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>월간 정산 임포트 (CSV)</h1>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
         본사 ProfitShareReview CSV → 회원별 PF(sharedProfit)를 활성 노드에 균등 분배(PF/N)해 정산 보고서를 만듭니다.

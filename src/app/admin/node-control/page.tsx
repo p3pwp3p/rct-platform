@@ -63,8 +63,8 @@ export default function NodeControlPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, fontFamily: 'var(--font-main)' }}>
-      <style>{`.nc-row:hover{background:var(--bg-inset)!important}`}</style>
+    <div className="nc-page" style={{ maxWidth: 1280, margin: '0 auto', padding: 24, fontFamily: 'var(--font-main)' }}>
+      <style>{`.nc-row:hover{background:var(--bg-inset)!important}@media(max-width:768px){.nc-page{padding:16px 12px!important}}`}</style>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>노드 통제 현황</h1>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
         회원 계정별 Vantage 수수료 잔고와 허용 노드 수(잔고 ÷ 3,000), 노드 상태. 행을 클릭하면 노드별 상세·조치.
