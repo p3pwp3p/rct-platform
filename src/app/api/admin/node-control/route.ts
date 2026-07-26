@@ -24,15 +24,16 @@ export async function GET(req: NextRequest) {
       .select('user_id, vantage_ct, fee_balance, allowed_nodes, is_exempt, balance_synced_at')
     const { data: profiles } = await admin
       .from('profiles')
-      .select('id, node_id, name, owner_id, status, pending_action, grace_until')
+      .select('id, node_id, name, owner_id, status, pending_action, grace_until, pending_reason')
 
-    const nodesByOwner = new Map<string, { node_id: string; name: string; status: string; pending: string | null; graceUntil: string | null }[]>()
+    type NodeDetail = { id: string; node_id: string; name: string; status: string; pending: string | null; graceUntil: string | null; reason: string | null }
+    const nodesByOwner = new Map<string, NodeDetail[]>()
     for (const p of (profiles ?? [])) {
       if (!p.owner_id) continue
       if (!nodesByOwner.has(p.owner_id)) nodesByOwner.set(p.owner_id, [])
       nodesByOwner.get(p.owner_id)!.push({
-        node_id: p.node_id, name: p.name, status: p.status,
-        pending: p.pending_action, graceUntil: p.grace_until,
+        id: p.id, node_id: p.node_id, name: p.name, status: p.status,
+        pending: p.pending_action, graceUntil: p.grace_until, reason: p.pending_reason,
       })
     }
 
