@@ -66,6 +66,18 @@ function Icon({ name }: { name: string }) {
 }
 
 // ─── 계정 스위처 ─────────────────────────────────────────────────────────────
+// 노드 상태 배지 (정지/정지예정) — 활성 노드는 표시 안 함
+function NodeStatusBadge({ status, pending }: { status?: string; pending?: string | null }) {
+  let t = '', c = ''
+  if (status === 'suspended') { t = '정지'; c = '#f87171' }
+  else if (status === 'expelled') { t = '제명'; c = '#a78bfa' }
+  else if (pending === 'suspend') { t = '정지예정'; c = '#fbbf24' }
+  else return null
+  return (
+    <span style={{ fontSize: 9.5, color: c, border: `1px solid ${c}`, background: `${c}1a`, borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', flexShrink: 0 }}>{t}</span>
+  )
+}
+
 function AccountSwitcher() {
   const { profiles, activeProfile, setActiveProfileId, loading } = useProfile()
   const [open, setOpen] = useState(false)
@@ -114,6 +126,7 @@ function AccountSwitcher() {
         }}>
           {loading ? '···' : (activeProfile?.rank ?? 'R0')}
         </span>
+        {!loading && <NodeStatusBadge status={activeProfile?.status} pending={activeProfile?.pending_action} />}
         {hasMultiple && (
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"
             style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}>
@@ -166,8 +179,9 @@ function AccountSwitcher() {
                 }}>
                   {p.rank}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.node_id}</div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{p.node_id}</span>
+                  <NodeStatusBadge status={p.status} pending={p.pending_action} />
                 </div>
                 {isActive && (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={prc} strokeWidth="2.5">

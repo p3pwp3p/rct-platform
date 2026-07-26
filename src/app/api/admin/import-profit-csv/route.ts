@@ -11,22 +11,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { parseProfitShareCsv, aggregateByCt, splitEven, parsePeriod } from '@/lib/profit-csv'
+import { logAudit } from '@/lib/audit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-async function isAdmin(req: NextRequest): Promise<boolean> {
+async function adminUser(req: NextRequest) {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
-  if (!token) return false
+  if (!token) return null
   const { data } = await admin.auth.getUser(token)
-  return data.user?.app_metadata?.role === 'admin'
+  return data.user?.app_metadata?.role === 'admin' ? data.user : null
 }
 
 export async function POST(req: NextRequest) {
   try {
-    if (!await isAdmin(req)) return NextResponse.json({ error: '관리자 권한 필요' }, { status: 401 })
+    const actor = await adminUser(req)
+    if (!actor) return NextResponse.json({ error: '관리자 권한 필요' }, { status: 401 })
 
     const { csv, apply = false } = await req.json()
     if (!csv || typeof csv !== 'string') return NextResponse.json({ error: 'csv 필요' }, { status: 400 })
@@ -130,6 +132,12 @@ export async function POST(req: NextRequest) {
       const { error } = await admin.from('profit_report_items').insert(withReport.slice(i, i + 200))
       if (error) throw new Error(error.message)
     }
+
+    await logAudit({
+      actorId: actor.id, actorEmail: actor.email, action: 'profit_csv_import',
+      targetType: 'report', targetId: report.id,
+      detail: { period, items: items.length, totalUnpaid, matched: summary.matched, unmatched: summary.unmatched },
+    })
 
     return NextResponse.json({ summary, breakdown, reportId: report.id })
   } catch (e: unknown) {

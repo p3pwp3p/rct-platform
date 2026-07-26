@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isInternalCall } from '@/lib/internal-auth'
 import { createNotifications } from '@/lib/notify'
+import { logAudit } from '@/lib/audit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -217,6 +218,21 @@ export async function POST(req: NextRequest) {
       graceCancel: recon.filter(r => r.action === 'grace_cancel').length,
       toReactivate: recon.filter(r => r.action === 'reactivate').length,
     }
+
+    // 실제 적용 시에만 감사로그 (통제 작업 = 기록). 크롤러(내부호출)면 actor=crawler.
+    if (apply) {
+      const internal = isInternalCall(req)
+      const tok = (req.headers.get('authorization') ?? '').replace('Bearer ', '').trim()
+      const { data: actor } = tok ? await admin.auth.getUser(tok) : { data: { user: null } }
+      await logAudit({
+        actorId: actor.user?.id ?? null,
+        actorEmail: actor.user?.email ?? (internal ? 'crawler(internal)' : null),
+        action: 'import_copiers',
+        targetType: 'node_control', targetId: null,
+        detail: { ...summary, graceByDeposit },
+      })
+    }
+
     return NextResponse.json({ summary, reconciliation: recon })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '임포트 오류'
