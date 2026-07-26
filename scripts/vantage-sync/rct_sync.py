@@ -162,6 +162,22 @@ def debug_alive(port):
     except Exception:
         return False
 
+def kill_profile_chrome(profile, log):
+    """우리 디버그 프로필을 물고 있는 잔여 chrome 만 종료(일반 Chrome 은 안 건드림)."""
+    token = os.path.basename(profile.rstrip("\\/"))
+    if not token:
+        return
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | "
+          f"Where-Object {{ $_.CommandLine -like '*{token}*' }} | "
+          "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }")
+    try:
+        flags = 0x08000000  # CREATE_NO_WINDOW (콘솔 깜빡임 방지)
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps], creationflags=flags, timeout=15)
+        log("잔여 디버그 Chrome 정리 완료.")
+        time.sleep(2)
+    except Exception as e:
+        log(f"(프로필 정리 스킵: {e})")
+
 def launch_chrome(cfg, log):
     chrome = cfg["chrome_path"]
     if not os.path.exists(chrome):
@@ -172,6 +188,8 @@ def launch_chrome(cfg, log):
     profile = cfg["profile_dir"]
     if not os.path.isabs(profile):
         profile = os.path.join(base_dir(), profile)
+    # 포트가 죽어있는데 프로필을 물고 있는 잔여 인스턴스 → 먼저 정리
+    kill_profile_chrome(profile, log)
     log(f"Chrome 실행(포트 {cfg['debug_port']})…")
     subprocess.Popen([chrome, f"--remote-debugging-port={cfg['debug_port']}",
                       "--remote-allow-origins=*",
