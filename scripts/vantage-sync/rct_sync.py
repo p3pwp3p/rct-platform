@@ -75,6 +75,35 @@ EXTRACT_JS = r"""
 """
 READY_JS = "(() => /ID:\\s*\\d{5,}/.test(document.body.innerText))()"
 
+MIN_PER_NODE = 3000
+
+def save_excel(rows, path, log):
+    """추출 결과를 엑셀(.xlsx)로 저장. openpyxl 필요."""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except Exception:
+        log("openpyxl 미설치로 엑셀 저장 건너뜀(copiers.json 은 저장됨).")
+        return None
+    wb = Workbook(); ws = wb.active; ws.title = "카피자"
+    headers = ["닉네임", "Vantage C.T", "서브계정", "수수료잔고(USD)", "실현수익(USD)", "허용노드(잔고/3000)", "그룹"]
+    ws.append(headers)
+    head_fill = PatternFill("solid", fgColor="11141B")
+    for c in ws[1]:
+        c.font = Font(bold=True, color="4DB6AC"); c.fill = head_fill; c.alignment = Alignment(horizontal="center")
+    for r in rows:
+        bal = r.get("feeBalance")
+        allowed = int(bal // MIN_PER_NODE) if isinstance(bal, (int, float)) else None
+        ws.append([r.get("nickname"), r.get("masterAccountNo"), r.get("subAccountNo"),
+                   bal, r.get("realizedProfit"), allowed, r.get("group")])
+    # 열 너비
+    widths = [16, 14, 12, 16, 15, 18, 12]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = w
+    ws.freeze_panes = "A2"
+    wb.save(path)
+    return path
+
 # ── CDP 클라이언트 ───────────────────────────────────────────────────────────
 class CDP:
     def __init__(self, ws_url, timeout=30):
@@ -198,10 +227,13 @@ def run_sync(cfg, log, allow_launch=True):
             return None
         rows = cdp.evaluate(EXTRACT_JS) or []
         log(f"추출된 카피자: {len(rows)}명")
-        # 파일 저장
+        # 파일 저장 (JSON + 엑셀)
         out = os.path.join(base_dir(), "copiers.json")
         with open(out, "w", encoding="utf-8") as f:
             json.dump(rows, f, ensure_ascii=False, indent=2)
+        xlsx = save_excel(rows, os.path.join(base_dir(), "copiers.xlsx"), log)
+        if xlsx:
+            log(f"엑셀 저장: {os.path.basename(xlsx)}")
         if rows:
             send_to_server(cfg, rows, log)
         log("완료.")

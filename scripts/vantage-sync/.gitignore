@@ -14,3 +14,5 @@ build/
 *.spec
 dist_new/
 build_new/
+copiers.xlsx
+sync_log.txt
