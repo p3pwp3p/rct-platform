@@ -212,24 +212,32 @@ def run_gui(cfg):
 
     root = tk.Tk()
     root.title(APP_NAME)
-    root.geometry("560x420")
+    root.geometry("560x440")
+    root.minsize(460, 360)
     root.configure(bg="#11141b")
 
-    top = tk.Frame(root, bg="#11141b"); top.pack(fill="x", padx=14, pady=(14, 6))
+    # 상단(제목 + 체크박스)
+    top = tk.Frame(root, bg="#11141b"); top.pack(side="top", fill="x", padx=14, pady=(14, 6))
     tk.Label(top, text=APP_NAME, fg="#e0e6ed", bg="#11141b", font=("Malgun Gothic", 13, "bold")).pack(side="left")
     apply_var = tk.BooleanVar(value=str(cfg.get("apply", "false")).lower() == "true")
     tk.Checkbutton(top, text="실제 적용(정지/재활성)", variable=apply_var, fg="#94a3b8", bg="#11141b",
                    selectcolor="#11141b", activebackground="#11141b", activeforeground="#e0e6ed").pack(side="right")
 
+    # 하단(버튼 + 상태) — 로그보다 먼저 배치해 항상 보이도록 고정
+    btns = tk.Frame(root, bg="#11141b"); btns.pack(side="bottom", fill="x", padx=14, pady=(4, 14))
+    run_btn = tk.Button(btns, text="동기화 실행", bg="#4db6ac", fg="#07080a",
+                        font=("Malgun Gothic", 10, "bold"), relief="flat", padx=18, pady=8)
+    run_btn.pack(side="right")
+    status = tk.Label(btns, text="대기 중", fg="#64748b", bg="#11141b", font=("Malgun Gothic", 9))
+    status.pack(side="left")
+
+    # 로그(가운데, 남는 공간 채움)
     logbox = scrolledtext.ScrolledText(root, bg="#0a0c10", fg="#94a3b8", insertbackground="#94a3b8",
                                        font=("Consolas", 9), relief="flat")
-    logbox.pack(fill="both", expand=True, padx=14, pady=6)
+    logbox.pack(side="top", fill="both", expand=True, padx=14, pady=6)
 
     def log(msg):
         logbox.insert("end", msg + "\n"); logbox.see("end"); root.update_idletasks()
-
-    status = tk.Label(root, text="대기 중", fg="#64748b", bg="#11141b", font=("Malgun Gothic", 9))
-    status.pack(anchor="w", padx=14)
 
     busy = {"v": False}
     def do_run():
@@ -247,9 +255,7 @@ def run_gui(cfg):
                 busy["v"] = False
         threading.Thread(target=work, daemon=True).start()
 
-    btns = tk.Frame(root, bg="#11141b"); btns.pack(fill="x", padx=14, pady=(4, 14))
-    tk.Button(btns, text="동기화 실행", command=do_run, bg="#4db6ac", fg="#07080a",
-              font=("Malgun Gothic", 10, "bold"), relief="flat", padx=16, pady=6).pack(side="right")
+    run_btn.config(command=do_run)
 
     log("준비됨. '동기화 실행'을 누르세요.")
     log(f"서버: {cfg['api_url']}  · 적용기본: {cfg.get('apply')}")
