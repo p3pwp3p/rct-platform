@@ -244,6 +244,14 @@ const CSS = `
 /* 화면 1: 노드 (앞면) */
 .lp-hero-glow { position:absolute; top:0; left:12%; width:760px; height:560px;
   background:radial-gradient(circle, rgba(77,182,172,0.09) 0%, transparent 68%); filter:blur(60px); pointer-events:none; }
+/* 경계 완충: 스냅으로 화면이 바뀌어도 "이어진다"는 인상을 주기 위해
+   두 섹션이 만나는 쪽에 같은 톤의 그라데이션 + 은은한 틸 글로우를 겹쳐둠 */
+.lp-hero::after { content:''; position:absolute; left:0; right:0; bottom:0; height:26vh; z-index:4; pointer-events:none;
+  background:linear-gradient(to bottom, transparent, #050607 85%),
+             radial-gradient(ellipse 60% 100% at 50% 100%, rgba(77,182,172,0.10) 0%, transparent 70%); }
+.bfy::before { content:''; position:absolute; left:0; right:0; top:0; height:26vh; z-index:4; pointer-events:none;
+  background:linear-gradient(to bottom, #050607, transparent 85%),
+             radial-gradient(ellipse 60% 100% at 50% 0%, rgba(77,182,172,0.08) 0%, transparent 70%); }
 .lp-hero-grid { position:relative; height:100%; max-width:1440px; margin:0 auto; width:100%; display:grid;
   grid-template-columns:1fr 1.15fr; gap:64px; align-items:center; padding:0 56px; }
 .lp-hero-text { display:flex; flex-direction:column; justify-content:center; z-index:10; }
