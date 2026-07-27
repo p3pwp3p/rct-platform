@@ -233,11 +233,13 @@ export async function POST(req: NextRequest) {
     })
 
     // 인앱 알림: 수령자별 합계 1건씩 (best-effort, 실패해도 정산은 유지)
+    // 사용자 지시로 임시 비활성화(PAYOUT_NOTIFY_ENABLED=true 로 재활성 전까지 발송 안 함)
+    const payoutNotifyEnabled = process.env.PAYOUT_NOTIFY_ENABLED === 'true'
     const perRecipient = new Map<string, number>()
     for (const d of distributions) {
       perRecipient.set(d.recipient_id, (perRecipient.get(d.recipient_id) ?? 0) + d.amount)
     }
-    await createNotifications(
+    if (payoutNotifyEnabled) await createNotifications(
       [...perRecipient.entries()]
         .filter(([, amt]) => amt > 0)
         .map(([recipientId, amt]) => ({
