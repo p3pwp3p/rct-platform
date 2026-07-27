@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ButterflyCanvas from '@/components/ButterflyCanvas'
 import WireframeStructureScene from '@/components/WireframeStructureScene'
-import { useSmoothScroll, useReveal, useSectionScroll } from '@/components/useScrollMotion'
+import { useSmoothScroll, useReveal, useSectionScroll, useSectionPager } from '@/components/useScrollMotion'
 
 /**
  * 랜딩(홈) — 위에서 아래로 쭉 이어지는 단일 스크롤 구성.
@@ -29,6 +29,8 @@ export default function LandingPage() {
 
   useSmoothScroll(LANDING_ENABLED)
   useReveal(LANDING_ENABLED)
+  // 휠 한 번 = 다음/이전 풀스크린 화면으로. 아래 콘텐츠 구간은 자유 스크롤.
+  useSectionPager('.lp-screen', LANDING_ENABLED)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -70,7 +72,7 @@ export default function LandingPage() {
 
       {/* ── 섹션들 — 겹치지 않고 위에서 아래로 이어짐 ── */}
         {/* 화면 1: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
-        <section className="bfy" ref={bfySectionRef}>
+        <section className="bfy lp-screen" ref={bfySectionRef}>
           <div className="bfy-dot" />
           <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
           <div className="bfy-overlay">
@@ -111,7 +113,7 @@ export default function LandingPage() {
         </section>
 
         {/* 화면 2: 노드 애니메이션 */}
-        <section className="lp-hero" ref={heroSectionRef}>
+        <section className="lp-hero lp-screen" ref={heroSectionRef}>
           <div className="lp-hero-glow" />
           <div className="lp-hero-grid">
             <div className="lp-hero-text">
@@ -254,8 +256,17 @@ const CSS = `
   text-transform:uppercase; opacity:0.9; display:block; margin-bottom:24px; }
 .lp-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; color:var(--acc); text-transform:uppercase; }
 
-/* 두 히어로 화면 — 각자 한 화면을 차지하되 겹치지 않고 이어서 흐름(스냅 없음) */
-.bfy, .lp-hero { position:relative; min-height:100vh; overflow:hidden; }
+/* 두 히어로 화면 — 각자 정확히 한 화면을 차지하고, 사이에 여백을 둬 분리 */
+.lp-screen { position:relative; height:100vh; overflow:hidden; }
+.bfy { margin-bottom:16vh; }
+.lp-hero { margin-bottom:22vh; }
+
+/* 섹션 이동 중(.lp-paging) 연출 — 내용이 살짝 물러났다가 제자리로 돌아옴 */
+.lp .bfy-overlay, .lp .lp-hero-grid {
+  transition:transform 1000ms cubic-bezier(0.16,1,0.3,1), opacity 1000ms cubic-bezier(0.16,1,0.3,1);
+  will-change:transform, opacity; }
+.lp-paging .bfy-overlay, .lp-paging .lp-hero-grid { transform:scale(0.955) translateY(10px); opacity:0.45; }
+.lp-paging .lp-scrollcue { opacity:0; }
 
 /* 스크롤 진입 리빌 — 하이엔드 사이트 표준 연출(페이드 + 상승, 스태거는 --d) */
 .lp .reveal { opacity:0; transform:translateY(26px);
