@@ -5,9 +5,14 @@ import * as THREE from 'three'
 /**
  * Kinetic butterfly — 12,000 파티클이 나비 궤적을 그리는 Three.js 애니메이션.
  * 원본(Butterfly.fi)을 우리 브랜드 색(틸)으로 변경.
+ *
+ * `active` 가 true 가 되는 순간(페이지 플립 진행률 기준 등 부모가 결정) 시작 + 페이드인.
+ * 지오메트리 기반 IntersectionObserver 대신 명시적 prop 으로 제어(부모가 이미
+ * 겹쳐진 레이어 안에 항상 렌더하므로 화면 교차만으로는 트리거 시점을 알 수 없음).
  */
-export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }) {
+export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { color?: number; active?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const startRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const mount = mountRef.current
@@ -70,21 +75,17 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
       camera.lookAt(0, 0, 0)
       renderer.render(scene, camera)
     }
-    // 화면에 들어오기 전엔 숨김(무작위 시작점이 흩뿌려진 정적 프레임 노출 방지).
-    // 스크롤로 25% 이상 보이는 순간 애니메이션 시작 + 페이드인.
+
+    // 시작 전엔 숨김(무작위 시작점이 흩뿌려진 정적 프레임 노출 방지).
     mount.style.opacity = '0'
-    mount.style.transition = 'opacity 1.4s ease'
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !started) {
-          started = true
-          mount.style.opacity = '1'
-          animate()
-        }
-      },
-      { threshold: 0.25 },
-    )
-    io.observe(mount)
+    mount.style.transition = 'opacity 1.2s ease'
+    startRef.current = () => {
+      if (started) return
+      started = true
+      mount.style.opacity = '1'
+      animate()
+    }
+    if (active) startRef.current()
 
     const onResize = () => {
       const nw = mount.clientWidth, nh = mount.clientHeight
@@ -95,7 +96,6 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
       renderer.setSize(w, h)
     }
     window.addEventListener('resize', onResize)
-    // 초기 레이아웃 확정 후 정확한 크기로 맞춤(컨테이너 폭이 뒤늦게 잡히는 경우 대비)
     const ro = new ResizeObserver(onResize)
     ro.observe(mount)
 
@@ -103,11 +103,16 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
       ro.disconnect()
-      io.disconnect()
       geo.dispose(); mat.dispose(); renderer.dispose()
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color])
+
+  // active 가 나중에 true 로 바뀌는 경우(스크롤 진행률 기준) 시작 트리거
+  useEffect(() => {
+    if (active) startRef.current()
+  }, [active])
 
   return <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
 }
