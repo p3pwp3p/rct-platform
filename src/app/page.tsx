@@ -6,17 +6,21 @@ import ButterflyCanvas from '@/components/ButterflyCanvas'
 /**
  * 랜딩(홈) — 스크롤 2단 구성.
  *  1) 첫 화면: 노드 애니메이션(글래스 노드·스플라인·코어 고리 pulse)
- *  2) 스크롤: 페이지가 책장 넘기듯 플립되며 나비 궤적 애니메이션(Butterfly 무드) 노출
+ *  2) 스크롤: 나비 궤적 애니메이션(Butterfly 무드) 화면으로 전환
  * 브랜드(RCT 로고/틸), SUIT 단일 서체 체계. 콘텐츠는 [placeholder].
+ *
+ * 전환 방식: 브라우저 네이티브 스크롤 스냅(scroll-snap-type: mandatory).
+ * 커스텀 휠 가로채기/JS 트랜지션 없음 → 트랙패드·마우스·터치 어디서든
+ * 브라우저가 최적화해 매끄럽고, 접근성·기기 호환성 리스크도 없음.
+ * 나비 조립/분해는 IntersectionObserver 로 그 섹션 진입/이탈마다 반복 트리거.
  *
  * 노출 스위치: 프로덕션(Vercel 미설정)에선 /login 으로. 로컬(.env.local=true)에서만 랜딩.
  */
 const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
-const TRANSITION_MS = 850   // CSS 트랜지션 시간(휠 재입력 잠금 시간과 일치시켜야 끊김 없음)
 
 export default function LandingPage() {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const [flipped, setFlipped] = useState(false)
+  const bfySectionRef = useRef<HTMLElement>(null)
+  const [bfyActive, setBfyActive] = useState(false)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -25,44 +29,20 @@ export default function LandingPage() {
     if (!LANDING_ENABLED) window.location.replace('/login')
   }, [])
 
-  // 휠 한 번(또는 터치 스와이프 한 번) → 다음/이전 화면으로 딱 한 번에 전환.
-  // 진행 중(locked)엔 추가 입력을 무시해 끊기거나 버벅이지 않게 함.
+  // 나비 섹션에 절반 이상 들어오면 조립, 벗어나면(위/아래 어느 방향이든) 분해 — 반복 재생.
   useEffect(() => {
     if (!LANDING_ENABLED) return
-    let locked = false
-    const lock = () => { locked = true; window.setTimeout(() => { locked = false }, TRANSITION_MS) }
+    const el = bfySectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => setBfyActive(entries[0]?.isIntersecting ?? false),
+      { threshold: 0.5 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
-    const onWheel = (e: WheelEvent) => {
-      if (window.scrollY > 2) return          // 이미 아래 콘텐츠로 스크롤된 상태 → 네이티브 스크롤에 맡김
-      if (locked) { e.preventDefault(); return }
-      if (!flipped && e.deltaY > 8) { e.preventDefault(); lock(); setFlipped(true) }
-      else if (flipped && e.deltaY < -8) { e.preventDefault(); lock(); setFlipped(false) }
-      else if (!flipped && e.deltaY < 0) { e.preventDefault() }  // 맨 위에서 더 위로: 그냥 무시
-    }
-
-    let touchStartY = 0
-    const onTouchStart = (e: TouchEvent) => { touchStartY = e.touches[0].clientY }
-    const onTouchMove = (e: TouchEvent) => { if (window.scrollY <= 2 && !locked) e.preventDefault() }
-    const onTouchEnd = (e: TouchEvent) => {
-      if (window.scrollY > 2 || locked) return
-      const dy = touchStartY - e.changedTouches[0].clientY   // 위로 스와이프(다음 화면) = 양수
-      if (!flipped && dy > 40) { lock(); setFlipped(true) }
-      else if (flipped && dy < -40) { lock(); setFlipped(false) }
-    }
-
-    window.addEventListener('wheel', onWheel, { passive: false })
-    window.addEventListener('touchstart', onTouchStart, { passive: true })
-    window.addEventListener('touchmove', onTouchMove, { passive: false })
-    window.addEventListener('touchend', onTouchEnd, { passive: true })
-    return () => {
-      window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchmove', onTouchMove)
-      window.removeEventListener('touchend', onTouchEnd)
-    }
-  }, [flipped])
-
-  const goNetwork = () => setFlipped(true)
+  const goNetwork = () => bfySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   if (!LANDING_ENABLED) return null
 
@@ -80,47 +60,10 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* ── 화면 1·2 — 휠/스와이프 한 번에 CSS 트랜지션으로 전환(책장 넘김 느낌) ── */}
-      <div className={`lp-flip-hero${flipped ? ' is-flipped' : ''}`} ref={heroRef}>
-        {/* 뒷면: 나비 애니메이션 화면 (항상 그 자리, 앞면이 넘어가며 드러남) */}
-        <div className="lp-page-back">
-          <div className="bfy-dot" />
-          <div className="bfy-canvas"><ButterflyCanvas active={flipped} /></div>
-          <div className="bfy-overlay">
-            <main className="bfy-hero">
-              <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
-              <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
-              <div className="bfy-actions">
-                <Link href="/login" className="lp-glass-btn">
-                  Open Terminal
-                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                </Link>
-                <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
-                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
-              </div>
-            </main>
-            <div className="bfy-floating">
-              <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
-              <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
-            </div>
-            <div className="bfy-features">
-              {[
-                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
-                { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
-                { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
-              ].map((f, i) => (
-                <div key={i} className="bfy-fcard">
-                  <span className="num">{f.n} <em>{f.k}</em></span>
-                  <h3>{f.t}</h3>
-                  <p>{f.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 앞면: 노드 애니메이션 화면 (한 번의 스크롤/스와이프로 위 가장자리를 축으로 딱 넘어감) */}
-        <div className="lp-page-front">
+      {/* ── 화면 1·2 — 브라우저 네이티브 스크롤 스냅(mandatory), 그 아래는 자유 스크롤 ── */}
+      <div className="lp-snapwrap">
+        {/* 화면 1: 노드 애니메이션 */}
+        <section className="lp-hero lp-snap">
           <div className="lp-hero-glow" />
           <div className="lp-hero-grid">
             <div className="lp-hero-text">
@@ -159,13 +102,48 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="lp-page-shade" />
-        </div>
+          <button type="button" onClick={goNetwork} className="lp-scrollcue">
+            <span>SCROLL</span>
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+          </button>
+        </section>
 
-        <button type="button" onClick={goNetwork} className="lp-scrollcue">
-          <span>SCROLL</span>
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-        </button>
+        {/* 화면 2: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
+        <section className="bfy lp-snap" ref={bfySectionRef}>
+          <div className="bfy-dot" />
+          <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
+          <div className="bfy-overlay">
+            <main className="bfy-hero">
+              <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
+              <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
+              <div className="bfy-actions">
+                <Link href="/login" className="lp-glass-btn">
+                  Open Terminal
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </Link>
+                <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
+                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
+              </div>
+            </main>
+            <div className="bfy-floating">
+              <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
+              <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
+            </div>
+            <div className="bfy-features">
+              {[
+                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
+                { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
+                { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
+              ].map((f, i) => (
+                <div key={i} className="bfy-fcard">
+                  <span className="num">{f.n} <em>{f.k}</em></span>
+                  <h3>{f.t}</h3>
+                  <p>{f.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
 
       {/* ── 콘텐츠 ── */}
@@ -228,20 +206,13 @@ const CSS = `
   text-transform:uppercase; opacity:0.9; display:block; margin-bottom:24px; }
 .lp-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; color:var(--acc); text-transform:uppercase; }
 
-/* 화면 1·2 전환 컨테이너 — 문서 흐름상 평범한 100vh 블록(중첩 스크롤 없음).
-   휠/스와이프 한 번 → is-flipped 클래스 토글 → CSS 트랜지션 한 번으로 부드럽게 전환. */
-.lp-flip-hero { position:relative; height:100vh; overflow:hidden; perspective:2600px; background:#050607; }
-.lp-page-back, .lp-page-front { position:absolute; inset:0; }
-.lp-page-back { z-index:1; background:radial-gradient(circle at 50% 42%, #0b0d10 0%, #050607 68%); }
-.lp-page-front { z-index:3; transform-style:preserve-3d; backface-visibility:hidden; transform-origin:top center;
-  background:#050607; transform:rotateX(0deg);
-  transition:transform 850ms cubic-bezier(0.65,0,0.35,1);
-  box-shadow:0 60px 140px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset; }
-.lp-flip-hero.is-flipped .lp-page-front { transform:rotateX(-152deg); }
-.lp-page-shade { position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;
-  transition:opacity 850ms ease;
-  background:linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 55%, transparent 100%); }
-.lp-flip-hero.is-flipped .lp-page-shade { opacity:0.55; }
+/* 화면 1·2 스냅 컨테이너 — 브라우저 네이티브 scroll-snap(mandatory).
+   이 안에서만 "한 번 스크롤 = 다음 화면" 스냅, 그 아래 콘텐츠는 자유 스크롤
+   (전체 문서에 걸면 마지막 스냅 지점 이후로 못 내려가는 함정이 있어 분리). */
+.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth;
+  scrollbar-width:none; -ms-overflow-style:none; background:#050607; }
+.lp-snapwrap::-webkit-scrollbar { display:none; }
+.lp-snap { scroll-snap-align:start; scroll-snap-stop:always; position:relative; height:100vh; overflow:hidden; }
 
 /* 네비 */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
@@ -283,7 +254,6 @@ const CSS = `
   font-family:var(--font-mono); font-size:10px; letter-spacing:0.3em; color:rgba(255,255,255,0.4);
   animation:lp-bob 2.2s ease-in-out infinite; transition:opacity 400ms ease; opacity:1; }
 .lp-scrollcue svg { width:14px; height:14px; stroke:rgba(255,255,255,0.4); stroke-width:1.6; fill:none; }
-.lp-flip-hero.is-flipped .lp-scrollcue { opacity:0; pointer-events:none; }
 @keyframes lp-bob { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(7px); } }
 
 .lp-canvas { position:relative; display:flex; align-items:center; justify-content:center; perspective:1200px; height:100%; }
