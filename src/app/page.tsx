@@ -38,8 +38,9 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* ── 화면 1: 노드 애니메이션 ── */}
-      <section className="lp-hero">
+      {/* ── 화면 1·2 스냅 컨테이너(중첩 스크롤) — 노드→나비만 자석 스냅, 그 아래는 자유 스크롤 ── */}
+      <div className="lp-snapwrap">
+      <section className="lp-hero lp-snap">
         <div className="lp-hero-glow" />
         <div className="lp-hero-grid">
           <div className="lp-hero-text">
@@ -82,7 +83,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 화면 2: 나비 애니메이션 ── */}
-      <section id="network" className="bfy">
+      <section id="network" className="bfy lp-snap">
         <div className="bfy-scanline" />
         <div className="bfy-dot" />
         <div className="bfy-canvas"><ButterflyCanvas /></div>
@@ -111,6 +112,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* ── 콘텐츠 ── */}
       <section id="about" className="lp-section">
@@ -171,8 +173,14 @@ const CSS = `
 .lp a { text-decoration:none; color:inherit; }
 .lp em { font-style:normal; color:var(--acc); opacity:0.85; }
 
+/* 노드→나비 스냅 컨테이너: 이 안에서만 자석처럼 스냅, 다 보면 아래 콘텐츠로 자연스럽게 이어짐 */
+.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth;
+  scrollbar-width:none; -ms-overflow-style:none; }
+.lp-snapwrap::-webkit-scrollbar { display:none; }
+.lp-snap { scroll-snap-align:start; scroll-snap-stop:always; }
+
 /* 네비 */
-.lp-nav { position:sticky; top:0; z-index:80; display:flex; align-items:center; justify-content:space-between;
+.lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
   padding:16px 32px; background:rgba(7,8,10,0.72); backdrop-filter:blur(10px); border-bottom:1px solid rgba(148,163,184,0.08); }
 .lp-brand { display:flex; align-items:center; gap:9px; font-weight:700; font-size:15px; }
 .lp-brand.small { font-size:13px; opacity:0.8; }
@@ -183,7 +191,7 @@ const CSS = `
 .lp-login-btn:hover { background:var(--acc); color:#07080a !important; box-shadow:0 0 16px rgba(77,182,172,0.3); }
 
 /* 화면 1: 노드 */
-.lp-hero { position:relative; overflow:hidden; min-height:calc(100vh - 64px); display:flex; flex-direction:column; justify-content:center; padding:40px 40px 60px; }
+.lp-hero { position:relative; overflow:hidden; height:100vh; display:flex; flex-direction:column; justify-content:center; padding:40px 40px 60px; }
 .lp-hero-glow { position:absolute; top:0; left:15%; width:700px; height:520px; background:radial-gradient(circle, rgba(77,182,172,0.08) 0%, transparent 65%); filter:blur(50px); pointer-events:none; }
 .lp-hero-grid { position:relative; max-width:1400px; margin:0 auto; width:100%; display:grid; grid-template-columns:1fr 1.2fr; gap:60px; align-items:center; }
 .lp-hero-text { display:flex; flex-direction:column; justify-content:center; z-index:10; }
@@ -228,7 +236,7 @@ const CSS = `
 .lp-lbl-2 { top:-26px; left:50%; transform:translateX(-50%); }
 
 /* 화면 2: 나비 */
-.bfy { position:relative; min-height:100vh; overflow:hidden; background:radial-gradient(circle at 50% 45%, #0a0a0f 0%, #030303 70%); }
+.bfy { position:relative; height:100vh; overflow:hidden; background:radial-gradient(circle at 50% 45%, #0a0a0f 0%, #030303 70%); }
 .bfy-scanline { position:absolute; inset:0; z-index:60; pointer-events:none; opacity:0.3; background:linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.1) 50%); background-size:100% 4px; }
 .bfy-dot { position:absolute; inset:0; z-index:2; pointer-events:none; background-image:radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); background-size:40px 40px; }
 .bfy-canvas { position:absolute; inset:0; z-index:1; }

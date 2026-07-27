@@ -49,6 +49,7 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
     const arr = geo.attributes.position.array as Float32Array
     let time = 0
     let raf = 0
+    let started = false
     const animate = () => {
       raf = requestAnimationFrame(animate)
       time += 0.01
@@ -69,7 +70,21 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
       camera.lookAt(0, 0, 0)
       renderer.render(scene, camera)
     }
-    animate()
+    // 화면에 들어오기 전엔 숨김(무작위 시작점이 흩뿌려진 정적 프레임 노출 방지).
+    // 스크롤로 25% 이상 보이는 순간 애니메이션 시작 + 페이드인.
+    mount.style.opacity = '0'
+    mount.style.transition = 'opacity 1.4s ease'
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !started) {
+          started = true
+          mount.style.opacity = '1'
+          animate()
+        }
+      },
+      { threshold: 0.25 },
+    )
+    io.observe(mount)
 
     const onResize = () => {
       const nw = mount.clientWidth, nh = mount.clientHeight
@@ -88,6 +103,7 @@ export default function ButterflyCanvas({ color = 0x4db6ac }: { color?: number }
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
       ro.disconnect()
+      io.disconnect()
       geo.dispose(); mat.dispose(); renderer.dispose()
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement)
     }
