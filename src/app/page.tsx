@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ButterflyCanvas from '@/components/ButterflyCanvas'
 import WireframeStructureScene from '@/components/WireframeStructureScene'
-import { useSmoothScroll, useReveal, useSectionScroll, useSectionPager } from '@/components/useScrollMotion'
+import { useSmoothScroll, useReveal, useSectionScroll, useScrubProgress } from '@/components/useScrollMotion'
 
 /**
  * 랜딩(홈) — 위에서 아래로 쭉 이어지는 단일 스크롤 구성.
@@ -29,8 +29,8 @@ export default function LandingPage() {
 
   useSmoothScroll(LANDING_ENABLED)
   useReveal(LANDING_ENABLED)
-  // 휠 한 번 = 다음/이전 풀스크린 화면으로. 아래 콘텐츠 구간은 자유 스크롤.
-  useSectionPager('.lp-screen', LANDING_ENABLED)
+  // [data-scrub] 섹션마다 스크롤 진행도를 --p(0~1)로 흘려보내 줌/패럴랙스를 스크럽
+  useScrubProgress(LANDING_ENABLED)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -42,7 +42,9 @@ export default function LandingPage() {
   // 나비 섹션에 절반 이상 들어오면 조립, 벗어나면(위/아래 어느 방향이든) 분해 — 반복 재생.
   useEffect(() => {
     if (!LANDING_ENABLED) return
-    const el = bfySectionRef.current
+    // 섹션은 스크럽용으로 220vh 라 "절반 이상 보임"이 성립할 수 없다.
+    // 실제로 화면을 채우는 sticky 내부(100vh)를 관찰해야 정확히 진입/이탈이 잡힘.
+    const el = bfySectionRef.current?.querySelector('.lp-sticky') ?? bfySectionRef.current
     if (!el) return
     const io = new IntersectionObserver(
       (entries) => setBfyActive(entries[0]?.isIntersecting ?? false),
@@ -72,10 +74,11 @@ export default function LandingPage() {
 
       {/* ── 섹션들 — 겹치지 않고 위에서 아래로 이어짐 ── */}
         {/* 화면 1: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
-        <section className="bfy lp-screen" ref={bfySectionRef}>
-          <div className="bfy-dot" />
-          <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
-          <div className="bfy-overlay">
+        <section className="bfy lp-screen" ref={bfySectionRef} data-scrub="in">
+          <div className="lp-sticky">
+            <div className="bfy-dot" />
+            <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
+            <div className="bfy-overlay">
             <main className="bfy-hero">
               <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
               <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
@@ -105,11 +108,13 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         </section>
 
         {/* 화면 2: 노드 애니메이션 */}
-        <section className="lp-hero lp-screen" ref={heroSectionRef}>
+        <section className="lp-hero lp-screen" ref={heroSectionRef} data-scrub="in">
+          <div className="lp-sticky">
           <div className="lp-hero-glow" />
           <div className="lp-hero-grid">
             <div className="lp-hero-text">
@@ -148,6 +153,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+          </div>
         </section>
 
       {/* ── 이용방법 — sticky 로 고정된 full-bleed 와이어프레임 타워 옆으로 내용이 흐름 ── */}
@@ -183,7 +189,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 영상 소개 — 가운데 정렬, 요약은 영상 아래로 ── */}
-      <section className="vid-sec">
+      <section className="vid-sec" data-scrub>
         <div className="vid-head">
           <span className="lp-kicker reveal">소개 영상</span>
           <h2 className="lp-h2 reveal" style={{ '--d': '60ms' } as React.CSSProperties}>3분이면 충분합니다</h2>
@@ -292,16 +298,37 @@ const CSS = `
   text-transform:uppercase; opacity:0.9; display:block; margin-bottom:24px; }
 .lp-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; color:var(--acc); text-transform:uppercase; }
 
-/* 두 히어로 화면 — 각자 정확히 한 화면을 차지하고, 사이에 여백을 둬 분리 */
-.lp-screen { position:relative; height:100vh; overflow:hidden; }
+/* 히어로 화면 — 화면 2.2배 높이를 확보하고 안쪽을 sticky 로 고정.
+   그 스크롤 구간 동안 --p(0~1)가 흐르며 줌/패럴랙스를 스크럽한다.
+   (프레임 자체는 그대로. 움직임만 스크롤에 물려 있음) */
+.lp-screen { position:relative; height:220vh; }
+.lp-sticky { position:sticky; top:0; height:100vh; overflow:hidden; }
 .bfy { margin-bottom:16vh; }
 .lp-hero { margin-bottom:22vh; }
 
-/* 섹션 이동 중(.lp-paging) 연출 — 내용이 살짝 물러났다가 제자리로 돌아옴 */
-.lp .bfy-overlay, .lp .lp-hero-grid {
-  transition:transform 1000ms cubic-bezier(0.16,1,0.3,1), opacity 1000ms cubic-bezier(0.16,1,0.3,1);
-  will-change:transform, opacity; }
-.lp-paging .bfy-overlay, .lp-paging .lp-hero-grid { transform:scale(0.955) translateY(10px); opacity:0.45; }
+/* ── 스크롤 스크럽 줌 — 중앙 오브젝트가 커지며 다가오고, 텍스트는 밀려나며 사라짐 ── */
+/* 나비: 스크롤할수록 확대되며 정면으로 다가옴 */
+.bfy-canvas { transform:scale(calc(1 + var(--p,0) * 1.15)); transform-origin:50% 50%; will-change:transform; }
+.bfy-dot { transform:scale(calc(1 + var(--p,0) * 0.35)); opacity:calc(0.55 - var(--p,0) * 0.45); }
+/* 텍스트는 위로 밀려 올라가며 페이드 — 오브젝트가 앞으로 나오는 느낌을 만듦 */
+.bfy-hero { transform:translateY(calc(var(--p,0) * -70px)) scale(calc(1 - var(--p,0) * 0.06));
+  opacity:calc(1 - var(--p,0) * 1.15); will-change:transform, opacity; }
+.bfy-features { transform:translateY(calc(var(--p,0) * 60px)); opacity:calc(1 - var(--p,0) * 1.3); }
+.bfy-floating { opacity:calc(1 - var(--p,0) * 1.4); }
+
+/* 노드: 씬이 다가오고 좌측 텍스트는 반대로 살짝 물러남 */
+.lp-scene { transform:rotateY(-15deg) rotateX(5deg) scale(calc(1 + var(--p,0) * 0.55)); will-change:transform; }
+.lp-hero-text { transform:translateY(calc(var(--p,0) * -56px)); opacity:calc(1 - var(--p,0) * 1.1); }
+.lp-hero-glow { transform:scale(calc(1 + var(--p,0) * 0.8)); opacity:calc(1 - var(--p,0) * 0.5); }
+
+/* 영상: 프레임이 들어오며 살짝 커짐 */
+.vid-frame { transform:scale(calc(0.94 + var(--p,0) * 0.09)); will-change:transform; }
+
+@media (prefers-reduced-motion:reduce) {
+  .bfy-canvas, .bfy-dot, .bfy-hero, .bfy-features, .bfy-floating,
+  .lp-scene, .lp-hero-text, .lp-hero-glow, .vid-frame { transform:none; opacity:1; }
+  .lp-scene { transform:rotateY(-15deg) rotateX(5deg); }
+}
 
 /* 스크롤 진입 리빌 — 하이엔드 사이트 표준 연출(페이드 + 상승, 스태거는 --d) */
 .lp .reveal { opacity:0; transform:translateY(26px);
@@ -360,7 +387,8 @@ const CSS = `
 .lp-backdrop { position:absolute; inset:40px -20px -20px 20px; border-radius:48px; background:linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(0,0,0,0.2) 100%);
   border-top:1px solid rgba(255,255,255,0.05); border-left:1px solid rgba(255,255,255,0.05); backdrop-filter:blur(40px);
   transform:rotateY(-15deg) rotateX(5deg) translateZ(-100px); transform-style:preserve-3d; pointer-events:none; }
-.lp-scene { position:relative; width:100%; height:520px; transform-style:preserve-3d; transform:rotateY(-15deg) rotateX(5deg); }
+/* transform 은 위쪽 스크럽 블록에서 --p 와 함께 지정 */
+.lp-scene { position:relative; width:100%; height:520px; transform-style:preserve-3d; }
 .lp-splines { position:absolute; inset:0; width:100%; height:100%; z-index:1; }
 .lp-spline-path { fill:none; stroke:rgba(77,182,172,0.16); stroke-width:1.4; stroke-dasharray:6 6; animation:lp-flow 22s linear infinite; }
 .lp-spline-glow { fill:none; stroke:rgba(255,255,255,0.04); stroke-width:8; filter:blur(4px); }
@@ -395,7 +423,8 @@ const CSS = `
 .lp-lbl-2 { top:-26px; left:50%; transform:translateX(-50%); }
 
 /* 화면 2: 나비 (뒷면) */
-.bfy-dot { position:absolute; inset:0; z-index:1; pointer-events:none; opacity:0.55;
+/* opacity/transform 은 위쪽 스크럽 블록에서 --p 와 함께 지정 */
+.bfy-dot { position:absolute; inset:0; z-index:1; pointer-events:none;
   background-image:radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px); background-size:42px 42px; }
 .bfy-canvas { position:absolute; inset:0; z-index:2; }
 .bfy-overlay { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; padding:100px 64px 56px; pointer-events:none; }
@@ -473,24 +502,26 @@ const CSS = `
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
 /* 5번 섹션 — 가운데 뜬 CTA + 얇은 푸터를 하나의 바닥 덩어리로 통합.
    위쪽에서 서서히 밝아지는 배경으로 본문과 이어 붙여 "붕 뜨는" 느낌을 없앰 */
-.lp-end { width:100%; padding:0 48px 40px; background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 32%, rgba(10,12,13,0.9) 100%); }
-.lp-end-cta { display:grid; grid-template-columns:1fr auto; gap:56px; align-items:end;
-  padding:120px 0 72px; border-bottom:1px solid rgba(255,255,255,0.09); }
-.lp-end-copy h2 { font-size:46px; font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:14px; }
-.lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:18px; max-width:340px; }
+/* 5번 섹션 — CTA + 푸터 전체가 한 화면에 들어오도록 압축 */
+.lp-end { width:100%; min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:0 48px 28px; background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 30%, rgba(10,12,13,0.9) 100%); }
+.lp-end-cta { display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end;
+  padding:0 0 44px; border-bottom:1px solid rgba(255,255,255,0.09); }
+.lp-end-copy h2 { font-size:clamp(30px, 3.4vw, 46px); font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:12px; }
+.lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:16px; max-width:340px; }
 .lp-end-act p { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.65; }
 
-.lp-end-grid { display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:40px; padding:56px 0 48px; }
-.lp-end-brand { display:flex; flex-direction:column; gap:14px; }
-.lp-end-brand p { font-size:13px; color:rgba(255,255,255,0.38); line-height:1.7; max-width:300px; }
-.lp-end-col { display:flex; flex-direction:column; align-items:flex-start; gap:11px; }
+.lp-end-grid { display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:36px; padding:38px 0 30px; }
+.lp-end-brand { display:flex; flex-direction:column; gap:12px; }
+.lp-end-brand p { font-size:13px; color:rgba(255,255,255,0.38); line-height:1.65; max-width:300px; }
+.lp-end-col { display:flex; flex-direction:column; align-items:flex-start; gap:9px; }
 .lp-end-col h5 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase;
-  color:rgba(255,255,255,0.35); margin-bottom:5px; }
+  color:rgba(255,255,255,0.35); margin-bottom:3px; }
 .lp-end-col a, .lp-end-col span, .lp-end-col button { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; text-align:left; }
 .lp-end-col a:hover, .lp-end-col button:hover { color:var(--acc); }
 
 .lp-end-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-  padding-top:26px; border-top:1px solid rgba(255,255,255,0.07);
+  padding-top:20px; border-top:1px solid rgba(255,255,255,0.07);
   font-size:12px; color:rgba(255,255,255,0.3); }
 .lp-end-bar a:hover { color:var(--acc); }
 

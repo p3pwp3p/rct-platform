@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
  *  1) useSmoothScroll  — Lenis 관성 스크롤(휠·트랙패드·터치)
  *  2) useReveal        — 뷰포트 진입 시 페이드+상승 리빌(1회)
  *  3) useSectionScroll — 특정 섹션의 스크롤 진행도(0~1) + 화면 안 여부
- *  4) useSectionPager  — 휠 한 번 = 다음/이전 풀스크린 섹션으로 이동(전환 연출 포함)
+ *  4) useScrubProgress — [data-scrub] 섹션의 스크롤 진행도를 CSS 변수 --p 로 전달
  */
 
 type LenisLike = {
@@ -129,111 +129,56 @@ export function useSectionScroll<T extends HTMLElement>(enabled = true) {
   return { ref, progress, inView }
 }
 
-const PAGE_MS = 1000
 
 /**
- * 휠(또는 터치 스와이프) 한 번 = 다음/이전 풀스크린 섹션으로 한 칸 이동.
+ * `[data-scrub]` 가 붙은 섹션마다 스크롤 진행도를 CSS 변수 `--p`(0~1)로 흘려보낸다.
+ * 실제 움직임(확대·이동·페이드)은 전부 CSS 쪽 calc() 에서 --p 를 읽어 처리하므로
+ * JS 는 값만 갱신하고 레이아웃엔 손대지 않는다(리플로우 없음).
  *
- * 스크롤을 통째로 잠그지 않는 게 핵심 — 페이저는 `selector` 로 지정한
- * 풀스크린 섹션 구간에서만 동작하고, 마지막 섹션에서 아래로 내리면 손을 떼
- * 그 아래 일반 콘텐츠는 평소대로 자유롭게 스크롤된다(이전 스냅 방식이
- * 위·아래 모두 답답했던 원인을 피함). 키보드 스크롤도 가로채지 않는다.
- *
- * 이동 중에는 <html> 에 `lp-paging` 이 붙어 CSS 전환 연출이 재생된다.
+ * 진행도 기준: 섹션 상단이 화면 하단에 닿는 순간 0, 섹션 하단이 화면 상단을 지나면 1.
+ * `data-scrub="in"` 이면 섹션이 화면에 들어와 있는 구간만 0~1 로 정규화한다.
  */
-export function useSectionPager(selector: string, enabled = true) {
+export function useScrubProgress(enabled = true) {
   useEffect(() => {
-    if (!enabled || prefersReduced()) return
-    // 모바일에선 페이징이 오히려 답답해 비활성(자유 스크롤)
-    if (!window.matchMedia('(min-width: 769px)').matches) return
+    if (!enabled) return
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-scrub]'))
+    if (!els.length) return
 
-    let locked = false
-    let unlockTimer = 0
-
-    const sections = () => Array.from(document.querySelectorAll<HTMLElement>(selector))
-    const zoneEnd = () => {
-      const els = sections()
-      const last = els[els.length - 1]
-      return last ? last.offsetTop + last.offsetHeight : 0
-    }
-    const currentIndex = () => {
-      const els = sections()
-      const probe = window.scrollY + window.innerHeight * 0.5
-      let idx = 0
-      els.forEach((el, i) => { if (probe >= el.offsetTop) idx = i })
-      return idx
+    if (prefersReduced()) {
+      els.forEach((el) => el.style.setProperty('--p', '0'))
+      return
     }
 
-    const goto = (i: number) => {
-      const els = sections()
-      const el = els[i]
-      if (!el) return
-      locked = true
-      document.documentElement.classList.add('lp-paging')
-      const y = el.offsetTop
-      const lenis = getLenis()
-      if (lenis) {
-        lenis.scrollTo(y, {
-          duration: PAGE_MS / 1000,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3),
-          lock: true,
-          force: true,
-        })
-      } else {
-        window.scrollTo({ top: y, behavior: 'smooth' })
+    let raf = 0
+    let queued = false
+    const measure = () => {
+      queued = false
+      const vh = window.innerHeight
+      for (const el of els) {
+        const r = el.getBoundingClientRect()
+        let p: number
+        if (el.dataset.scrub === 'in') {
+          // 섹션이 화면을 채우고 있는 동안만 0~1 (상단 정렬 기준)
+          p = -r.top / Math.max(r.height - vh, 1)
+        } else {
+          p = (vh - r.top) / (r.height + vh)
+        }
+        el.style.setProperty('--p', Math.min(1, Math.max(0, p)).toFixed(4))
       }
-      window.clearTimeout(unlockTimer)
-      unlockTimer = window.setTimeout(() => {
-        locked = false
-        document.documentElement.classList.remove('lp-paging')
-      }, PAGE_MS + 60)
+    }
+    const onScroll = () => {
+      if (queued) return
+      queued = true
+      raf = requestAnimationFrame(measure)
     }
 
-    const handleIntent = (dir: 1 | -1, e: Event) => {
-      const els = sections()
-      if (!els.length) return
-      // 페이저 구간 밖(아래 콘텐츠)이면 관여하지 않음
-      if (window.scrollY >= zoneEnd() - 10) return
-
-      const idx = currentIndex()
-      if (dir > 0 && idx >= els.length - 1) return   // 마지막 스크린 → 아래 콘텐츠로 놓아줌
-      if (dir < 0 && idx <= 0 && window.scrollY <= 2) return // 최상단 → 더 올릴 곳 없음
-
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      if (locked) return
-
-      const offFromTop = window.scrollY - els[idx].offsetTop
-      // 위로 올릴 때 현재 섹션에 딱 맞춰져 있지 않으면 먼저 현재 섹션으로 정렬
-      if (dir < 0 && offFromTop > 12) goto(idx)
-      else goto(idx + dir)
-    }
-
-    const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 2) return
-      handleIntent(e.deltaY > 0 ? 1 : -1, e)
-    }
-
-    let touchY = 0
-    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0].clientY }
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = touchY - e.touches[0].clientY
-      if (Math.abs(dy) < 40) return
-      handleIntent(dy > 0 ? 1 : -1, e)
-    }
-
-    // capture 단계로 먼저 잡아야 Lenis 의 휠 처리보다 앞설 수 있음
-    const opts = { capture: true, passive: false } as const
-    window.addEventListener('wheel', onWheel, opts)
-    window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true })
-    window.addEventListener('touchmove', onTouchMove, opts)
-
+    measure()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
     return () => {
-      window.clearTimeout(unlockTimer)
-      document.documentElement.classList.remove('lp-paging')
-      window.removeEventListener('wheel', onWheel, opts)
-      window.removeEventListener('touchstart', onTouchStart, { capture: true })
-      window.removeEventListener('touchmove', onTouchMove, opts)
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
     }
-  }, [selector, enabled])
+  }, [enabled])
 }
