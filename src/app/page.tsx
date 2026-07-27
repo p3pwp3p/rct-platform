@@ -106,10 +106,6 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-          <button type="button" onClick={goNext} className="lp-scrollcue">
-            <span>SCROLL</span>
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-          </button>
         </section>
 
         {/* 화면 2: 노드 애니메이션 */}
@@ -218,16 +214,49 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="lp-cta">
-        <h2>지금 시작해보세요</h2>
-        <p>가입 후 바로 이용할 수 있습니다.</p>
-        <Link href="/login" className="lp-btn-primary">로그인 / 시작하기 →</Link>
-      </section>
-      <footer className="lp-footer">
-        <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
-        <div className="lp-foot-meta">
+      {/* ── 5번: 마무리 CTA + 푸터를 하나의 덩어리로 묶어 바닥에 앉힘 ── */}
+      <footer className="lp-end">
+        <div className="lp-end-cta">
+          <div className="lp-end-copy">
+            <span className="lp-kicker reveal">시작하기</span>
+            <h2 className="reveal" style={{ '--d': '60ms' } as React.CSSProperties}>
+              지금 바로<br />시작할 수 있습니다
+            </h2>
+          </div>
+          <div className="lp-end-act reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
+            <p>[placeholder] 가입 후 바로 이용할 수 있습니다.</p>
+            <Link href="/login" className="lp-btn-primary">로그인 / 시작하기 →</Link>
+          </div>
+        </div>
+
+        <div className="lp-end-grid">
+          <div className="lp-end-brand">
+            <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
+            <p>[placeholder] 회사를 한 줄로 소개하는 문장이 들어갑니다.</p>
+          </div>
+          <div className="lp-end-col">
+            <h5>바로가기</h5>
+            <a href="#how">이용방법</a>
+            <button type="button" onClick={goNext}>네트워크</button>
+            <Link href="/login">로그인</Link>
+          </div>
+          <div className="lp-end-col">
+            <h5>문의</h5>
+            <span>[placeholder] 이메일</span>
+            <span>[placeholder] 카카오 채널</span>
+            <span>[placeholder] 운영시간</span>
+          </div>
+          <div className="lp-end-col">
+            <h5>회사 정보</h5>
+            <span>[placeholder] 상호 · 대표자</span>
+            <span>[placeholder] 사업자등록번호</span>
+            <span>[placeholder] 주소</span>
+          </div>
+        </div>
+
+        <div className="lp-end-bar">
           <span>© {new Date().getFullYear()} RCT Platform. All rights reserved.</span>
-          <span>회사 정보 · 연락처가 들어갈 자리</span>
+          <Link href="/terms">이용약관</Link>
         </div>
       </footer>
     </div>
@@ -273,7 +302,6 @@ const CSS = `
   transition:transform 1000ms cubic-bezier(0.16,1,0.3,1), opacity 1000ms cubic-bezier(0.16,1,0.3,1);
   will-change:transform, opacity; }
 .lp-paging .bfy-overlay, .lp-paging .lp-hero-grid { transform:scale(0.955) translateY(10px); opacity:0.45; }
-.lp-paging .lp-scrollcue { opacity:0; }
 
 /* 스크롤 진입 리빌 — 하이엔드 사이트 표준 연출(페이드 + 상승, 스태거는 --d) */
 .lp .reveal { opacity:0; transform:translateY(26px);
@@ -327,12 +355,6 @@ const CSS = `
 .lp-subhead { font-size:17px; line-height:1.7; color:rgba(255,255,255,0.48); font-weight:400; max-width:440px; margin-bottom:42px; }
 .lp-cta-group { display:flex; align-items:center; gap:20px; }
 
-.lp-scrollcue { position:absolute; bottom:34px; left:50%; transform:translateX(-50%); z-index:20;
-  display:flex; flex-direction:column; align-items:center; gap:8px;
-  font-family:var(--font-mono); font-size:10px; letter-spacing:0.3em; color:rgba(255,255,255,0.4);
-  animation:lp-bob 2.2s ease-in-out infinite; transition:opacity 400ms ease; opacity:1; }
-.lp-scrollcue svg { width:14px; height:14px; stroke:rgba(255,255,255,0.4); stroke-width:1.6; fill:none; }
-@keyframes lp-bob { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(7px); } }
 
 .lp-canvas { position:relative; display:flex; align-items:center; justify-content:center; perspective:1200px; height:100%; }
 .lp-backdrop { position:absolute; inset:40px -20px -20px 20px; border-radius:48px; background:linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(0,0,0,0.2) 100%);
@@ -449,15 +471,28 @@ const CSS = `
 .lp-step-n { font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--acc); }
 .lp-step h4 { font-size:15.5px; font-weight:600; margin:10px 0 6px; letter-spacing:-0.01em; }
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
-/* 5번 섹션 — 폭 제한 없이 화면 좌우 끝까지 */
-.lp-cta { text-align:center; padding:130px 48px; width:100%;
-  border-top:1px solid rgba(255,255,255,0.07); border-bottom:1px solid rgba(255,255,255,0.07);
-  background:linear-gradient(180deg, rgba(77,182,172,0.05), transparent); }
-.lp-cta h2 { font-size:34px; font-weight:200; letter-spacing:-0.02em; color:#fff; }
-.lp-cta p { color:rgba(255,255,255,0.48); margin:14px 0 30px; font-size:15px; }
-.lp-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
-  width:100%; padding:44px 48px 60px; }
-.lp-foot-meta { display:flex; flex-direction:column; gap:4px; font-size:12px; color:rgba(255,255,255,0.32); text-align:right; }
+/* 5번 섹션 — 가운데 뜬 CTA + 얇은 푸터를 하나의 바닥 덩어리로 통합.
+   위쪽에서 서서히 밝아지는 배경으로 본문과 이어 붙여 "붕 뜨는" 느낌을 없앰 */
+.lp-end { width:100%; padding:0 48px 40px; background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 32%, rgba(10,12,13,0.9) 100%); }
+.lp-end-cta { display:grid; grid-template-columns:1fr auto; gap:56px; align-items:end;
+  padding:120px 0 72px; border-bottom:1px solid rgba(255,255,255,0.09); }
+.lp-end-copy h2 { font-size:46px; font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:14px; }
+.lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:18px; max-width:340px; }
+.lp-end-act p { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.65; }
+
+.lp-end-grid { display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:40px; padding:56px 0 48px; }
+.lp-end-brand { display:flex; flex-direction:column; gap:14px; }
+.lp-end-brand p { font-size:13px; color:rgba(255,255,255,0.38); line-height:1.7; max-width:300px; }
+.lp-end-col { display:flex; flex-direction:column; align-items:flex-start; gap:11px; }
+.lp-end-col h5 { font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase;
+  color:rgba(255,255,255,0.35); margin-bottom:5px; }
+.lp-end-col a, .lp-end-col span, .lp-end-col button { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; text-align:left; }
+.lp-end-col a:hover, .lp-end-col button:hover { color:var(--acc); }
+
+.lp-end-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  padding-top:26px; border-top:1px solid rgba(255,255,255,0.07);
+  font-size:12px; color:rgba(255,255,255,0.3); }
+.lp-end-bar a:hover { color:var(--acc); }
 
 /* 반응형 */
 @media (max-width:1100px) {
@@ -481,12 +516,14 @@ const CSS = `
   .lp-navlink-btn { display:none; }
   .lp-h1 { font-size:30px; } .lp-subhead { font-size:14px; }
   .lp-node { width:130px; height:84px; padding:10px; }
-  .lp-scrollcue { bottom:18px; }
   .bfy-h1 { font-size:28px; } .bfy-features { grid-template-columns:1fr; }
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
-  .lp-footer { flex-direction:column; align-items:flex-start; padding:32px 20px 48px; } .lp-foot-meta { text-align:left; }
-  .lp-cta { padding:80px 20px; }
+  .lp-end { padding:0 20px 32px; }
+  .lp-end-cta { grid-template-columns:1fr; gap:28px; align-items:start; padding:72px 0 44px; }
+  .lp-end-copy h2 { font-size:30px; }
+  .lp-end-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0 34px; }
+  .lp-end-brand { grid-column:1 / -1; }
   .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
   .how-sec { grid-template-columns:1fr; padding:0 0 64px; }
   .how-visual { position:relative; height:56vh; }
