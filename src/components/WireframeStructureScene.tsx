@@ -97,11 +97,18 @@ export default function WireframeStructureScene({
       group.rotation.y = spin
 
       // 스크롤 진행에 따라 카메라가 타워를 아래에서 위로 훑고 지나감
-      // 세로로 긴 화면이면 카메라를 조금 더 당겨 타워 전체가 들어오도록 보정
-      const fit = Math.max(1, 1.15 * (h / Math.max(w, 1)) * 0.9)
-      const camY = -TOP * 0.18 + p * TOP * 0.5
-      camera.position.set(22 * fit, camY, 30 * fit)
-      camera.lookAt(0, camY * 0.5, 0)
+      // 타워 전체(위·아래 끝)가 항상 화면에 들어오도록 필요한 거리를 매 프레임 산출.
+      // 세로 화각으로 높이를 먼저 맞추고, 가로가 모자라면 그만큼 더 물러난다.
+      const halfV = (camera.fov * Math.PI) / 360
+      const needV = TOP / 2 + 2.5           // 타워 절반 높이 + 여백
+      const needH = 5.0                      // 회전 시 밑변 대각까지 커버
+      const halfH = Math.atan(Math.tan(halfV) * camera.aspect)
+      const dist = Math.max(needV / Math.tan(halfV), needH / Math.tan(halfH))
+
+      // 스크롤에 따라 아주 완만하게만 오르내림 — 크게 움직이면 끝이 잘리므로 억제
+      const camY = -1.5 + p * 3
+      camera.position.set(dist * 0.5, camY, dist * 0.87)
+      camera.lookAt(0, camY * 0.25, 0)
 
       renderer.render(scene, camera)
     }

@@ -391,7 +391,7 @@ const CSS = `
 /* 이용방법 — 좌측 타워는 sticky 로 화면에 고정된 채 우측 내용이 옆으로 흐름.
    타워는 카드/박스 없이 화면 높이만큼 그대로 세워짐(full-bleed). */
 .how-sec { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:0;
-  align-items:start; padding:0 0 120px; border-top:1px solid rgba(255,255,255,0.06); }
+  align-items:start; padding:0 0 24vh; border-top:1px solid rgba(255,255,255,0.06); }
 .how-visual { position:sticky; top:0; height:100vh; }
 .how-visual-inner { position:relative; width:100%; height:100%;
   background:radial-gradient(ellipse 55% 70% at 45% 55%, rgba(77,182,172,0.07), transparent 70%); }
@@ -411,7 +411,7 @@ const CSS = `
 .how-row p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.6; }
 
 /* 영상 소개 */
-.vid-sec { max-width:1240px; margin:0 auto; padding:40px 32px 120px; display:grid; grid-template-columns:1.3fr 1fr; gap:56px; align-items:center; }
+.vid-sec { max-width:1240px; margin:0 auto; padding:20vh 32px 18vh; display:grid; grid-template-columns:1.3fr 1fr; gap:56px; align-items:center; }
 .vid-frame { border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); background:#0a0c0d; }
 .vid-placeholder { aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 50% 40%, rgba(77,182,172,0.12), transparent 65%), linear-gradient(135deg,#0d0f10,#050607); }
