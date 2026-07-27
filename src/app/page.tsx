@@ -209,7 +209,9 @@ const CSS = `
 /* 화면 1·2 스냅 컨테이너 — 브라우저 네이티브 scroll-snap(mandatory).
    이 안에서만 "한 번 스크롤 = 다음 화면" 스냅, 그 아래 콘텐츠는 자유 스크롤
    (전체 문서에 걸면 마지막 스냅 지점 이후로 못 내려가는 함정이 있어 분리). */
-.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth;
+/* scroll-behavior:smooth 를 빼서 스냅 보정이 활강 없이 즉시 붙도록(반응속도 최우선).
+   nav/스크롤큐 클릭 시의 scrollIntoView({behavior:'smooth'})는 JS 옵션이라 별도로 부드럽게 유지됨. */
+.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory;
   scrollbar-width:none; -ms-overflow-style:none; background:#050607; }
 .lp-snapwrap::-webkit-scrollbar { display:none; }
 .lp-snap { scroll-snap-align:start; scroll-snap-stop:always; position:relative; height:100vh; overflow:hidden; }
