@@ -3,17 +3,17 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ButterflyCanvas from '@/components/ButterflyCanvas'
 import WireframeStructureScene from '@/components/WireframeStructureScene'
+import { useSmoothScroll, useReveal, useSectionScroll } from '@/components/useScrollMotion'
 
 /**
- * 랜딩(홈) — 스크롤 2단 구성.
- *  1) 첫 화면: 노드 애니메이션(글래스 노드·스플라인·코어 고리 pulse)
- *  2) 스크롤: 나비 궤적 애니메이션(Butterfly 무드) 화면으로 전환
+ * 랜딩(홈) — 위에서 아래로 쭉 이어지는 단일 스크롤 구성.
  * 브랜드(RCT 로고/틸), SUIT 단일 서체 체계. 콘텐츠는 [placeholder].
  *
- * 전환 방식: 브라우저 네이티브 스크롤 스냅(scroll-snap-type: mandatory).
- * 커스텀 휠 가로채기/JS 트랜지션 없음 → 트랙패드·마우스·터치 어디서든
- * 브라우저가 최적화해 매끄럽고, 접근성·기기 호환성 리스크도 없음.
- * 나비 조립/분해는 IntersectionObserver 로 그 섹션 진입/이탈마다 반복 트리거.
+ * 스크롤 연출: 스냅/휠 하이재킹을 쓰지 않는다(위·아래 이동이 불편해지는 원인).
+ * 대신 하이엔드 사이트의 표준 조합을 쓴다 —
+ *   ① Lenis 관성 스무스 스크롤   ② 뷰포트 진입 리빌(fade+rise, 스태거)
+ *   ③ sticky 고정 비주얼 + 스크롤 진행도 연동 카메라
+ * 섹션끼리 겹치지 않고 각자 자기 자리를 차지하며 여백으로 구분된다.
  *
  * 노출 스위치: 프로덕션(Vercel 미설정)에선 /login 으로. 로컬(.env.local=true)에서만 랜딩.
  */
@@ -22,9 +22,13 @@ const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
 export default function LandingPage() {
   const bfySectionRef = useRef<HTMLElement>(null)
   const heroSectionRef = useRef<HTMLElement>(null)
-  const howSectionRef = useRef<HTMLElement>(null)
   const [bfyActive, setBfyActive] = useState(false)
-  const [howActive, setHowActive] = useState(false)
+
+  // 이용방법 타워 — 섹션 스크롤 진행도로 카메라를 움직이고, 화면 안일 때만 조립
+  const how = useSectionScroll<HTMLElement>(LANDING_ENABLED)
+
+  useSmoothScroll(LANDING_ENABLED)
+  useReveal(LANDING_ENABLED)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -41,19 +45,6 @@ export default function LandingPage() {
     const io = new IntersectionObserver(
       (entries) => setBfyActive(entries[0]?.isIntersecting ?? false),
       { threshold: 0.5 },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-
-  // 이용방법 섹션 — 화면에 잡히는 동안만 와이어프레임 구조 조립 애니메이션 재생.
-  useEffect(() => {
-    if (!LANDING_ENABLED) return
-    const el = howSectionRef.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      (entries) => setHowActive(entries[0]?.isIntersecting ?? false),
-      { threshold: 0.35 },
     )
     io.observe(el)
     return () => io.disconnect()
@@ -77,10 +68,9 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* ── 화면 1·2 — 브라우저 네이티브 스크롤 스냅(mandatory), 그 아래는 자유 스크롤 ── */}
-      <div className="lp-snapwrap">
+      {/* ── 섹션들 — 겹치지 않고 위에서 아래로 이어짐 ── */}
         {/* 화면 1: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
-        <section className="bfy lp-snap" ref={bfySectionRef}>
+        <section className="bfy" ref={bfySectionRef}>
           <div className="bfy-dot" />
           <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
           <div className="bfy-overlay">
@@ -121,7 +111,7 @@ export default function LandingPage() {
         </section>
 
         {/* 화면 2: 노드 애니메이션 */}
-        <section className="lp-hero lp-snap" ref={heroSectionRef}>
+        <section className="lp-hero" ref={heroSectionRef}>
           <div className="lp-hero-glow" />
           <div className="lp-hero-grid">
             <div className="lp-hero-text">
@@ -161,18 +151,23 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-      </div>
 
-      {/* ── 이용방법 — 와이어프레임 구조 조립 애니메이션 + 스펙 리스트 ── */}
-      <section id="how" className="how-sec" ref={howSectionRef}>
+      {/* ── 이용방법 — sticky 로 고정된 full-bleed 와이어프레임 타워 옆으로 내용이 흐름 ── */}
+      <section id="how" className="how-sec" ref={how.ref}>
         <div className="how-visual">
-          <WireframeStructureScene active={howActive} />
-          <span className="how-visual-tag">PIPELINE // AUTOMATED</span>
+          <div className="how-visual-inner">
+            <WireframeStructureScene active={how.inView} progress={how.progress} />
+            <span className="how-hud how-hud-tl">SIMULATION STATE: {how.inView ? 'ACTIVE' : 'IDLE'}</span>
+            <span className="how-hud how-hud-bl">RENDER_MODE: WIREFRAME_PRECISION</span>
+            <span className="how-axis">Z-AXIS // PIPELINE ALIGNMENT</span>
+          </div>
         </div>
         <div className="how-info">
-          <span className="lp-kicker">HOW IT WORKS</span>
-          <h2 className="lp-h2">이용 방법</h2>
-          <p className="lp-lead">[placeholder] 계좌 연결부터 정산까지 이어지는 흐름을 한눈에 확인하세요.</p>
+          <span className="lp-kicker reveal">HOW IT WORKS</span>
+          <h2 className="lp-h2 reveal" style={{ '--d': '60ms' } as React.CSSProperties}>이용 방법</h2>
+          <p className="lp-lead reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
+            [placeholder] 계좌 연결부터 정산까지 이어지는 흐름을 한눈에 확인하세요.
+          </p>
           <ul className="how-list">
             {[
               { n: '01', t: '계좌 개설', d: '[placeholder] 첫 단계 설명' },
@@ -180,7 +175,7 @@ export default function LandingPage() {
               { n: '03', t: '수익 정산', d: '[placeholder] 세 번째 단계 설명' },
               { n: '04', t: '보상 수령', d: '[placeholder] 네 번째 단계 설명' },
             ].map((s, i) => (
-              <li key={i} className="how-row">
+              <li key={i} className="how-row reveal" style={{ '--d': `${i * 90}ms` } as React.CSSProperties}>
                 <span className="how-n">{s.n}</span>
                 <div><h4>{s.t}</h4><p>{s.d}</p></div>
               </li>
@@ -191,7 +186,7 @@ export default function LandingPage() {
 
       {/* ── 영상 소개 ── */}
       <section className="vid-sec">
-        <div className="vid-frame">
+        <div className="vid-frame reveal">
           <div className="vid-placeholder">
             <button type="button" className="vid-play" aria-label="재생" />
           </div>
@@ -202,12 +197,14 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="vid-info">
-          <span className="lp-kicker">INTRO</span>
-          <h2 className="lp-h2">플랫폼 소개 영상</h2>
-          <p className="lp-lead">[placeholder] RCT Platform의 자동 거래 구조를 짧은 영상으로 소개합니다.</p>
+          <span className="lp-kicker reveal">INTRO</span>
+          <h2 className="lp-h2 reveal" style={{ '--d': '60ms' } as React.CSSProperties}>플랫폼 소개 영상</h2>
+          <p className="lp-lead reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
+            [placeholder] RCT Platform의 자동 거래 구조를 짧은 영상으로 소개합니다.
+          </p>
           <div className="vid-points">
-            <div className="vid-point"><span className="v">01</span><p>[placeholder] 핵심 요약 1</p></div>
-            <div className="vid-point"><span className="v">02</span><p>[placeholder] 핵심 요약 2</p></div>
+            <div className="vid-point reveal" style={{ '--d': '180ms' } as React.CSSProperties}><span className="v">01</span><p>[placeholder] 핵심 요약 1</p></div>
+            <div className="vid-point reveal" style={{ '--d': '240ms' } as React.CSSProperties}><span className="v">02</span><p>[placeholder] 핵심 요약 2</p></div>
           </div>
         </div>
       </section>
@@ -257,15 +254,17 @@ const CSS = `
   text-transform:uppercase; opacity:0.9; display:block; margin-bottom:24px; }
 .lp-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; color:var(--acc); text-transform:uppercase; }
 
-/* 화면 1·2 스냅 컨테이너 — 브라우저 네이티브 scroll-snap(mandatory).
-   이 안에서만 "한 번 스크롤 = 다음 화면" 스냅, 그 아래 콘텐츠는 자유 스크롤
-   (전체 문서에 걸면 마지막 스냅 지점 이후로 못 내려가는 함정이 있어 분리). */
-/* scroll-behavior:smooth 를 빼서 스냅 보정이 활강 없이 즉시 붙도록(반응속도 최우선).
-   nav/스크롤큐 클릭 시의 scrollIntoView({behavior:'smooth'})는 JS 옵션이라 별도로 부드럽게 유지됨. */
-.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory;
-  scrollbar-width:none; -ms-overflow-style:none; background:#050607; }
-.lp-snapwrap::-webkit-scrollbar { display:none; }
-.lp-snap { scroll-snap-align:start; scroll-snap-stop:always; position:relative; height:100vh; overflow:hidden; }
+/* 두 히어로 화면 — 각자 한 화면을 차지하되 겹치지 않고 이어서 흐름(스냅 없음) */
+.bfy, .lp-hero { position:relative; min-height:100vh; overflow:hidden; }
+
+/* 스크롤 진입 리빌 — 하이엔드 사이트 표준 연출(페이드 + 상승, 스태거는 --d) */
+.lp .reveal { opacity:0; transform:translateY(26px);
+  transition:opacity 900ms cubic-bezier(0.16,1,0.3,1), transform 900ms cubic-bezier(0.16,1,0.3,1);
+  transition-delay:var(--d, 0ms); will-change:opacity, transform; }
+.lp .reveal.is-in { opacity:1; transform:none; }
+@media (prefers-reduced-motion:reduce) {
+  .lp .reveal { opacity:1; transform:none; transition:none; }
+}
 
 /* 네비 */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
@@ -378,15 +377,23 @@ const CSS = `
 .bfy-fcard h3 { font-size:19px; font-weight:600; margin-bottom:10px; letter-spacing:-0.01em; }
 .bfy-fcard p { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.65; max-width:280px; }
 
-/* 이용방법 — 와이어프레임 + 스펙 리스트 */
-.how-sec { max-width:1240px; margin:0 auto; padding:120px 32px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
-.how-visual { position:relative; aspect-ratio:1/1; border-radius:28px; border:1px solid rgba(255,255,255,0.08);
-  background:radial-gradient(circle at 30% 20%, rgba(77,182,172,0.08), transparent 60%), rgba(255,255,255,0.02); overflow:hidden; }
-.how-visual-tag { position:absolute; bottom:20px; left:20px; font-family:var(--font-mono); font-size:10px; letter-spacing:0.2em;
-  color:rgba(255,255,255,0.35); text-transform:uppercase; }
-.how-info { display:flex; flex-direction:column; }
+/* 이용방법 — 좌측 타워는 sticky 로 화면에 고정된 채 우측 내용이 옆으로 흐름.
+   타워는 카드/박스 없이 화면 높이만큼 그대로 세워짐(full-bleed). */
+.how-sec { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:0;
+  align-items:start; padding:0 0 120px; border-top:1px solid rgba(255,255,255,0.06); }
+.how-visual { position:sticky; top:0; height:100vh; }
+.how-visual-inner { position:relative; width:100%; height:100%;
+  background:radial-gradient(ellipse 55% 70% at 45% 55%, rgba(77,182,172,0.07), transparent 70%); }
+.how-hud { position:absolute; font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.22em;
+  color:rgba(255,255,255,0.32); text-transform:uppercase; pointer-events:none; }
+.how-hud-tl { top:96px; left:40px; }
+.how-hud-bl { bottom:40px; left:40px; }
+.how-axis { position:absolute; top:50%; left:40px; transform:translateY(-50%) rotate(-90deg); transform-origin:left center;
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.28em; color:rgba(255,255,255,0.2);
+  text-transform:uppercase; pointer-events:none; white-space:nowrap; }
+.how-info { display:flex; flex-direction:column; padding:32vh 56px 0 8px; min-height:100vh; }
 .how-list { list-style:none; margin-top:28px; display:flex; flex-direction:column; }
-.how-row { display:flex; gap:20px; padding:18px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start; }
+.how-row { display:flex; gap:20px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start; }
 .how-row:last-child { border-bottom:1px solid rgba(255,255,255,0.08); }
 .how-n { font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--acc); padding-top:2px; }
 .how-row h4 { font-size:15.5px; font-weight:600; margin-bottom:6px; letter-spacing:-0.01em; }
@@ -456,7 +463,11 @@ const CSS = `
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
   .lp-footer { flex-direction:column; align-items:flex-start; } .lp-foot-meta { text-align:left; }
-  .how-sec, .vid-sec { grid-template-columns:1fr; padding:64px 20px; gap:32px; }
-  .how-visual { order:-1; }
+  .vid-sec { grid-template-columns:1fr; padding:64px 20px; gap:32px; }
+  .how-sec { grid-template-columns:1fr; padding:0 0 64px; }
+  .how-visual { position:relative; height:56vh; }
+  .how-hud-tl { top:16px; left:20px; } .how-hud-bl { bottom:16px; left:20px; } .how-axis { display:none; }
+  .how-info { padding:32px 20px 0; min-height:0; }
+  .how-row { padding:20px 0; }
 }
 `
