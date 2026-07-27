@@ -6,13 +6,14 @@ import * as THREE from 'three'
  * Kinetic butterfly — 12,000 파티클이 나비 궤적을 그리는 Three.js 애니메이션.
  * 원본(Butterfly.fi)을 우리 브랜드 색(틸)으로 변경.
  *
- * `active` 가 true 가 되는 순간(페이지 플립 진행률 기준 등 부모가 결정) 시작 + 페이드인.
- * 지오메트리 기반 IntersectionObserver 대신 명시적 prop 으로 제어(부모가 이미
- * 겹쳐진 레이어 안에 항상 렌더하므로 화면 교차만으로는 트리거 시점을 알 수 없음).
+ * `active` 가 true 면 흩어진 입자가 나비 모양으로 "조립", false 가 되면 그 반대로
+ * "분해"(원래 흩어진 위치로 되돌아감) — 섹션에 들어올 때마다/나갈 때마다 반복 재생됨.
  */
 export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { color?: number; active?: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null)
-  const startRef = useRef<() => void>(() => {})
+  const assembleRef = useRef(active)
+
+  useEffect(() => { assembleRef.current = active }, [active])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -32,9 +33,15 @@ export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { c
     const count = 12000
     const geo = new THREE.BufferGeometry()
     const pos = new Float32Array(count * 3)
+    // 흩어진(분해) 상태의 기준 좌표 — "나갈 때" 되돌아갈 목표점으로 재사용
+    const scatterX = new Float32Array(count)
+    const scatterY = new Float32Array(count)
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 10
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 10
+      const sx = (Math.random() - 0.5) * 10
+      const sy = (Math.random() - 0.5) * 10
+      scatterX[i] = sx; scatterY[i] = sy
+      pos[i * 3] = sx
+      pos[i * 3 + 1] = sy
       pos[i * 3 + 2] = (Math.random() - 0.5) * 5
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
@@ -54,17 +61,24 @@ export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { c
     const arr = geo.attributes.position.array as Float32Array
     let time = 0
     let raf = 0
-    let started = false
+    let everShown = false
     const animate = () => {
       raf = requestAnimationFrame(animate)
       time += 0.01
+      const assembling = assembleRef.current
       for (let i = 0; i < count; i++) {
         const i3 = i * 3
-        const t = (i / count) * Math.PI * 12 + time * 0.2
-        const tg = butterfly(t)
+        let tx: number, ty: number
+        if (assembling) {
+          const t = (i / count) * Math.PI * 12 + time * 0.2
+          const tg = butterfly(t)
+          tx = tg.x; ty = tg.y
+        } else {
+          tx = scatterX[i]; ty = scatterY[i]
+        }
         const flutter = Math.sin(time * 2 + i * 0.01) * 0.2
-        arr[i3] += (tg.x - arr[i3]) * 0.02
-        arr[i3 + 1] += (tg.y - arr[i3 + 1]) * 0.02
+        arr[i3] += (tx - arr[i3]) * 0.02
+        arr[i3 + 1] += (ty - arr[i3 + 1]) * 0.02
         arr[i3 + 2] += (flutter - arr[i3 + 2]) * 0.01
       }
       geo.attributes.position.needsUpdate = true
@@ -74,18 +88,18 @@ export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { c
       camera.position.y = Math.cos(time * 0.2) * 0.5
       camera.lookAt(0, 0, 0)
       renderer.render(scene, camera)
+
+      // 최초 진입 시 한 번만 페이드인(이후엔 계속 보이는 채로 조립/분해 반복)
+      if (assembling && !everShown) {
+        everShown = true
+        mount.style.opacity = '1'
+      }
     }
 
-    // 시작 전엔 숨김(무작위 시작점이 흩뿌려진 정적 프레임 노출 방지).
     mount.style.opacity = '0'
-    mount.style.transition = 'opacity 1.2s ease'
-    startRef.current = () => {
-      if (started) return
-      started = true
-      mount.style.opacity = '1'
-      animate()
-    }
-    if (active) startRef.current()
+    mount.style.transition = 'opacity 1s ease'
+    renderer.render(scene, camera)
+    animate()
 
     const onResize = () => {
       const nw = mount.clientWidth, nh = mount.clientHeight
@@ -108,11 +122,6 @@ export default function ButterflyCanvas({ color = 0x4db6ac, active = true }: { c
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color])
-
-  // active 가 나중에 true 로 바뀌는 경우(스크롤 진행률 기준) 시작 트리거
-  useEffect(() => {
-    if (active) startRef.current()
-  }, [active])
 
   return <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
 }

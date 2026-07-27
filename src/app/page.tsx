@@ -12,15 +12,11 @@ import ButterflyCanvas from '@/components/ButterflyCanvas'
  * 노출 스위치: 프로덕션(Vercel 미설정)에선 /login 으로. 로컬(.env.local=true)에서만 랜딩.
  */
 const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
-const FLIP_MAX_DEG = 152      // 완전히 넘어가는 각도(과하게 180 근처면 뒷면이 보이며 어색해짐)
-const ACTIVATE_AT = 0.1       // 이 진행률부터 나비 애니메이션 시작
+const TRANSITION_MS = 850   // CSS 트랜지션 시간(휠 재입력 잠금 시간과 일치시켜야 끊김 없음)
 
 export default function LandingPage() {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const frontRef = useRef<HTMLDivElement>(null)
-  const shadeRef = useRef<HTMLDivElement>(null)
-  const cueRef = useRef<HTMLButtonElement>(null)
-  const [bfyActive, setBfyActive] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
+  const [flipped, setFlipped] = useState(false)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -29,28 +25,44 @@ export default function LandingPage() {
     if (!LANDING_ENABLED) window.location.replace('/login')
   }, [])
 
-  // 스크롤 진행률 → 페이지 플립(rotateX) + 그림자 + 스크롤 큐 페이드 + 나비 활성화
+  // 휠 한 번(또는 터치 스와이프 한 번) → 다음/이전 화면으로 딱 한 번에 전환.
+  // 진행 중(locked)엔 추가 입력을 무시해 끊기거나 버벅이지 않게 함.
   useEffect(() => {
     if (!LANDING_ENABLED) return
-    const wrap = wrapRef.current, front = frontRef.current
-    if (!wrap || !front) return
-    const onScroll = () => {
-      const max = wrap.scrollHeight - wrap.clientHeight
-      const progress = max > 0 ? Math.min(1, Math.max(0, wrap.scrollTop / max)) : 0
-      front.style.transform = `rotateX(${-(progress * FLIP_MAX_DEG)}deg)`
-      if (shadeRef.current) shadeRef.current.style.opacity = String(Math.min(0.6, progress * 1.1))
-      if (cueRef.current) cueRef.current.style.opacity = String(Math.max(0, 1 - progress * 5))
-      if (progress > ACTIVATE_AT) setBfyActive(v => v || true)
-    }
-    onScroll()
-    wrap.addEventListener('scroll', onScroll, { passive: true })
-    return () => wrap.removeEventListener('scroll', onScroll)
-  }, [])
+    let locked = false
+    const lock = () => { locked = true; window.setTimeout(() => { locked = false }, TRANSITION_MS) }
 
-  const flipToNetwork = () => {
-    const wrap = wrapRef.current
-    if (wrap) wrap.scrollTo({ top: wrap.clientHeight, behavior: 'smooth' })
-  }
+    const onWheel = (e: WheelEvent) => {
+      if (window.scrollY > 2) return          // 이미 아래 콘텐츠로 스크롤된 상태 → 네이티브 스크롤에 맡김
+      if (locked) { e.preventDefault(); return }
+      if (!flipped && e.deltaY > 8) { e.preventDefault(); lock(); setFlipped(true) }
+      else if (flipped && e.deltaY < -8) { e.preventDefault(); lock(); setFlipped(false) }
+      else if (!flipped && e.deltaY < 0) { e.preventDefault() }  // 맨 위에서 더 위로: 그냥 무시
+    }
+
+    let touchStartY = 0
+    const onTouchStart = (e: TouchEvent) => { touchStartY = e.touches[0].clientY }
+    const onTouchMove = (e: TouchEvent) => { if (window.scrollY <= 2 && !locked) e.preventDefault() }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (window.scrollY > 2 || locked) return
+      const dy = touchStartY - e.changedTouches[0].clientY   // 위로 스와이프(다음 화면) = 양수
+      if (!flipped && dy > 40) { lock(); setFlipped(true) }
+      else if (flipped && dy < -40) { lock(); setFlipped(false) }
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [flipped])
+
+  const goNetwork = () => setFlipped(true)
 
   if (!LANDING_ENABLED) return null
 
@@ -62,114 +74,101 @@ export default function LandingPage() {
       <header className="lp-nav">
         <div className="lp-brand"><Logo /><span>RCT Platform</span></div>
         <nav className="lp-navlinks">
-          <a href="#about">소개</a>
           <a href="#how">이용방법</a>
-          <button type="button" onClick={flipToNetwork} className="lp-navlink-btn">네트워크</button>
+          <button type="button" onClick={goNetwork} className="lp-navlink-btn">네트워크</button>
           <Link href="/login" className="lp-login-btn">로그인</Link>
         </nav>
       </header>
 
-      {/* ── 화면 1·2 플립 컨테이너 — 스크롤에 맞춰 책장처럼 넘어가며 나비 화면 노출 ── */}
-      <div className="lp-snapwrap" ref={wrapRef}>
-        <div className="lp-flip-track">
-          <div className="lp-snap-a" />
-          <div className="lp-snap-b" />
-
-          <div className="lp-flip-stage">
-            {/* 뒷면: 나비 애니메이션 화면 (항상 그 자리, 앞면이 넘어가며 드러남) */}
-            <div className="lp-page-back">
-              <div className="bfy-dot" />
-              <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
-              <div className="bfy-overlay">
-                <main className="bfy-hero">
-                  <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
-                  <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
-                  <div className="bfy-actions">
-                    <Link href="/login" className="lp-glass-btn">
-                      Open Terminal
-                      <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    </Link>
-                    <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
-                    <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
-                  </div>
-                </main>
-                <div className="bfy-floating">
-                  <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
-                  <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
-                </div>
-                <div className="bfy-features">
-                  {[
-                    { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
-                    { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
-                    { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
-                  ].map((f, i) => (
-                    <div key={i} className="bfy-fcard">
-                      <span className="num">{f.n} <em>{f.k}</em></span>
-                      <h3>{f.t}</h3>
-                      <p>{f.d}</p>
-                    </div>
-                  ))}
-                </div>
+      {/* ── 화면 1·2 — 휠/스와이프 한 번에 CSS 트랜지션으로 전환(책장 넘김 느낌) ── */}
+      <div className={`lp-flip-hero${flipped ? ' is-flipped' : ''}`} ref={heroRef}>
+        {/* 뒷면: 나비 애니메이션 화면 (항상 그 자리, 앞면이 넘어가며 드러남) */}
+        <div className="lp-page-back">
+          <div className="bfy-dot" />
+          <div className="bfy-canvas"><ButterflyCanvas active={flipped} /></div>
+          <div className="bfy-overlay">
+            <main className="bfy-hero">
+              <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
+              <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
+              <div className="bfy-actions">
+                <Link href="/login" className="lp-glass-btn">
+                  Open Terminal
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </Link>
+                <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
+                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
               </div>
+            </main>
+            <div className="bfy-floating">
+              <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
+              <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
             </div>
-
-            {/* 앞면: 노드 애니메이션 화면 (스크롤에 따라 위 가장자리를 축으로 넘어감) */}
-            <div className="lp-page-front" ref={frontRef}>
-              <div className="lp-hero-glow" />
-              <div className="lp-hero-grid">
-                <div className="lp-hero-text">
-                  <span className="lp-tag">{/* [placeholder] */}SYSTEM ACTIVE</span>
-                  <h1 className="lp-h1">{/* [placeholder] */}자동 거래로 완성하는<br />새로운 수익의 기준</h1>
-                  <p className="lp-subhead">{/* [placeholder] */}여기에 회사를 한 문장으로 설명하는 카피가 들어갑니다. 링크 하나로 소개와 시작까지.</p>
-                  <div className="lp-cta-group">
-                    <Link href="/login" className="lp-glass-btn">
-                      플랫폼 시작하기
-                      <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    </Link>
-                  </div>
+            <div className="bfy-features">
+              {[
+                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
+                { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
+                { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
+              ].map((f, i) => (
+                <div key={i} className="bfy-fcard">
+                  <span className="num">{f.n} <em>{f.k}</em></span>
+                  <h3>{f.t}</h3>
+                  <p>{f.d}</p>
                 </div>
-                <div className="lp-canvas">
-                  <div className="lp-backdrop" />
-                  <div className="lp-scene">
-                    <svg className="lp-splines" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice">
-                      {SPLINES.map((d, i) => (
-                        <g key={i}><path className="lp-spline-glow" d={d} /><path className="lp-spline-path" d={d} /></g>
-                      ))}
-                    </svg>
-                    {['NODE_01', 'NODE_02', 'NODE_03', 'NODE_04'].map((lbl, i) => (
-                      <div key={i} className={`lp-node lp-node-${i + 1}`}>
-                        <div className="lp-card-head">
-                          <div className="lp-avatar" />
-                          <div style={{ flex: 1 }}><div className="lp-card-title" /><div className="lp-card-meta" /></div>
-                        </div>
-                        <div className="lp-play" />
-                        <div className="lp-meta-lbl lp-lbl-1">{lbl}</div>
-                      </div>
-                    ))}
-                    <div className="lp-insight">
-                      <div className="lp-meta-lbl lp-lbl-2">CORE_NODE</div>
-                      <div className="lp-core"><Logo size={30} /></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="lp-page-shade" ref={shadeRef} />
+              ))}
             </div>
           </div>
-
-          <button type="button" onClick={flipToNetwork} className="lp-scrollcue" ref={cueRef}>
-            <span>SCROLL</span>
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-          </button>
         </div>
+
+        {/* 앞면: 노드 애니메이션 화면 (한 번의 스크롤/스와이프로 위 가장자리를 축으로 딱 넘어감) */}
+        <div className="lp-page-front">
+          <div className="lp-hero-glow" />
+          <div className="lp-hero-grid">
+            <div className="lp-hero-text">
+              <span className="lp-tag">{/* [placeholder] */}SYSTEM ACTIVE</span>
+              <h1 className="lp-h1">{/* [placeholder] */}자동 거래로 완성하는<br />새로운 수익의 기준</h1>
+              <p className="lp-subhead">{/* [placeholder] */}여기에 회사를 한 문장으로 설명하는 카피가 들어갑니다. 링크 하나로 소개와 시작까지.</p>
+              <div className="lp-cta-group">
+                <Link href="/login" className="lp-glass-btn">
+                  플랫폼 시작하기
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </Link>
+              </div>
+            </div>
+            <div className="lp-canvas">
+              <div className="lp-backdrop" />
+              <div className="lp-scene">
+                <svg className="lp-splines" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice">
+                  {SPLINES.map((d, i) => (
+                    <g key={i}><path className="lp-spline-glow" d={d} /><path className="lp-spline-path" d={d} /></g>
+                  ))}
+                </svg>
+                {['NODE_01', 'NODE_02', 'NODE_03', 'NODE_04'].map((lbl, i) => (
+                  <div key={i} className={`lp-node lp-node-${i + 1}`}>
+                    <div className="lp-card-head">
+                      <div className="lp-avatar" />
+                      <div style={{ flex: 1 }}><div className="lp-card-title" /><div className="lp-card-meta" /></div>
+                    </div>
+                    <div className="lp-play" />
+                    <div className="lp-meta-lbl lp-lbl-1">{lbl}</div>
+                  </div>
+                ))}
+                <div className="lp-insight">
+                  <div className="lp-meta-lbl lp-lbl-2">CORE_NODE</div>
+                  <div className="lp-core"><Logo size={30} /></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="lp-page-shade" />
+        </div>
+
+        <button type="button" onClick={goNetwork} className="lp-scrollcue">
+          <span>SCROLL</span>
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+        </button>
       </div>
 
       {/* ── 콘텐츠 ── */}
-      <section id="about" className="lp-section">
-        <span className="lp-kicker">ABOUT</span>
-        <h2 className="lp-h2">RCT Platform이란?</h2>
-        <p className="lp-lead">여기에 회사 소개가 들어갑니다. 어떤 문제를 해결하는지, 왜 신뢰할 수 있는지 간결하게 설명하는 자리입니다.</p>
-      </section>
       <section id="how" className="lp-section">
         <span className="lp-kicker">HOW IT WORKS</span>
         <h2 className="lp-h2">이용 방법</h2>
@@ -229,22 +228,20 @@ const CSS = `
   text-transform:uppercase; opacity:0.9; display:block; margin-bottom:24px; }
 .lp-kicker { font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; color:var(--acc); text-transform:uppercase; }
 
-/* 플립 스크롤 컨테이너 */
-.lp-snapwrap { height:100vh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth;
-  scrollbar-width:none; -ms-overflow-style:none; background:#050607; }
-.lp-snapwrap::-webkit-scrollbar { display:none; }
-.lp-flip-track { position:relative; height:200vh; }
-.lp-snap-a, .lp-snap-b { position:absolute; left:0; right:0; height:100vh; scroll-snap-align:start; scroll-snap-stop:always; pointer-events:none; }
-.lp-snap-a { top:0; } .lp-snap-b { top:100vh; }
-.lp-flip-stage { position:sticky; top:0; height:100vh; perspective:2600px; overflow:hidden; }
-
+/* 화면 1·2 전환 컨테이너 — 문서 흐름상 평범한 100vh 블록(중첩 스크롤 없음).
+   휠/스와이프 한 번 → is-flipped 클래스 토글 → CSS 트랜지션 한 번으로 부드럽게 전환. */
+.lp-flip-hero { position:relative; height:100vh; overflow:hidden; perspective:2600px; background:#050607; }
 .lp-page-back, .lp-page-front { position:absolute; inset:0; }
 .lp-page-back { z-index:1; background:radial-gradient(circle at 50% 42%, #0b0d10 0%, #050607 68%); }
 .lp-page-front { z-index:3; transform-style:preserve-3d; backface-visibility:hidden; transform-origin:top center;
-  will-change:transform; background:#050607;
+  background:#050607; transform:rotateX(0deg);
+  transition:transform 850ms cubic-bezier(0.65,0,0.35,1);
   box-shadow:0 60px 140px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset; }
+.lp-flip-hero.is-flipped .lp-page-front { transform:rotateX(-152deg); }
 .lp-page-shade { position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;
+  transition:opacity 850ms ease;
   background:linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 55%, transparent 100%); }
+.lp-flip-hero.is-flipped .lp-page-shade { opacity:0.55; }
 
 /* 네비 */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
@@ -284,8 +281,9 @@ const CSS = `
 .lp-scrollcue { position:absolute; bottom:34px; left:50%; transform:translateX(-50%); z-index:20;
   display:flex; flex-direction:column; align-items:center; gap:8px;
   font-family:var(--font-mono); font-size:10px; letter-spacing:0.3em; color:rgba(255,255,255,0.4);
-  animation:lp-bob 2.2s ease-in-out infinite; transition:opacity .2s linear; }
+  animation:lp-bob 2.2s ease-in-out infinite; transition:opacity 400ms ease; opacity:1; }
 .lp-scrollcue svg { width:14px; height:14px; stroke:rgba(255,255,255,0.4); stroke-width:1.6; fill:none; }
+.lp-flip-hero.is-flipped .lp-scrollcue { opacity:0; pointer-events:none; }
 @keyframes lp-bob { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(7px); } }
 
 .lp-canvas { position:relative; display:flex; align-items:center; justify-content:center; perspective:1200px; height:100%; }
