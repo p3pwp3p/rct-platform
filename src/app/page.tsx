@@ -20,6 +20,7 @@ const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
 
 export default function LandingPage() {
   const bfySectionRef = useRef<HTMLElement>(null)
+  const heroSectionRef = useRef<HTMLElement>(null)
   const [bfyActive, setBfyActive] = useState(false)
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function LandingPage() {
     return () => io.disconnect()
   }, [])
 
-  const goNetwork = () => bfySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const goNext = () => heroSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   if (!LANDING_ENABLED) return null
 
@@ -55,15 +56,56 @@ export default function LandingPage() {
         <div className="lp-brand"><Logo /><span>RCT Platform</span></div>
         <nav className="lp-navlinks">
           <a href="#how">이용방법</a>
-          <button type="button" onClick={goNetwork} className="lp-navlink-btn">네트워크</button>
+          <button type="button" onClick={goNext} className="lp-navlink-btn">네트워크</button>
           <Link href="/login" className="lp-login-btn">로그인</Link>
         </nav>
       </header>
 
       {/* ── 화면 1·2 — 브라우저 네이티브 스크롤 스냅(mandatory), 그 아래는 자유 스크롤 ── */}
       <div className="lp-snapwrap">
-        {/* 화면 1: 노드 애니메이션 */}
-        <section className="lp-hero lp-snap">
+        {/* 화면 1: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
+        <section className="bfy lp-snap" ref={bfySectionRef}>
+          <div className="bfy-dot" />
+          <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
+          <div className="bfy-overlay">
+            <main className="bfy-hero">
+              <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
+              <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
+              <div className="bfy-actions">
+                <Link href="/login" className="lp-glass-btn">
+                  Open Terminal
+                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </Link>
+                <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
+                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
+              </div>
+            </main>
+            <div className="bfy-floating">
+              <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
+              <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
+            </div>
+            <div className="bfy-features">
+              {[
+                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
+                { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
+                { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
+              ].map((f, i) => (
+                <div key={i} className="bfy-fcard">
+                  <span className="num">{f.n} <em>{f.k}</em></span>
+                  <h3>{f.t}</h3>
+                  <p>{f.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button type="button" onClick={goNext} className="lp-scrollcue">
+            <span>SCROLL</span>
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+          </button>
+        </section>
+
+        {/* 화면 2: 노드 애니메이션 */}
+        <section className="lp-hero lp-snap" ref={heroSectionRef}>
           <div className="lp-hero-glow" />
           <div className="lp-hero-grid">
             <div className="lp-hero-text">
@@ -100,47 +142,6 @@ export default function LandingPage() {
                   <div className="lp-core"><Logo size={30} /></div>
                 </div>
               </div>
-            </div>
-          </div>
-          <button type="button" onClick={goNetwork} className="lp-scrollcue">
-            <span>SCROLL</span>
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-          </button>
-        </section>
-
-        {/* 화면 2: 나비 애니메이션 — 섹션 진입/이탈마다 조립/분해 반복 */}
-        <section className="bfy lp-snap" ref={bfySectionRef}>
-          <div className="bfy-dot" />
-          <div className="bfy-canvas"><ButterflyCanvas active={bfyActive} /></div>
-          <div className="bfy-overlay">
-            <main className="bfy-hero">
-              <span className="lp-tag">{/* [placeholder] */}AUTOMATED COPY TRADING NETWORK</span>
-              <h1 className="bfy-h1">자동 거래로 잇는<br /><em>새로운 수익</em>의 구조</h1>
-              <div className="bfy-actions">
-                <Link href="/login" className="lp-glass-btn">
-                  Open Terminal
-                  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                </Link>
-                <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
-                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
-              </div>
-            </main>
-            <div className="bfy-floating">
-              <div className="bfy-fstat"><span className="v">$412.8M</span><span className="l">Total Volume</span></div>
-              <div className="bfy-fstat"><span className="v">12.4k</span><span className="l">Active Members</span></div>
-            </div>
-            <div className="bfy-features">
-              {[
-                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
-                { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
-                { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
-              ].map((f, i) => (
-                <div key={i} className="bfy-fcard">
-                  <span className="num">{f.n} <em>{f.k}</em></span>
-                  <h3>{f.t}</h3>
-                  <p>{f.d}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -246,10 +247,10 @@ const CSS = `
   background:radial-gradient(circle, rgba(77,182,172,0.09) 0%, transparent 68%); filter:blur(60px); pointer-events:none; }
 /* 경계 완충: 스냅으로 화면이 바뀌어도 "이어진다"는 인상을 주기 위해
    두 섹션이 만나는 쪽에 같은 톤의 그라데이션 + 은은한 틸 글로우를 겹쳐둠 */
-.lp-hero::after { content:''; position:absolute; left:0; right:0; bottom:0; height:26vh; z-index:4; pointer-events:none;
+.bfy::after { content:''; position:absolute; left:0; right:0; bottom:0; height:26vh; z-index:4; pointer-events:none;
   background:linear-gradient(to bottom, transparent, #050607 85%),
              radial-gradient(ellipse 60% 100% at 50% 100%, rgba(77,182,172,0.10) 0%, transparent 70%); }
-.bfy::before { content:''; position:absolute; left:0; right:0; top:0; height:26vh; z-index:4; pointer-events:none;
+.lp-hero::before { content:''; position:absolute; left:0; right:0; top:0; height:26vh; z-index:4; pointer-events:none;
   background:linear-gradient(to bottom, #050607, transparent 85%),
              radial-gradient(ellipse 60% 100% at 50% 0%, rgba(77,182,172,0.08) 0%, transparent 70%); }
 .lp-hero-grid { position:relative; height:100%; max-width:1440px; margin:0 auto; width:100%; display:grid;
