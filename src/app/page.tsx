@@ -186,9 +186,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 영상 소개 ── */}
+      {/* ── 영상 소개 — 가운데 정렬, 요약은 영상 아래로 ── */}
       <section className="vid-sec">
-        <div className="vid-frame reveal">
+        <div className="vid-head">
+          <span className="lp-kicker reveal">소개 영상</span>
+          <h2 className="lp-h2 reveal" style={{ '--d': '60ms' } as React.CSSProperties}>3분이면 충분합니다</h2>
+          <p className="lp-lead reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
+            [placeholder] RCT Platform의 자동 거래 구조를 짧은 영상으로 소개합니다.
+          </p>
+        </div>
+        <div className="vid-frame reveal" style={{ '--d': '180ms' } as React.CSSProperties}>
           <div className="vid-placeholder">
             <button type="button" className="vid-play" aria-label="재생" />
           </div>
@@ -198,16 +205,16 @@ export default function LandingPage() {
             <span className="time">--:--</span>
           </div>
         </div>
-        <div className="vid-info">
-          <span className="lp-kicker reveal">INTRO</span>
-          <h2 className="lp-h2 reveal" style={{ '--d': '60ms' } as React.CSSProperties}>플랫폼 소개 영상</h2>
-          <p className="lp-lead reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
-            [placeholder] RCT Platform의 자동 거래 구조를 짧은 영상으로 소개합니다.
-          </p>
-          <div className="vid-points">
-            <div className="vid-point reveal" style={{ '--d': '180ms' } as React.CSSProperties}><span className="v">01</span><p>[placeholder] 핵심 요약 1</p></div>
-            <div className="vid-point reveal" style={{ '--d': '240ms' } as React.CSSProperties}><span className="v">02</span><p>[placeholder] 핵심 요약 2</p></div>
-          </div>
+        <div className="vid-points">
+          {[
+            { n: '01', t: '[placeholder] 핵심 요약 1' },
+            { n: '02', t: '[placeholder] 핵심 요약 2' },
+            { n: '03', t: '[placeholder] 핵심 요약 3' },
+          ].map((p, i) => (
+            <div key={i} className="vid-point reveal" style={{ '--d': `${i * 80}ms` } as React.CSSProperties}>
+              <span className="v">{p.n}</span><p>{p.t}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -411,8 +418,11 @@ const CSS = `
 .how-row p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.6; }
 
 /* 영상 소개 */
-.vid-sec { max-width:1240px; margin:0 auto; padding:20vh 32px 18vh; display:grid; grid-template-columns:1.3fr 1fr; gap:56px; align-items:center; }
-.vid-frame { border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); background:#0a0c0d; }
+/* 영상 — 가운데 정렬 세로 흐름(제목 → 영상 → 요약 3분할) */
+.vid-sec { max-width:920px; margin:0 auto; padding:20vh 32px 26vh; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.vid-head { display:flex; flex-direction:column; align-items:center; margin-bottom:44px; }
+.vid-head .lp-lead { max-width:560px; }
+.vid-frame { width:100%; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); background:#0a0c0d; }
 .vid-placeholder { aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 50% 40%, rgba(77,182,172,0.12), transparent 65%), linear-gradient(135deg,#0d0f10,#050607); }
 .vid-play { width:74px; height:74px; border-radius:50%; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06);
@@ -424,10 +434,10 @@ const CSS = `
 .vid-controls .time { font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.4); }
 .vid-progress { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,0.12); position:relative; }
 .vid-progress-fill { position:absolute; inset:0; width:0%; background:var(--acc); border-radius:2px; }
-.vid-info { display:flex; flex-direction:column; }
-.vid-points { margin-top:26px; display:flex; flex-direction:column; gap:16px; }
-.vid-point { display:flex; gap:14px; align-items:flex-start; }
-.vid-point .v { font-family:var(--font-mono); font-size:12px; color:var(--acc); padding-top:2px; }
+.vid-points { margin-top:44px; width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+.vid-point { display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center;
+  padding-top:20px; border-top:1px solid rgba(255,255,255,0.09); }
+.vid-point .v { font-family:var(--font-mono); font-size:12px; color:var(--acc); letter-spacing:0.1em; }
 .vid-point p { font-size:13.5px; color:rgba(255,255,255,0.5); line-height:1.6; }
 
 /* 콘텐츠 */
@@ -439,12 +449,14 @@ const CSS = `
 .lp-step-n { font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--acc); }
 .lp-step h4 { font-size:15.5px; font-weight:600; margin:10px 0 6px; letter-spacing:-0.01em; }
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
-.lp-cta { text-align:center; padding:110px 32px; max-width:1080px; margin:0 auto;
+/* 5번 섹션 — 폭 제한 없이 화면 좌우 끝까지 */
+.lp-cta { text-align:center; padding:130px 48px; width:100%;
   border-top:1px solid rgba(255,255,255,0.07); border-bottom:1px solid rgba(255,255,255,0.07);
   background:linear-gradient(180deg, rgba(77,182,172,0.05), transparent); }
 .lp-cta h2 { font-size:34px; font-weight:200; letter-spacing:-0.02em; color:#fff; }
 .lp-cta p { color:rgba(255,255,255,0.48); margin:14px 0 30px; font-size:15px; }
-.lp-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; max-width:1080px; margin:0 auto; padding:32px 32px 56px; }
+.lp-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+  width:100%; padding:44px 48px 60px; }
 .lp-foot-meta { display:flex; flex-direction:column; gap:4px; font-size:12px; color:rgba(255,255,255,0.32); text-align:right; }
 
 /* 반응형 */
@@ -473,8 +485,9 @@ const CSS = `
   .bfy-h1 { font-size:28px; } .bfy-features { grid-template-columns:1fr; }
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
-  .lp-footer { flex-direction:column; align-items:flex-start; } .lp-foot-meta { text-align:left; }
-  .vid-sec { grid-template-columns:1fr; padding:64px 20px; gap:32px; }
+  .lp-footer { flex-direction:column; align-items:flex-start; padding:32px 20px 48px; } .lp-foot-meta { text-align:left; }
+  .lp-cta { padding:80px 20px; }
+  .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
   .how-sec { grid-template-columns:1fr; padding:0 0 64px; }
   .how-visual { position:relative; height:56vh; }
   .how-hud-tl { top:16px; left:20px; } .how-hud-bl { bottom:16px; left:20px; } .how-axis { display:none; }
