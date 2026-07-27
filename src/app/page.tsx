@@ -8,12 +8,19 @@ import ButterflyCanvas from '@/components/ButterflyCanvas'
  * 히어로 우측에 3D 네트워크 애니메이션(플로우 스플라인 · 떠다니는 노드 · 코어 고리 pulse).
  * 콘텐츠는 아직 확정 전이라 [placeholder] 골격만.
  */
+// 랜딩 노출 스위치: 로컬(.env.local)에서만 'true' → 랜딩 표시.
+// 프로덕션(Vercel 미설정)에서는 로그인으로 바로 이동. 완성되면 Vercel 에 환경변수 추가.
+const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
+
 export default function LandingPage() {
   useEffect(() => {
     const hash = window.location.hash
-    if (hash.includes('type=recovery')) window.location.replace('/reset-password' + hash)
-    else if (hash.includes('type=signup') || hash.includes('type=email')) window.location.replace('/auth/confirm' + hash)
+    if (hash.includes('type=recovery')) { window.location.replace('/reset-password' + hash); return }
+    if (hash.includes('type=signup') || hash.includes('type=email')) { window.location.replace('/auth/confirm' + hash); return }
+    if (!LANDING_ENABLED) window.location.replace('/login')   // 프로덕션: 로그인으로
   }, [])
+
+  if (!LANDING_ENABLED) return null   // 프로덕션에선 랜딩 미표시(리다이렉트만)
 
   return (
     <div className="lp">
