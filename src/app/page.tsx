@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ButterflyCanvas from '@/components/ButterflyCanvas'
+import WireframeStructureScene from '@/components/WireframeStructureScene'
 
 /**
  * 랜딩(홈) — 스크롤 2단 구성.
@@ -21,7 +22,9 @@ const LANDING_ENABLED = process.env.NEXT_PUBLIC_LANDING_ENABLED === 'true'
 export default function LandingPage() {
   const bfySectionRef = useRef<HTMLElement>(null)
   const heroSectionRef = useRef<HTMLElement>(null)
+  const howSectionRef = useRef<HTMLElement>(null)
   const [bfyActive, setBfyActive] = useState(false)
+  const [howActive, setHowActive] = useState(false)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -38,6 +41,19 @@ export default function LandingPage() {
     const io = new IntersectionObserver(
       (entries) => setBfyActive(entries[0]?.isIntersecting ?? false),
       { threshold: 0.5 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  // 이용방법 섹션 — 화면에 잡히는 동안만 와이어프레임 구조 조립 애니메이션 재생.
+  useEffect(() => {
+    if (!LANDING_ENABLED) return
+    const el = howSectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => setHowActive(entries[0]?.isIntersecting ?? false),
+      { threshold: 0.35 },
     )
     io.observe(el)
     return () => io.disconnect()
@@ -77,7 +93,7 @@ export default function LandingPage() {
                   <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </Link>
                 <div className="bfy-stat"><span className="v">0.0001s</span><span className="l">Execution Latency</span></div>
-                <div className="bfy-stat"><span className="v">24/7</span><span className="l">Real-time Settlement</span></div>
+                <div className="bfy-stat"><span className="v">WEEKDAYS</span><span className="l">Real-time Settlement</span></div>
               </div>
             </main>
             <div className="bfy-floating">
@@ -86,7 +102,7 @@ export default function LandingPage() {
             </div>
             <div className="bfy-features">
               {[
-                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 고정밀 자동 거래 시스템 설명.' },
+                { n: '01', k: 'KINETIC', t: '자동 거래', d: '[placeholder] 자동 거래 시스템 설명.' },
                 { n: '02', k: 'ADAPTIVE', t: '투명한 정산', d: '[placeholder] 월간 수익 정산·투명성 설명.' },
                 { n: '03', k: 'PRISMATIC', t: '보상 플랜', d: '[placeholder] 추천/직급 보상 플랜 설명.' },
               ].map((f, i) => (
@@ -147,21 +163,55 @@ export default function LandingPage() {
         </section>
       </div>
 
-      {/* ── 콘텐츠 ── */}
-      <section id="how" className="lp-section">
-        <span className="lp-kicker">HOW IT WORKS</span>
-        <h2 className="lp-h2">이용 방법</h2>
-        <div className="lp-steps">
-          {[
-            { n: '01', t: '계좌 개설', d: '[placeholder] 첫 단계 설명' },
-            { n: '02', t: '자동 거래 연결', d: '[placeholder] 두 번째 단계 설명' },
-            { n: '03', t: '수익 정산', d: '[placeholder] 세 번째 단계 설명' },
-            { n: '04', t: '보상 수령', d: '[placeholder] 네 번째 단계 설명' },
-          ].map((s, i) => (
-            <div key={i} className="lp-step"><span className="lp-step-n">{s.n}</span><h4>{s.t}</h4><p>{s.d}</p></div>
-          ))}
+      {/* ── 이용방법 — 와이어프레임 구조 조립 애니메이션 + 스펙 리스트 ── */}
+      <section id="how" className="how-sec" ref={howSectionRef}>
+        <div className="how-visual">
+          <WireframeStructureScene active={howActive} />
+          <span className="how-visual-tag">PIPELINE // AUTOMATED</span>
+        </div>
+        <div className="how-info">
+          <span className="lp-kicker">HOW IT WORKS</span>
+          <h2 className="lp-h2">이용 방법</h2>
+          <p className="lp-lead">[placeholder] 계좌 연결부터 정산까지 이어지는 흐름을 한눈에 확인하세요.</p>
+          <ul className="how-list">
+            {[
+              { n: '01', t: '계좌 개설', d: '[placeholder] 첫 단계 설명' },
+              { n: '02', t: '자동 거래 연결', d: '[placeholder] 두 번째 단계 설명' },
+              { n: '03', t: '수익 정산', d: '[placeholder] 세 번째 단계 설명' },
+              { n: '04', t: '보상 수령', d: '[placeholder] 네 번째 단계 설명' },
+            ].map((s, i) => (
+              <li key={i} className="how-row">
+                <span className="how-n">{s.n}</span>
+                <div><h4>{s.t}</h4><p>{s.d}</p></div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
+
+      {/* ── 영상 소개 ── */}
+      <section className="vid-sec">
+        <div className="vid-frame">
+          <div className="vid-placeholder">
+            <button type="button" className="vid-play" aria-label="재생" />
+          </div>
+          <div className="vid-controls">
+            <span className="time">00:00</span>
+            <div className="vid-progress"><div className="vid-progress-fill" /></div>
+            <span className="time">--:--</span>
+          </div>
+        </div>
+        <div className="vid-info">
+          <span className="lp-kicker">INTRO</span>
+          <h2 className="lp-h2">플랫폼 소개 영상</h2>
+          <p className="lp-lead">[placeholder] RCT Platform의 자동 거래 구조를 짧은 영상으로 소개합니다.</p>
+          <div className="vid-points">
+            <div className="vid-point"><span className="v">01</span><p>[placeholder] 핵심 요약 1</p></div>
+            <div className="vid-point"><span className="v">02</span><p>[placeholder] 핵심 요약 2</p></div>
+          </div>
+        </div>
+      </section>
+
       <section className="lp-cta">
         <h2>지금 시작해보세요</h2>
         <p>가입 후 바로 이용할 수 있습니다.</p>
@@ -328,6 +378,40 @@ const CSS = `
 .bfy-fcard h3 { font-size:19px; font-weight:600; margin-bottom:10px; letter-spacing:-0.01em; }
 .bfy-fcard p { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.65; max-width:280px; }
 
+/* 이용방법 — 와이어프레임 + 스펙 리스트 */
+.how-sec { max-width:1240px; margin:0 auto; padding:120px 32px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+.how-visual { position:relative; aspect-ratio:1/1; border-radius:28px; border:1px solid rgba(255,255,255,0.08);
+  background:radial-gradient(circle at 30% 20%, rgba(77,182,172,0.08), transparent 60%), rgba(255,255,255,0.02); overflow:hidden; }
+.how-visual-tag { position:absolute; bottom:20px; left:20px; font-family:var(--font-mono); font-size:10px; letter-spacing:0.2em;
+  color:rgba(255,255,255,0.35); text-transform:uppercase; }
+.how-info { display:flex; flex-direction:column; }
+.how-list { list-style:none; margin-top:28px; display:flex; flex-direction:column; }
+.how-row { display:flex; gap:20px; padding:18px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start; }
+.how-row:last-child { border-bottom:1px solid rgba(255,255,255,0.08); }
+.how-n { font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--acc); padding-top:2px; }
+.how-row h4 { font-size:15.5px; font-weight:600; margin-bottom:6px; letter-spacing:-0.01em; }
+.how-row p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.6; }
+
+/* 영상 소개 */
+.vid-sec { max-width:1240px; margin:0 auto; padding:40px 32px 120px; display:grid; grid-template-columns:1.3fr 1fr; gap:56px; align-items:center; }
+.vid-frame { border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); background:#0a0c0d; }
+.vid-placeholder { aspect-ratio:16/9; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 40%, rgba(77,182,172,0.12), transparent 65%), linear-gradient(135deg,#0d0f10,#050607); }
+.vid-play { width:74px; height:74px; border-radius:50%; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(8px); position:relative; transition:transform .2s ease, background .2s ease; }
+.vid-play:hover { transform:scale(1.06); background:rgba(77,182,172,0.14); border-color:rgba(77,182,172,0.5); }
+.vid-play::after { content:''; position:absolute; top:50%; left:54%; transform:translate(-50%,-50%);
+  border-style:solid; border-width:11px 0 11px 17px; border-color:transparent transparent transparent #fff; }
+.vid-controls { display:flex; align-items:center; gap:14px; padding:14px 20px; border-top:1px solid rgba(255,255,255,0.06); }
+.vid-controls .time { font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.4); }
+.vid-progress { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,0.12); position:relative; }
+.vid-progress-fill { position:absolute; inset:0; width:0%; background:var(--acc); border-radius:2px; }
+.vid-info { display:flex; flex-direction:column; }
+.vid-points { margin-top:26px; display:flex; flex-direction:column; gap:16px; }
+.vid-point { display:flex; gap:14px; align-items:flex-start; }
+.vid-point .v { font-family:var(--font-mono); font-size:12px; color:var(--acc); padding-top:2px; }
+.vid-point p { font-size:13.5px; color:rgba(255,255,255,0.5); line-height:1.6; }
+
 /* 콘텐츠 */
 .lp-section { max-width:1080px; margin:0 auto; padding:100px 32px; }
 .lp-h2 { font-size:36px; font-weight:200; letter-spacing:-0.02em; margin:12px 0 22px; color:#fff; }
@@ -372,5 +456,7 @@ const CSS = `
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
   .lp-footer { flex-direction:column; align-items:flex-start; } .lp-foot-meta { text-align:left; }
+  .how-sec, .vid-sec { grid-template-columns:1fr; padding:64px 20px; gap:32px; }
+  .how-visual { order:-1; }
 }
 `
