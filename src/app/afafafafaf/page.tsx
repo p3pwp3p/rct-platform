@@ -68,8 +68,8 @@ export default function LandingPage() {
         <nav className="lp-navlinks">
           <a href="#how">How It Works</a>
           <button type="button" onClick={goNext} className="lp-navlink-btn">Network</button>
-          <Link href="/login" className="lp-login-btn">Login</Link>
         </nav>
+        <Link href="/login" className="lp-login-btn">Login</Link>
       </header>
 
       {/* ── 섹션들 — 겹치지 않고 위에서 아래로 이어짐 ── */}
@@ -345,16 +345,18 @@ const CSS = `
 }
 
 /* 네비 */
-/* 배경 바/구분선 없이 히어로 위에 그대로 떠 있는 네비(참고 레퍼런스 스타일) */
-.lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
+/* 배경 바/구분선 없이 히어로 위에 그대로 떠 있는 네비(참고 레퍼런스 스타일).
+   3열 그리드로 로고-좌 / 메뉴-정중앙 / 로그인-우, 폭이 다른 좌우 그룹과 무관하게 진짜 중앙 정렬. */
+.lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
   padding:26px 36px; background:none; }
-.lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; letter-spacing:-0.01em; }
+.lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; letter-spacing:-0.01em; justify-self:start; }
 .lp-brand.small { font-size:13px; opacity:0.75; }
-.lp-navlinks { display:flex; align-items:center; gap:30px; font-size:12.5px; letter-spacing:0.04em; color:rgba(255,255,255,0.55); font-weight:500; }
+.lp-navlinks { display:flex; align-items:center; gap:30px; font-size:12.5px; letter-spacing:0.04em; color:rgba(255,255,255,0.55); font-weight:500; justify-self:center; }
 .lp-navlinks a, .lp-navlink-btn { transition:color .2s ease; }
 .lp-navlinks a:hover, .lp-navlink-btn:hover { color:#fff; }
 .lp-login-btn { border:1px solid rgba(255,255,255,0.14); color:#fff !important; padding:9px 22px; border-radius:999px;
-  font-weight:600; font-size:13px; transition:all .25s ease; }
+  font-weight:600; font-size:13px; transition:all .25s ease; justify-self:end; }
 .lp-login-btn:hover { border-color:var(--acc); background:rgba(77,182,172,0.1); box-shadow:0 0 20px rgba(77,182,172,0.18); }
 
 /* 통합 글래스 CTA 버튼(양 화면 공용) */
@@ -433,7 +435,7 @@ const CSS = `
 .bfy-dot { position:absolute; inset:0; z-index:1; pointer-events:none;
   background-image:radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px); background-size:42px 42px; }
 .bfy-canvas { position:absolute; inset:0; z-index:2; }
-.bfy-overlay { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; padding:100px 64px 56px; pointer-events:none; }
+.bfy-overlay { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; padding:168px 64px 56px; pointer-events:none; }
 .bfy-overlay > * { pointer-events:auto; }
 .bfy-hero { max-width:720px; }
 .bfy-h1 { font-size:60px; font-weight:200; line-height:1.15; letter-spacing:-0.03em; margin-bottom:38px; color:#fff; }
