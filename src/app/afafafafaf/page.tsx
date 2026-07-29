@@ -220,47 +220,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 5번: 마무리 CTA(가운데 정렬) + 진짜 <footer>(좌우 전폭, 바닥에 밀착) ── */}
-      <div className="lp-end">
-        <div className="lp-end-cta">
-          <div className="lp-end-copy">
+      {/* ── 5번: Get Started(2단) + Footer(4단) — 참고 레퍼런스 구조, 색상만 브랜드 틸로 ── */}
+      <div className="lp-endwrap">
+        <section className="lp-get">
+          <div className="lp-get-copy">
             <span className="lp-kicker reveal">Get Started</span>
             <h2 className="reveal" style={{ '--d': '60ms' } as React.CSSProperties}>
-              지금 바로<br />시작할 수 있습니다
+              지금 바로<br />시작하세요.
             </h2>
+            <p className="reveal" style={{ '--d': '100ms' } as React.CSSProperties}>
+              [placeholder] 새로운 수익 구조를 링크 하나로 소개부터 시작까지 이어갑니다.
+            </p>
           </div>
-          <div className="lp-end-act reveal" style={{ '--d': '120ms' } as React.CSSProperties}>
+          <div className="lp-get-box reveal" style={{ '--d': '140ms' } as React.CSSProperties}>
             <p>[placeholder] 가입 후 바로 이용할 수 있습니다.</p>
-            <Link href="/login" className="lp-btn-primary">로그인 / 시작하기 →</Link>
+            <Link href="/login" className="lp-get-btn">로그인 / 시작하기</Link>
           </div>
-        </div>
-
-        {/* CTA 바로 아래 위치는 고정, 폭만 전폭으로(좌우 끝까지) */}
-        <div className="lp-end-rule" />
+        </section>
 
         <footer className="lp-foot">
-          <div className="lp-end-grid">
+          <div className="lp-foot-grid">
             <div className="lp-end-brand">
               <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
-              <p>[placeholder] 회사를 한 줄로 소개하는 문장이 들어갑니다.</p>
+              <p>[placeholder] 자동 거래로 이어지는 새로운 수익 구조, 그 다음 세대 금융 인프라입니다.</p>
             </div>
             <div className="lp-end-col">
-              <h5>바로가기</h5>
-              <a href="#how">이용방법</a>
-              <button type="button" onClick={goNext}>네트워크</button>
-              <Link href="/login">로그인</Link>
+              <h5>Quick Links</h5>
+              <ul>
+                <li><a href="#how">이용방법</a></li>
+                <li><button type="button" onClick={goNext}>네트워크</button></li>
+                <li><Link href="/login">로그인</Link></li>
+              </ul>
             </div>
             <div className="lp-end-col">
-              <h5>문의</h5>
-              <span>[placeholder] 이메일</span>
-              <span>[placeholder] 카카오 채널</span>
-              <span>[placeholder] 운영시간</span>
+              <h5>Inquiry</h5>
+              <ul>
+                <li><span>[placeholder] 이메일</span></li>
+                <li><span>[placeholder] 카카오 채널</span></li>
+                <li><span>[placeholder] 운영시간</span></li>
+              </ul>
             </div>
             <div className="lp-end-col">
-              <h5>회사 정보</h5>
-              <span>[placeholder] 상호 · 대표자</span>
-              <span>[placeholder] 사업자등록번호</span>
-              <span>[placeholder] 주소</span>
+              <h5>Company Info</h5>
+              <p className="lp-end-company">
+                [placeholder] 상호 · 대표자<br />
+                [placeholder] 사업자등록번호<br />
+                [placeholder] 주소
+              </p>
             </div>
           </div>
 
@@ -349,14 +355,15 @@ const CSS = `
    3열 그리드로 로고-좌 / 메뉴-정중앙 / 로그인-우, 폭이 다른 좌우 그룹과 무관하게 진짜 중앙 정렬. */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80;
   display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
-  padding:26px 36px; background:none; }
-.lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; letter-spacing:-0.01em; justify-self:start; }
+  padding:44px 52px 26px; background:none; }
+.lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; letter-spacing:-0.01em; justify-self:start; }
 .lp-brand.small { font-size:13px; opacity:0.75; }
-.lp-navlinks { display:flex; align-items:center; gap:30px; font-size:12.5px; letter-spacing:0.04em; color:rgba(255,255,255,0.55); font-weight:500; justify-self:center; }
+.lp-navlinks { display:flex; align-items:center; gap:42px; font-size:11.5px; text-transform:uppercase;
+  letter-spacing:0.15em; color:rgba(255,255,255,0.4); font-weight:500; justify-self:center; }
 .lp-navlinks a, .lp-navlink-btn { transition:color .2s ease; }
 .lp-navlinks a:hover, .lp-navlink-btn:hover { color:#fff; }
-.lp-login-btn { border:1px solid rgba(255,255,255,0.14); color:#fff !important; padding:9px 22px; border-radius:999px;
-  font-weight:600; font-size:13px; transition:all .25s ease; justify-self:end; }
+.lp-login-btn { border:1px solid rgba(255,255,255,0.14); color:#fff !important; padding:10px 24px; border-radius:999px;
+  font-weight:600; font-size:14px; transition:all .25s ease; justify-self:end; }
 .lp-login-btn:hover { border-color:var(--acc); background:rgba(77,182,172,0.1); box-shadow:0 0 20px rgba(77,182,172,0.18); }
 
 /* 통합 글래스 CTA 버튼(양 화면 공용) */
@@ -384,7 +391,7 @@ const CSS = `
   background:linear-gradient(to bottom, #050607, transparent 85%),
              radial-gradient(ellipse 60% 100% at 50% 0%, rgba(77,182,172,0.08) 0%, transparent 70%); }
 .lp-hero-grid { position:relative; height:100%; max-width:1440px; margin:0 auto; width:100%; display:grid;
-  grid-template-columns:1fr 1.15fr; gap:64px; align-items:center; padding:0 56px; }
+  grid-template-columns:1fr 1.15fr; gap:64px; align-items:center; padding:0 72px; }
 .lp-hero-text { display:flex; flex-direction:column; justify-content:center; z-index:10; }
 .lp-h1 { font-size:66px; line-height:1.08; font-weight:200; letter-spacing:-0.035em; margin-bottom:26px; color:#fff; }
 .lp-subhead { font-size:17px; line-height:1.7; color:rgba(255,255,255,0.48); font-weight:400; max-width:440px; margin-bottom:42px; }
@@ -435,7 +442,7 @@ const CSS = `
 .bfy-dot { position:absolute; inset:0; z-index:1; pointer-events:none;
   background-image:radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px); background-size:42px 42px; }
 .bfy-canvas { position:absolute; inset:0; z-index:2; }
-.bfy-overlay { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; padding:168px 64px 56px; pointer-events:none; }
+.bfy-overlay { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; padding:270px 80px 56px; pointer-events:none; }
 .bfy-overlay > * { pointer-events:auto; }
 .bfy-hero { max-width:720px; }
 .bfy-h1 { font-size:60px; font-weight:200; line-height:1.15; letter-spacing:-0.03em; margin-bottom:38px; color:#fff; }
@@ -468,7 +475,7 @@ const CSS = `
 .how-axis { position:absolute; top:50%; left:40px; transform:translateY(-50%) rotate(-90deg); transform-origin:left center;
   font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.28em; color:rgba(255,255,255,0.2);
   text-transform:uppercase; pointer-events:none; white-space:nowrap; }
-.how-info { display:flex; flex-direction:column; padding:32vh 56px 0 8px; min-height:100vh; }
+.how-info { display:flex; flex-direction:column; padding:32vh 72px 0 8px; min-height:100vh; }
 .how-list { list-style:none; margin-top:28px; display:flex; flex-direction:column; }
 .how-row { display:flex; gap:20px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start; }
 .how-row:last-child { border-bottom:1px solid rgba(255,255,255,0.08); }
@@ -478,7 +485,7 @@ const CSS = `
 
 /* 영상 소개 */
 /* 영상 — 가운데 정렬 세로 흐름(제목 → 영상 → 요약 3분할) */
-.vid-sec { max-width:920px; margin:0 auto; padding:20vh 32px 26vh; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.vid-sec { max-width:920px; margin:0 auto; padding:20vh 48px 26vh; display:flex; flex-direction:column; align-items:center; text-align:center; }
 .vid-head { display:flex; flex-direction:column; align-items:center; margin-bottom:44px; }
 .vid-head .lp-lead { max-width:560px; }
 .vid-frame { width:100%; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); background:#0a0c0d; }
@@ -508,36 +515,40 @@ const CSS = `
 .lp-step-n { font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--acc); }
 .lp-step h4 { font-size:15.5px; font-weight:600; margin:10px 0 6px; letter-spacing:-0.01em; }
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
-/* 5번 섹션 — CTA 는 다른 섹션과 같은 폭으로 가운데 정렬(전폭으로 안 퍼지게),
-   그 아래 진짜 <footer> 만 좌우 꽉 채워 화면/문서의 바닥에 딱 붙인다.
-   (센터링용 min-height:100vh 를 없애 하단에 빈 여백이 남지 않도록)
-   Get Started 자체도 독자 섹션처럼 보이도록 위쪽 경계선 + 넉넉한 상단 여백. */
-.lp-end { width:100%; padding-top:26vh; border-top:1px solid rgba(255,255,255,0.06);
-  background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 30%, rgba(10,12,13,0.9) 100%); }
-.lp-end-cta { max-width:1080px; margin:0 auto; padding:0 32px 44px; width:100%;
-  display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end; }
-/* 구분선 — CTA 바로 아래라는 위치는 그대로, 폭만 좌우 끝까지 */
-.lp-end-rule { width:100%; height:1px; background:rgba(255,255,255,0.09); }
-/* 진짜 푸터 — 좌우 전폭. 위쪽 구분선과는 충분히 띄우고, 문서 바닥엔 그대로 붙음 */
-.lp-foot { width:100%; padding:64px 48px 0; }
-.lp-end-copy h2 { font-size:clamp(30px, 3.4vw, 46px); font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:12px; }
-.lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:16px; max-width:340px; }
-.lp-end-act p { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.65; }
+/* 5번: Get Started + Footer — 참고 레퍼런스(Butterfly.fi) 구조를 그대로 따르되
+   색상만 브랜드 틸로. 서체는 사이트 전체 규칙(SUIT+Geist Mono, 세리프 없음)을 유지. */
+.lp-endwrap { max-width:1440px; margin:0 auto; padding:0 80px; display:flex; flex-direction:column; }
 
-.lp-end-grid { display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:36px; padding:38px 0 30px; }
-.lp-end-brand { display:flex; flex-direction:column; gap:12px; }
-.lp-end-brand p { font-size:13px; color:rgba(255,255,255,0.38); line-height:1.65; max-width:300px; }
-/* 한글 라벨엔 mono+wide letter-spacing 이 글자가 들뜬 것처럼 보여서 SUIT 로 통일.
-   버튼도 a 와 동일 규칙을 받도록 폭 100%·정렬 왼쪽 고정(개별 패딩/정렬 차이 없앰) */
-.lp-end-col { display:flex; flex-direction:column; align-items:stretch; gap:9px; }
-.lp-end-col h5 { font-family:var(--font-main); font-weight:600; font-size:12.5px; letter-spacing:-0.01em;
-  color:rgba(255,255,255,0.4); margin-bottom:3px; }
+.lp-get { display:grid; grid-template-columns:1.3fr 1fr; gap:64px; align-items:center;
+  padding:100px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:80px; }
+.lp-get-copy h2 { font-size:clamp(32px, 3.6vw, 52px); font-weight:200; line-height:1.14; letter-spacing:-0.03em; color:#fff; margin:20px 0 20px; }
+.lp-get-copy p { font-size:14px; color:rgba(255,255,255,0.4); line-height:1.65; max-width:400px; }
+.lp-get-box { display:flex; flex-direction:column; align-items:stretch; gap:20px; padding:40px;
+  border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); backdrop-filter:blur(10px); }
+.lp-get-box p { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.65; }
+.lp-get-btn { display:block; width:100%; text-align:center; padding:20px 40px;
+  border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); backdrop-filter:blur(10px);
+  color:#fff; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.2em;
+  transition:all .3s ease; }
+.lp-get-btn:hover { border-color:var(--acc); background:rgba(77,182,172,0.05); }
+
+/* 진짜 푸터 — Get Started 와 같은 컨테이너 폭, 자체 상단 경계선 */
+.lp-foot { width:100%; padding-bottom:40px; }
+.lp-foot-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px;
+  padding:60px 0; border-top:1px solid rgba(255,255,255,0.08); }
+.lp-end-brand { display:flex; flex-direction:column; gap:20px; }
+.lp-end-brand p { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.65; max-width:280px; }
+.lp-end-col h5 { font-family:var(--font-mono); font-weight:400; font-size:10px; text-transform:uppercase;
+  letter-spacing:0.15em; color:#fff; margin-bottom:24px; }
+.lp-end-col ul { list-style:none; display:flex; flex-direction:column; gap:12px; }
 .lp-end-col a, .lp-end-col span, .lp-end-col button {
-  display:block; width:100%; font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; text-align:left; }
-.lp-end-col a:hover, .lp-end-col button:hover { color:var(--acc); }
+  display:block; width:100%; font-size:13px; color:rgba(255,255,255,0.4); line-height:1.5; text-align:left;
+  transition:color .3s ease; }
+.lp-end-col a:hover, .lp-end-col button:hover { color:#fff; }
+.lp-end-company { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.8; }
 
 .lp-end-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-  padding:20px 0 26px; border-top:1px solid rgba(255,255,255,0.07);
+  padding-top:20px; border-top:1px solid rgba(255,255,255,0.07);
   font-size:12px; color:rgba(255,255,255,0.3); }
 .lp-end-bar a:hover { color:var(--acc); }
 
@@ -566,11 +577,10 @@ const CSS = `
   .bfy-h1 { font-size:28px; } .bfy-features { grid-template-columns:1fr; }
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
-  .lp-end { padding-top:14vh; }
-  .lp-end-cta { grid-template-columns:1fr; gap:28px; align-items:start; padding:0 20px 44px; }
-  .lp-end-copy h2 { font-size:30px; }
-  .lp-foot { padding:44px 20px 0; }
-  .lp-end-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0 34px; }
+  .lp-endwrap { padding:0 20px; }
+  .lp-get { grid-template-columns:1fr; gap:32px; padding:64px 0; margin-top:40px; }
+  .lp-get-copy h2 { font-size:30px; }
+  .lp-foot-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0; }
   .lp-end-brand { grid-column:1 / -1; }
   .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
   .how-sec { grid-template-columns:1fr; padding:0 0 64px; }
