@@ -198,11 +198,14 @@ const PAGE_MS = 900
  */
 export function useSectionPager(selector: string, enabled = true) {
   useEffect(() => {
-    if (!enabled || prefersReduced()) return
+    // 페이징 자체(휠 한 칸=다음 섹션)는 핵심 내비게이션이라 reduced-motion 에도 끄지 않는다.
+    // 대신 reduced-motion 이면 트윈 없이 즉시 이동해 "많이 움직이는" 느낌만 없앤다.
+    if (!enabled) return
     if (!window.matchMedia('(min-width: 769px)').matches) return
 
     let locked = false
     let unlockTimer = 0
+    let raf = 0
 
     const sections = () => Array.from(document.querySelectorAll<HTMLElement>(selector))
     const zoneEnd = () => {
@@ -218,6 +221,22 @@ export function useSectionPager(selector: string, enabled = true) {
       return idx
     }
 
+    // Lenis 유무·초기화 타이밍에 기대지 않는 자체 rAF 트윈 — 항상 확실하게 동작.
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+    const tweenTo = (y: number, ms: number) => {
+      cancelAnimationFrame(raf)
+      const startY = window.scrollY
+      const dist = y - startY
+      if (Math.abs(dist) < 1 || ms <= 0) { window.scrollTo(0, y); return }
+      const t0 = performance.now()
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / ms)
+        window.scrollTo(0, startY + dist * easeOutCubic(t))
+        if (t < 1) raf = requestAnimationFrame(step)
+      }
+      raf = requestAnimationFrame(step)
+    }
+
     const goto = (i: number) => {
       const els = sections()
       const el = els[i]
@@ -226,17 +245,18 @@ export function useSectionPager(selector: string, enabled = true) {
       const y = el.offsetTop
       const lenis = getLenis()
       if (lenis) {
+        // Lenis 가 떠 있으면 그쪽 스크롤 상태와 어긋나지 않도록 우선 사용
         lenis.scrollTo(y, {
-          duration: PAGE_MS / 1000,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3),
+          duration: prefersReduced() ? 0 : PAGE_MS / 1000,
+          easing: easeOutCubic,
           lock: true,
           force: true,
         })
       } else {
-        window.scrollTo({ top: y, behavior: 'smooth' })
+        tweenTo(y, prefersReduced() ? 0 : PAGE_MS)
       }
       window.clearTimeout(unlockTimer)
-      unlockTimer = window.setTimeout(() => { locked = false }, PAGE_MS + 60)
+      unlockTimer = window.setTimeout(() => { locked = false }, (prefersReduced() ? 0 : PAGE_MS) + 60)
     }
 
     const handleIntent = (dir: 1 | -1, e: Event) => {
@@ -277,6 +297,7 @@ export function useSectionPager(selector: string, enabled = true) {
 
     return () => {
       window.clearTimeout(unlockTimer)
+      cancelAnimationFrame(raf)
       window.removeEventListener('wheel', onWheel, opts)
       window.removeEventListener('touchstart', onTouchStart, { capture: true })
       window.removeEventListener('touchmove', onTouchMove, opts)
