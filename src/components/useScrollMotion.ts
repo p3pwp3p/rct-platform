@@ -90,8 +90,16 @@ export function useReveal(enabled = true) {
 /**
  * 섹션이 화면을 지나가는 동안의 진행도(0~1)와 화면 안 여부.
  * scroll 이벤트는 rAF 로 코얼레싱해 프레임당 한 번만 계산.
+ *
+ * `mode`:
+ *  - 'through'(기본) 섹션 상단이 화면 하단에 닿을 때 0, 하단이 화면 상단을 지나면 1
+ *  - 'pinned'  sticky 로 고정된 구간만 0~1 로 정규화. 내부 콘텐츠가 화면에 붙어 있는
+ *              동안의 진행도라, 시네마틱 스크럽(단계별 전환)에는 이쪽이어야 0~1 을 다 쓴다.
  */
-export function useSectionScroll<T extends HTMLElement>(enabled = true) {
+export function useSectionScroll<T extends HTMLElement>(
+  enabled = true,
+  mode: 'through' | 'pinned' = 'through',
+) {
   const ref = useRef<T>(null)
   const [progress, setProgress] = useState(0)
   const [inView, setInView] = useState(false)
@@ -107,8 +115,10 @@ export function useSectionScroll<T extends HTMLElement>(enabled = true) {
       queued = false
       const r = el.getBoundingClientRect()
       const vh = window.innerHeight
-      const total = r.height + vh
-      setProgress(Math.min(1, Math.max(0, (vh - r.top) / total)))
+      const p = mode === 'pinned'
+        ? -r.top / Math.max(r.height - vh, 1)
+        : (vh - r.top) / (r.height + vh)
+      setProgress(Math.min(1, Math.max(0, p)))
       setInView(r.bottom > 0 && r.top < vh)
     }
     const onScroll = () => {
@@ -125,7 +135,7 @@ export function useSectionScroll<T extends HTMLElement>(enabled = true) {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
-  }, [enabled])
+  }, [enabled, mode])
 
   return { ref, progress, inView }
 }

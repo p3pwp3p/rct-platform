@@ -25,7 +25,7 @@ export default function LandingPage() {
   const [bfyActive, setBfyActive] = useState(false)
 
   // 이용방법 타워 — 섹션 스크롤 진행도로 카메라를 움직이고, 화면 안일 때만 조립
-  const how = useSectionScroll<HTMLElement>(true)
+  const how = useSectionScroll<HTMLElement>(true, 'pinned')
 
   useSmoothScroll(true)
   useReveal(true)
@@ -156,14 +156,48 @@ export default function LandingPage() {
           </div>
         </section>
 
-      {/* ── 이용방법 — sticky 로 고정된 full-bleed 와이어프레임 타워 옆으로 내용이 흐름 ── */}
+      {/* ── 이용방법 — sticky 타워 + 시네마틱 스크럽(진행도로 단계가 순차 활성화) ── */}
       <section id="how" className="how-sec" ref={how.ref}>
         <div className="how-visual">
           <div className="how-visual-inner">
             <WireframeStructureScene active={how.inView} progress={how.progress} />
-            <span className="how-hud how-hud-tl">SIMULATION STATE: {how.inView ? 'ACTIVE' : 'IDLE'}</span>
-            <span className="how-hud how-hud-bl">RENDER_MODE: WIREFRAME_PRECISION</span>
-            <span className="how-axis">Z-AXIS // PIPELINE ALIGNMENT</span>
+
+            {/* HUD 코너 브래킷 */}
+            <span className="how-corner tl" /><span className="how-corner tr" />
+            <span className="how-corner bl" /><span className="how-corner br" />
+
+            <span className="how-hud how-hud-tl">
+              <i className={how.inView ? 'on' : ''} />
+              {how.inView ? '자동 운용 중' : '대기'}
+            </span>
+            <span className="how-hud how-hud-tr">
+              STEP {String(Math.min(HOW_STEPS.length, Math.floor(how.progress * HOW_STEPS.length) + 1)).padStart(2, '0')} / {String(HOW_STEPS.length).padStart(2, '0')}
+            </span>
+
+            {/* 진행도에 맞춰 단계 캡션이 교차 등장 */}
+            <div className="how-beats">
+              {HOW_STEPS.map((s, i) => {
+                const from = i / HOW_STEPS.length
+                const to = (i + 1) / HOW_STEPS.length
+                const on = how.progress >= from && how.progress < to
+                return (
+                  <figure key={i} className={`how-beat${on ? ' on' : ''}`}>
+                    <span className="lbl">STEP {s.n}</span>
+                    <strong>{s.t}</strong>
+                    <p>{s.d}</p>
+                  </figure>
+                )
+              })}
+            </div>
+
+            {/* 하단 진행바 */}
+            <div className="how-progress">
+              <div className="bar"><span style={{ transform: `scaleX(${how.progress})` }} /></div>
+              <div className="meta">
+                <span>PIPELINE // RCT</span>
+                <span>{Math.round(how.progress * 100)}%</span>
+              </div>
+            </div>
           </div>
         </div>
         <div className="how-info">
@@ -173,17 +207,16 @@ export default function LandingPage() {
             [placeholder] 계좌 연결부터 정산까지 이어지는 흐름을 한눈에 확인하세요.
           </p>
           <ul className="how-list">
-            {[
-              { n: '01', t: '계좌 개설', d: '[placeholder] 첫 단계 설명' },
-              { n: '02', t: '자동 거래 연결', d: '[placeholder] 두 번째 단계 설명' },
-              { n: '03', t: '수익 정산', d: '[placeholder] 세 번째 단계 설명' },
-              { n: '04', t: '보상 수령', d: '[placeholder] 네 번째 단계 설명' },
-            ].map((s, i) => (
-              <li key={i} className="how-row reveal" style={{ '--d': `${i * 90}ms` } as React.CSSProperties}>
-                <span className="how-n">{s.n}</span>
-                <div><h4>{s.t}</h4><p>{s.d}</p></div>
-              </li>
-            ))}
+            {HOW_STEPS.map((s, i) => {
+              const from = i / HOW_STEPS.length
+              const active = how.progress >= from
+              return (
+                <li key={i} className={`how-row${active ? ' is-active' : ''}`}>
+                  <span className="how-n">{s.n}</span>
+                  <div><h4>{s.t}</h4><p>{s.d}</p></div>
+                </li>
+              )
+            })}
           </ul>
         </div>
       </section>
@@ -291,6 +324,13 @@ function Logo({ size = 22 }: { size?: number }) {
     </svg>
   )
 }
+
+const HOW_STEPS = [
+  { n: '01', t: '계좌 개설', d: '[placeholder] 첫 단계 설명' },
+  { n: '02', t: '자동 거래 연결', d: '[placeholder] 두 번째 단계 설명' },
+  { n: '03', t: '수익 정산', d: '[placeholder] 세 번째 단계 설명' },
+  { n: '04', t: '보상 수령', d: '[placeholder] 네 번째 단계 설명' },
+]
 
 const SPLINES = [
   'M160 120 C 300 120, 200 300, 300 300',
@@ -471,20 +511,60 @@ const CSS = `
 .how-visual { position:sticky; top:0; height:100vh; }
 .how-visual-inner { position:relative; width:100%; height:100%;
   background:radial-gradient(ellipse 55% 70% at 45% 55%, rgba(77,182,172,0.07), transparent 70%); }
-.how-hud { position:absolute; font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.22em;
+.how-hud { position:absolute; display:flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.22em;
   color:rgba(255,255,255,0.32); text-transform:uppercase; pointer-events:none; }
-.how-hud-tl { top:96px; left:40px; }
-.how-hud-bl { bottom:40px; left:40px; }
-.how-axis { position:absolute; top:50%; left:40px; transform:translateY(-50%) rotate(-90deg); transform-origin:left center;
-  font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.28em; color:rgba(255,255,255,0.2);
-  text-transform:uppercase; pointer-events:none; white-space:nowrap; }
+.how-hud-tl { top:120px; left:48px; }
+.how-hud-tr { top:120px; right:48px; color:var(--acc); }
+.how-hud i { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.25); }
+.how-hud i.on { background:var(--acc); box-shadow:0 0 10px rgba(77,182,172,0.9); }
+
+/* HUD 코너 브래킷 */
+.how-corner { position:absolute; width:22px; height:22px; pointer-events:none; opacity:0.5;
+  border-color:var(--acc); border-style:solid; border-width:0; }
+.how-corner.tl { top:104px; left:32px; border-top-width:1px; border-left-width:1px; }
+.how-corner.tr { top:104px; right:32px; border-top-width:1px; border-right-width:1px; }
+.how-corner.bl { bottom:104px; left:32px; border-bottom-width:1px; border-left-width:1px; }
+.how-corner.br { bottom:104px; right:32px; border-bottom-width:1px; border-right-width:1px; }
+
+/* 단계 캡션 — 진행 구간에 들어올 때만 떠오름 */
+.how-beats { position:absolute; left:48px; bottom:150px; width:min(360px, 62%); pointer-events:none; }
+.how-beat { position:absolute; left:0; bottom:0; width:100%;
+  padding:20px 22px; border:1px solid rgba(255,255,255,0.09); border-radius:14px;
+  background:rgba(5,6,7,0.62); backdrop-filter:blur(10px);
+  opacity:0; transform:translateY(14px);
+  transition:opacity .45s cubic-bezier(0.16,1,0.3,1), transform .45s cubic-bezier(0.16,1,0.3,1); }
+.how-beat.on { opacity:1; transform:none; }
+.how-beat .lbl { font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.24em; color:var(--acc); }
+.how-beat strong { display:block; margin:10px 0 6px; font-size:17px; font-weight:600; letter-spacing:-0.01em; color:#fff; }
+.how-beat p { font-size:12.5px; color:rgba(255,255,255,0.45); line-height:1.6; }
+
+/* 하단 진행바 */
+.how-progress { position:absolute; left:48px; right:48px; bottom:56px; pointer-events:none; }
+.how-progress .bar { height:1px; background:rgba(255,255,255,0.12); overflow:hidden; }
+.how-progress .bar span { display:block; height:100%; background:var(--acc); transform-origin:left center;
+  transition:transform 90ms linear; }
+.how-progress .meta { display:flex; justify-content:space-between; margin-top:12px;
+  font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.24em;
+  text-transform:uppercase; color:rgba(255,255,255,0.3); }
+
 .how-info { display:flex; flex-direction:column; padding:32vh 72px 0 8px; min-height:100vh; }
 .how-list { list-style:none; margin-top:28px; display:flex; flex-direction:column; }
-.how-row { display:flex; gap:20px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start; }
+/* 스크롤 진행에 따라 해당 단계가 켜짐 — 지나간 단계는 계속 활성 유지 */
+.how-row { display:flex; gap:20px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start;
+  opacity:0.32; transform:translateX(-8px);
+  transition:opacity .5s cubic-bezier(0.16,1,0.3,1), transform .5s cubic-bezier(0.16,1,0.3,1), border-color .5s ease; }
+.how-row.is-active { opacity:1; transform:none; border-top-color:rgba(77,182,172,0.4); }
 .how-row:last-child { border-bottom:1px solid rgba(255,255,255,0.08); }
-.how-n { font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--acc); padding-top:2px; }
+.how-n { font-family:var(--font-mono); font-size:15px; font-weight:600; color:rgba(255,255,255,0.3); padding-top:2px;
+  transition:color .5s ease; }
+.how-row.is-active .how-n { color:var(--acc); }
 .how-row h4 { font-size:15.5px; font-weight:600; margin-bottom:6px; letter-spacing:-0.01em; }
 .how-row p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.6; }
+@media (prefers-reduced-motion:reduce) {
+  .how-row { opacity:1; transform:none; transition:none; }
+  .how-beat { transition:none; }
+}
 
 /* 영상 소개 */
 /* 영상 — 가운데 정렬 세로 흐름(제목 → 영상 → 요약 3분할) */
@@ -594,7 +674,10 @@ const CSS = `
   .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
   .how-sec { grid-template-columns:1fr; padding:0 0 64px; }
   .how-visual { position:relative; height:56vh; }
-  .how-hud-tl { top:16px; left:20px; } .how-hud-bl { bottom:16px; left:20px; } .how-axis { display:none; }
+  .how-hud-tl { top:16px; left:20px; } .how-hud-tr { top:16px; right:20px; }
+  .how-corner { display:none; }
+  .how-beats { left:20px; right:20px; width:auto; bottom:86px; }
+  .how-progress { left:20px; right:20px; bottom:24px; }
   .how-info { padding:32px 20px 0; min-height:0; }
   .how-row { padding:20px 0; }
 }
