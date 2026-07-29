@@ -522,20 +522,24 @@ const CSS = `
    색상만 브랜드 틸로. 서체는 사이트 전체 규칙(SUIT+Geist Mono, 세리프 없음)을 유지. */
 .lp-endwrap { max-width:1440px; margin:0 auto; padding:0 80px; display:flex; flex-direction:column; }
 
+/* 위쪽엔 hr 없이 여백만(영상 섹션과 확실히 떨어지도록). 아래쪽은 푸터의
+   border-top 하나만 경계로 남겨서 — 컨테이너 폭이 다른 두 hr이 서로 다른
+   길이로 보이며 안 맞던 문제를 원천적으로 없앰(선은 하나만). */
 .lp-get { display:grid; grid-template-columns:1.3fr 1fr; gap:64px; align-items:center;
-  padding:100px 0; border-top:1px solid rgba(255,255,255,0.08); margin-top:80px; }
+  padding:0 0 220px; margin-top:160px; }
 .lp-get-copy h2 { font-size:clamp(32px, 3.6vw, 52px); font-weight:200; line-height:1.14; letter-spacing:-0.03em; color:#fff; margin:20px 0 20px; }
 .lp-get-copy p { font-size:14px; color:rgba(255,255,255,0.4); line-height:1.65; max-width:400px; }
 .lp-get-box { display:flex; flex-direction:column; align-items:stretch; gap:20px; padding:40px;
   border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); backdrop-filter:blur(10px); }
 .lp-get-box p { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.65; }
-.lp-get-btn { display:block; width:100%; text-align:center; padding:20px 40px;
+/* 모노+넓은 자간은 한글에서 붕 뜬 느낌이라 SUIT 로 통일, 사이트의 다른 CTA 버튼과 톤 맞춤 */
+.lp-get-btn { display:block; width:100%; text-align:center; padding:18px 40px;
   border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); backdrop-filter:blur(10px);
-  color:#fff; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.2em;
+  color:#fff; font-family:var(--font-main); font-weight:600; font-size:14.5px; letter-spacing:-0.01em;
   transition:all .3s ease; }
 .lp-get-btn:hover { border-color:var(--acc); background:rgba(77,182,172,0.05); }
 
-/* 진짜 푸터 — Get Started 와 같은 컨테이너 폭, 자체 상단 경계선 */
+/* 진짜 푸터 — Get Started 와 같은 컨테이너 폭, 자체 상단 경계선(유일한 hr) */
 /* Get Started 는 lp-endwrap(1440/80px) 폭 유지, 푸터만 그 밖에서 좌우 전폭으로 */
 .lp-foot { width:100%; padding:0 80px 40px; }
 .lp-foot-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px;
