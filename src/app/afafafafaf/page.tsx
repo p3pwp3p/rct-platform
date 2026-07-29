@@ -66,9 +66,9 @@ export default function LandingPage() {
       <header className="lp-nav">
         <div className="lp-brand"><Logo /><span>RCT Platform</span></div>
         <nav className="lp-navlinks">
-          <a href="#how">이용방법</a>
-          <button type="button" onClick={goNext} className="lp-navlink-btn">네트워크</button>
-          <Link href="/login" className="lp-login-btn">로그인</Link>
+          <a href="#how">How It Works</a>
+          <button type="button" onClick={goNext} className="lp-navlink-btn">Network</button>
+          <Link href="/login" className="lp-login-btn">Login</Link>
         </nav>
       </header>
 
@@ -345,11 +345,12 @@ const CSS = `
 }
 
 /* 네비 */
+/* 배경 바/구분선 없이 히어로 위에 그대로 떠 있는 네비(참고 레퍼런스 스타일) */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80; display:flex; align-items:center; justify-content:space-between;
-  padding:18px 36px; background:rgba(5,6,7,0.6); backdrop-filter:blur(16px) saturate(140%); border-bottom:1px solid rgba(255,255,255,0.06); }
+  padding:26px 36px; background:none; }
 .lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; letter-spacing:-0.01em; }
 .lp-brand.small { font-size:13px; opacity:0.75; }
-.lp-navlinks { display:flex; align-items:center; gap:30px; font-size:13.5px; color:rgba(255,255,255,0.55); font-weight:500; }
+.lp-navlinks { display:flex; align-items:center; gap:30px; font-size:12.5px; letter-spacing:0.04em; color:rgba(255,255,255,0.55); font-weight:500; }
 .lp-navlinks a, .lp-navlink-btn { transition:color .2s ease; }
 .lp-navlinks a:hover, .lp-navlink-btn:hover { color:#fff; }
 .lp-login-btn { border:1px solid rgba(255,255,255,0.14); color:#fff !important; padding:9px 22px; border-radius:999px;
