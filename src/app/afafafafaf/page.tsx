@@ -220,8 +220,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 5번: 마무리 CTA + 푸터를 하나의 덩어리로 묶어 바닥에 앉힘 ── */}
-      <footer className="lp-end">
+      {/* ── 5번: 마무리 CTA(가운데 정렬) + 진짜 <footer>(좌우 전폭, 바닥에 밀착) ── */}
+      <div className="lp-end">
         <div className="lp-end-cta">
           <div className="lp-end-copy">
             <span className="lp-kicker reveal">Get Started</span>
@@ -235,36 +235,38 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="lp-end-grid">
-          <div className="lp-end-brand">
-            <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
-            <p>[placeholder] 회사를 한 줄로 소개하는 문장이 들어갑니다.</p>
+        <footer className="lp-foot">
+          <div className="lp-end-grid">
+            <div className="lp-end-brand">
+              <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
+              <p>[placeholder] 회사를 한 줄로 소개하는 문장이 들어갑니다.</p>
+            </div>
+            <div className="lp-end-col">
+              <h5>바로가기</h5>
+              <a href="#how">이용방법</a>
+              <button type="button" onClick={goNext}>네트워크</button>
+              <Link href="/login">로그인</Link>
+            </div>
+            <div className="lp-end-col">
+              <h5>문의</h5>
+              <span>[placeholder] 이메일</span>
+              <span>[placeholder] 카카오 채널</span>
+              <span>[placeholder] 운영시간</span>
+            </div>
+            <div className="lp-end-col">
+              <h5>회사 정보</h5>
+              <span>[placeholder] 상호 · 대표자</span>
+              <span>[placeholder] 사업자등록번호</span>
+              <span>[placeholder] 주소</span>
+            </div>
           </div>
-          <div className="lp-end-col">
-            <h5>바로가기</h5>
-            <a href="#how">이용방법</a>
-            <button type="button" onClick={goNext}>네트워크</button>
-            <Link href="/login">로그인</Link>
-          </div>
-          <div className="lp-end-col">
-            <h5>문의</h5>
-            <span>[placeholder] 이메일</span>
-            <span>[placeholder] 카카오 채널</span>
-            <span>[placeholder] 운영시간</span>
-          </div>
-          <div className="lp-end-col">
-            <h5>회사 정보</h5>
-            <span>[placeholder] 상호 · 대표자</span>
-            <span>[placeholder] 사업자등록번호</span>
-            <span>[placeholder] 주소</span>
-          </div>
-        </div>
 
-        <div className="lp-end-bar">
-          <span>© {new Date().getFullYear()} RCT Platform. All rights reserved.</span>
-          <Link href="/terms">이용약관</Link>
-        </div>
-      </footer>
+          <div className="lp-end-bar">
+            <span>© {new Date().getFullYear()} RCT Platform. All rights reserved.</span>
+            <Link href="/terms">이용약관</Link>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }
@@ -500,13 +502,16 @@ const CSS = `
 .lp-step-n { font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--acc); }
 .lp-step h4 { font-size:15.5px; font-weight:600; margin:10px 0 6px; letter-spacing:-0.01em; }
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
-/* 5번 섹션 — CTA + 푸터가 한 화면에 들어오도록 높이만 압축하고,
-   좌우로는 다른 섹션과 같은 폭으로 가운데 정렬(전폭으로 퍼지지 않게) */
-.lp-end { width:100%; min-height:100vh; display:flex; flex-direction:column; justify-content:center;
-  padding:0 32px 28px; background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 30%, rgba(10,12,13,0.9) 100%); }
-.lp-end-cta, .lp-end-grid, .lp-end-bar { max-width:1080px; margin-left:auto; margin-right:auto; width:100%; }
-.lp-end-cta { display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end;
-  padding:0 0 44px; border-bottom:1px solid rgba(255,255,255,0.09); }
+/* 5번 섹션 — CTA 는 다른 섹션과 같은 폭으로 가운데 정렬(전폭으로 안 퍼지게),
+   그 아래 진짜 <footer> 만 좌우 꽉 채워 화면/문서의 바닥에 딱 붙인다.
+   (센터링용 min-height:100vh 를 없애 하단에 빈 여백이 남지 않도록) */
+.lp-end { width:100%; padding-top:14vh;
+  background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 30%, rgba(10,12,13,0.9) 100%); }
+.lp-end-cta { max-width:1080px; margin:0 auto; padding:0 32px 44px; width:100%;
+  display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end;
+  border-bottom:1px solid rgba(255,255,255,0.09); }
+/* 진짜 푸터 — 좌우 전폭, 문서 맨 끝에 그대로 붙음(바닥 여백 최소화) */
+.lp-foot { width:100%; padding:0 48px; }
 .lp-end-copy h2 { font-size:clamp(30px, 3.4vw, 46px); font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:12px; }
 .lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:16px; max-width:340px; }
 .lp-end-act p { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.65; }
@@ -524,7 +529,7 @@ const CSS = `
 .lp-end-col a:hover, .lp-end-col button:hover { color:var(--acc); }
 
 .lp-end-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-  padding-top:20px; border-top:1px solid rgba(255,255,255,0.07);
+  padding:20px 0 26px; border-top:1px solid rgba(255,255,255,0.07);
   font-size:12px; color:rgba(255,255,255,0.3); }
 .lp-end-bar a:hover { color:var(--acc); }
 
@@ -553,9 +558,10 @@ const CSS = `
   .bfy-h1 { font-size:28px; } .bfy-features { grid-template-columns:1fr; }
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
-  .lp-end { padding:0 20px 32px; }
-  .lp-end-cta { grid-template-columns:1fr; gap:28px; align-items:start; padding:72px 0 44px; }
+  .lp-end { padding-top:10vh; }
+  .lp-end-cta { grid-template-columns:1fr; gap:28px; align-items:start; padding:0 20px 44px; }
   .lp-end-copy h2 { font-size:30px; }
+  .lp-foot { padding:0 20px; }
   .lp-end-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0 34px; }
   .lp-end-brand { grid-column:1 / -1; }
   .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
