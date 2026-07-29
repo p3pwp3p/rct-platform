@@ -235,6 +235,9 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* CTA 바로 아래 위치는 고정, 폭만 전폭으로(좌우 끝까지) */}
+        <div className="lp-end-rule" />
+
         <footer className="lp-foot">
           <div className="lp-end-grid">
             <div className="lp-end-brand">
@@ -504,14 +507,16 @@ const CSS = `
 .lp-step p { font-size:13px; color:rgba(255,255,255,0.42); line-height:1.65; }
 /* 5번 섹션 — CTA 는 다른 섹션과 같은 폭으로 가운데 정렬(전폭으로 안 퍼지게),
    그 아래 진짜 <footer> 만 좌우 꽉 채워 화면/문서의 바닥에 딱 붙인다.
-   (센터링용 min-height:100vh 를 없애 하단에 빈 여백이 남지 않도록) */
-.lp-end { width:100%; padding-top:14vh;
+   (센터링용 min-height:100vh 를 없애 하단에 빈 여백이 남지 않도록)
+   Get Started 자체도 독자 섹션처럼 보이도록 위쪽 경계선 + 넉넉한 상단 여백. */
+.lp-end { width:100%; padding-top:26vh; border-top:1px solid rgba(255,255,255,0.06);
   background:linear-gradient(180deg, transparent, rgba(77,182,172,0.05) 30%, rgba(10,12,13,0.9) 100%); }
 .lp-end-cta { max-width:1080px; margin:0 auto; padding:0 32px 44px; width:100%;
-  display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end;
-  border-bottom:1px solid rgba(255,255,255,0.09); }
-/* 진짜 푸터 — 좌우 전폭, 문서 맨 끝에 그대로 붙음(바닥 여백 최소화) */
-.lp-foot { width:100%; padding:0 48px; }
+  display:grid; grid-template-columns:1fr auto; gap:48px; align-items:end; }
+/* 구분선 — CTA 바로 아래라는 위치는 그대로, 폭만 좌우 끝까지 */
+.lp-end-rule { width:100%; height:1px; background:rgba(255,255,255,0.09); }
+/* 진짜 푸터 — 좌우 전폭. 위쪽 구분선과는 충분히 띄우고, 문서 바닥엔 그대로 붙음 */
+.lp-foot { width:100%; padding:64px 48px 0; }
 .lp-end-copy h2 { font-size:clamp(30px, 3.4vw, 46px); font-weight:200; line-height:1.16; letter-spacing:-0.03em; color:#fff; margin-top:12px; }
 .lp-end-act { display:flex; flex-direction:column; align-items:flex-start; gap:16px; max-width:340px; }
 .lp-end-act p { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.65; }
@@ -558,10 +563,10 @@ const CSS = `
   .bfy-h1 { font-size:28px; } .bfy-features { grid-template-columns:1fr; }
   .bfy-actions { gap:20px; }
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
-  .lp-end { padding-top:10vh; }
+  .lp-end { padding-top:14vh; }
   .lp-end-cta { grid-template-columns:1fr; gap:28px; align-items:start; padding:0 20px 44px; }
   .lp-end-copy h2 { font-size:30px; }
-  .lp-foot { padding:0 20px; }
+  .lp-foot { padding:44px 20px 0; }
   .lp-end-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0 34px; }
   .lp-end-brand { grid-column:1 / -1; }
   .vid-sec { padding:64px 20px 12vh; } .vid-points { grid-template-columns:1fr; gap:18px; }
