@@ -220,7 +220,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 5번: Get Started(2단) + Footer(4단) — 참고 레퍼런스 구조, 색상만 브랜드 틸로 ── */}
+      {/* ── 5번: Get Started(2단, 다른 섹션과 같은 폭 유지) ── */}
       <div className="lp-endwrap">
         <section className="lp-get">
           <div className="lp-get-copy">
@@ -237,45 +237,46 @@ export default function LandingPage() {
             <Link href="/login" className="lp-get-btn">로그인 / 시작하기</Link>
           </div>
         </section>
-
-        <footer className="lp-foot">
-          <div className="lp-foot-grid">
-            <div className="lp-end-brand">
-              <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
-              <p>[placeholder] 자동 거래로 이어지는 새로운 수익 구조, 그 다음 세대 금융 인프라입니다.</p>
-            </div>
-            <div className="lp-end-col">
-              <h5>Quick Links</h5>
-              <ul>
-                <li><a href="#how">이용방법</a></li>
-                <li><button type="button" onClick={goNext}>네트워크</button></li>
-                <li><Link href="/login">로그인</Link></li>
-              </ul>
-            </div>
-            <div className="lp-end-col">
-              <h5>Inquiry</h5>
-              <ul>
-                <li><span>[placeholder] 이메일</span></li>
-                <li><span>[placeholder] 카카오 채널</span></li>
-                <li><span>[placeholder] 운영시간</span></li>
-              </ul>
-            </div>
-            <div className="lp-end-col">
-              <h5>Company Info</h5>
-              <p className="lp-end-company">
-                [placeholder] 상호 · 대표자<br />
-                [placeholder] 사업자등록번호<br />
-                [placeholder] 주소
-              </p>
-            </div>
-          </div>
-
-          <div className="lp-end-bar">
-            <span>© {new Date().getFullYear()} RCT Platform. All rights reserved.</span>
-            <Link href="/terms">이용약관</Link>
-          </div>
-        </footer>
       </div>
+
+      {/* ── Footer — 좌우 전폭(lp-endwrap 밖) ── */}
+      <footer className="lp-foot">
+        <div className="lp-foot-grid">
+          <div className="lp-end-brand">
+            <div className="lp-brand small"><Logo /><span>RCT Platform</span></div>
+            <p>[placeholder] 자동 거래로 이어지는 새로운 수익 구조, 그 다음 세대 금융 인프라입니다.</p>
+          </div>
+          <div className="lp-end-col">
+            <h5>Quick Links</h5>
+            <ul>
+              <li><a href="#how">이용방법</a></li>
+              <li><button type="button" onClick={goNext}>네트워크</button></li>
+              <li><Link href="/login">로그인</Link></li>
+            </ul>
+          </div>
+          <div className="lp-end-col">
+            <h5>Inquiry</h5>
+            <ul>
+              <li><span>[placeholder] 이메일</span></li>
+              <li><span>[placeholder] 카카오 채널</span></li>
+              <li><span>[placeholder] 운영시간</span></li>
+            </ul>
+          </div>
+          <div className="lp-end-col">
+            <h5>Company Info</h5>
+            <p className="lp-end-company">
+              [placeholder] 상호 · 대표자<br />
+              [placeholder] 사업자등록번호<br />
+              [placeholder] 주소
+            </p>
+          </div>
+        </div>
+
+        <div className="lp-end-bar">
+          <span>© {new Date().getFullYear()} RCT Platform. All rights reserved.</span>
+          <Link href="/terms">이용약관</Link>
+        </div>
+      </footer>
     </div>
   )
 }
@@ -351,11 +352,13 @@ const CSS = `
 }
 
 /* 네비 */
-/* 배경 바/구분선 없이 히어로 위에 그대로 떠 있는 네비(참고 레퍼런스 스타일).
+/* 스크롤하면 뒤 콘텐츠가 그대로 비쳐 겹쳐 보이던 문제 → 배경을 페이지 바탕색으로 완전
+   불투명하게(블러/반투명 없음). 딱딱한 구분선 대신 아래로 옅게 페이드되는 그림자로 경계 처리.
    3열 그리드로 로고-좌 / 메뉴-정중앙 / 로그인-우, 폭이 다른 좌우 그룹과 무관하게 진짜 중앙 정렬. */
 .lp-nav { position:fixed; top:0; left:0; right:0; width:100%; z-index:80;
   display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
-  padding:44px 52px 26px; background:none; }
+  padding:44px 52px 26px; background:#050607;
+  box-shadow:0 24px 24px -16px rgba(5,6,7,0.85); }
 .lp-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; letter-spacing:-0.01em; justify-self:start; }
 .lp-brand.small { font-size:13px; opacity:0.75; }
 .lp-navlinks { display:flex; align-items:center; gap:42px; font-size:11.5px; text-transform:uppercase;
@@ -533,7 +536,8 @@ const CSS = `
 .lp-get-btn:hover { border-color:var(--acc); background:rgba(77,182,172,0.05); }
 
 /* 진짜 푸터 — Get Started 와 같은 컨테이너 폭, 자체 상단 경계선 */
-.lp-foot { width:100%; padding-bottom:40px; }
+/* Get Started 는 lp-endwrap(1440/80px) 폭 유지, 푸터만 그 밖에서 좌우 전폭으로 */
+.lp-foot { width:100%; padding:0 80px 40px; }
 .lp-foot-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px;
   padding:60px 0; border-top:1px solid rgba(255,255,255,0.08); }
 .lp-end-brand { display:flex; flex-direction:column; gap:20px; }
@@ -579,6 +583,7 @@ const CSS = `
   .lp-section { padding:64px 20px; } .lp-h2 { font-size:26px; } .lp-steps { grid-template-columns:1fr; }
   .lp-endwrap { padding:0 20px; }
   .lp-get { grid-template-columns:1fr; gap:32px; padding:64px 0; margin-top:40px; }
+  .lp-foot { padding:0 20px 32px; }
   .lp-get-copy h2 { font-size:30px; }
   .lp-foot-grid { grid-template-columns:1fr 1fr; gap:30px; padding:40px 0; }
   .lp-end-brand { grid-column:1 / -1; }
