@@ -160,7 +160,10 @@ export default function LandingPage() {
       <section id="how" className="how-sec" ref={how.ref}>
         <div className="how-visual">
           <div className="how-visual-inner">
-            <WireframeStructureScene active={how.inView} progress={how.progress} />
+            {/* 캔버스를 하단에서 띄워 타워가 진행바/메타 위로 침범하지 않게 */}
+            <div className="how-stage">
+              <WireframeStructureScene active={how.inView} progress={how.progress} />
+            </div>
 
             {/* HUD 코너 브래킷 */}
             <span className="how-corner tl" /><span className="how-corner tr" />
@@ -511,6 +514,8 @@ const CSS = `
 .how-visual { position:sticky; top:0; height:100vh; }
 .how-visual-inner { position:relative; width:100%; height:100%;
   background:radial-gradient(ellipse 55% 70% at 45% 55%, rgba(77,182,172,0.07), transparent 70%); }
+/* 캔버스 무대 — 하단 진행바/메타 높이만큼 비워 타워가 그 위로 내려오지 않게 */
+.how-stage { position:absolute; left:0; right:0; top:0; bottom:120px; }
 .how-hud { position:absolute; display:flex; align-items:center; gap:8px;
   font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.22em;
   color:rgba(255,255,255,0.32); text-transform:uppercase; pointer-events:none; }
@@ -548,10 +553,11 @@ const CSS = `
   font-family:var(--font-mono); font-size:9.5px; letter-spacing:0.24em;
   text-transform:uppercase; color:rgba(255,255,255,0.3); }
 
-.how-info { display:flex; flex-direction:column; padding:32vh 72px 0 8px; min-height:100vh; }
-.how-list { list-style:none; margin-top:28px; display:flex; flex-direction:column; }
+/* 4단계가 한 화면에 다 들어오도록 위로 끌어올리고 행 간격을 압축 */
+.how-info { display:flex; flex-direction:column; justify-content:center; padding:12vh 72px 12vh 8px; min-height:100vh; }
+.how-list { list-style:none; margin-top:22px; display:flex; flex-direction:column; }
 /* 스크롤 진행에 따라 해당 단계가 켜짐 — 지나간 단계는 계속 활성 유지 */
-.how-row { display:flex; gap:20px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start;
+.how-row { display:flex; gap:20px; padding:20px 0; border-top:1px solid rgba(255,255,255,0.08); align-items:flex-start;
   opacity:0.32; transform:translateX(-8px);
   transition:opacity .5s cubic-bezier(0.16,1,0.3,1), transform .5s cubic-bezier(0.16,1,0.3,1), border-color .5s ease; }
 .how-row.is-active { opacity:1; transform:none; border-top-color:rgba(77,182,172,0.4); }
