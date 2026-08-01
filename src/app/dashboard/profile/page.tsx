@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { useToast } from '@/components/ToastProvider'
@@ -30,14 +31,62 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
+type ProfilePayload = {
+  authEmail: string
+  meta: { fullName: string; phone: string; trc20: string }
+  myProfile: Profile | null
+  nodes: Profile[]
+}
+
 export default function ProfilePage() {
-  const [myProfile, setMyProfile] = useState<Profile | null>(null)
-  const [nodes, setNodes]         = useState<Profile[]>([])
-  const [authEmail, setAuthEmail]   = useState('')
+  // 서버 데이터(프로필·소유 노드)는 SWR 로. 폼 입력값은 아래에서 최초 1회만 시딩한다.
+  const { data, isLoading: loading, mutate } = useSWR<ProfilePayload | null>(
+    'profile-page',
+    async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: owned } = await supabase
+        .from('profiles').select('*')
+        .or(`id.eq.${user.id},owner_id.eq.${user.id}`)
+        .order('created_at', { ascending: true })
+      return {
+        authEmail: user.email ?? '',
+        meta: {
+          fullName: (user.user_metadata?.full_name as string) ?? '',
+          phone:    (user.user_metadata?.phone as string) ?? '',
+          trc20:    (user.user_metadata?.trc20_address as string) ?? '',
+        },
+        myProfile: (profile ?? null) as Profile | null,
+        nodes: (owned ?? []) as Profile[],
+      }
+    },
+  )
+  const myProfile = data?.myProfile ?? null
+  const nodes     = data?.nodes ?? []
+  const authEmail = data?.authEmail ?? ''
+
+  /** 캐시를 직접 갱신(재조회 없이) — 저장 직후 즉시 반영용 */
+  const patch = (fn: (d: ProfilePayload) => ProfilePayload) =>
+    mutate(d => (d ? fn(d) : d), { revalidate: false })
+  const setMyProfile = (fn: (p: Profile | null) => Profile | null) =>
+    patch(d => ({ ...d, myProfile: fn(d.myProfile) }))
+  const setNodes = (fn: (ns: Profile[]) => Profile[]) =>
+    patch(d => ({ ...d, nodes: fn(d.nodes) }))
+
   const [fullName, setFullName]     = useState('')
   const [phone, setPhone]           = useState('')
   const [authTrc20, setAuthTrc20]   = useState('')  // auth 메타데이터 기준 TRC-20
-  const [loading, setLoading]       = useState(true)
+
+  // 폼 입력값은 최초 로드 때만 시딩 — 재검증(포커스 복귀 등)이 편집 중인 값을 덮지 않도록
+  const seeded = useRef(false)
+  useEffect(() => {
+    if (seeded.current || !data) return
+    seeded.current = true
+    setFullName(data.meta.fullName)
+    setPhone(data.meta.phone)
+    setAuthTrc20(data.meta.trc20)
+  }, [data])
   const isMobile = useIsMobile()
   const showToast = useToast()
 
@@ -192,27 +241,6 @@ export default function ProfilePage() {
     showToast('지갑 주소가 저장됐습니다')
   }
 
-  useEffect(() => {
-    const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
-      setAuthEmail(user.email ?? '')
-      setFullName((user.user_metadata?.full_name as string) ?? '')
-      setPhone((user.user_metadata?.phone as string) ?? '')
-      setAuthTrc20((user.user_metadata?.trc20_address as string) ?? '')
-
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setMyProfile(profile as Profile)
-
-      const { data: owned } = await supabase
-        .from('profiles').select('*')
-        .or(`id.eq.${user.id},owner_id.eq.${user.id}`)
-        .order('created_at', { ascending: true })
-      setNodes((owned ?? []) as Profile[])
-      setLoading(false)
-    }
-    run()
-  }, [])
 
   // 최고 직급: 소유 노드 중 가장 높은 직급
   const topRank = nodes.reduce<string>((best, n) => {
