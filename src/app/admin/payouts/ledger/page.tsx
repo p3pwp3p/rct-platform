@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useMemo } from 'react'
+import { useApi } from '@/lib/swr'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 type LedgerRow = {
@@ -29,32 +29,15 @@ function Shimmer({ w = '70%', h = 14 }: { w?: string; h?: number }) {
 }
 
 export default function PayoutLedgerPage() {
-  const [rows, setRows]       = useState<LedgerRow[]>([])
-  const [totals, setTotals]   = useState({ referral: 0, rank: 0, sponsor: 0, total: 0 })
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
-  const [query, setQuery]     = useState('')
+  const [query, setQuery] = useState('')
   const isMobile = useIsMobile()
 
-  async function load() {
-    setLoading(true); setError('')
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('로그인이 필요합니다.')
-      const res  = await fetch('/api/admin/payout-ledger', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? '조회 실패')
-      setRows(json.rows ?? [])
-      setTotals(json.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 })
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : (e as any)?.message ?? '오류')
-    } finally {
-      setLoading(false)
-    }
-  }
-  useEffect(() => { load() }, [])
+  type LedgerResp = { rows?: LedgerRow[]; totals?: { referral: number; rank: number; sponsor: number; total: number } }
+  const { data, isLoading, error: swrError } = useApi<LedgerResp>('/api/admin/payout-ledger')
+  const rows    = data?.rows ?? []
+  const totals  = data?.totals ?? { referral: 0, rank: 0, sponsor: 0, total: 0 }
+  const loading = isLoading
+  const error   = swrError ? (swrError as Error).message : ''
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

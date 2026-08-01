@@ -1,6 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState, useMemo } from 'react'
+import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
+import { useApi } from '@/lib/swr'
 import { useIsMobile } from '@/lib/useIsMobile'
 
 type ForfeitedRow = {
@@ -43,15 +45,10 @@ function Shimmer({ w = '70%', h = 14 }: { w?: string | number; h?: number }) {
 }
 
 export default function ForfeitedPage() {
-  const [rows,    setRows]    = useState<ForfeitedRow[]>([])
-  const [summary, setSummary] = useState<SummaryRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
   const isMobile = useIsMobile()
 
   // 회사 매출 집계 (service-role API)
   type Revenue = { totalProfit: number; companyBase: number; memberPool: number; totalPaid: number; forfeiture: number; forfeitRecorded: number; companyTotal: number; reportCount: number }
-  const [rev, setRev] = useState<Revenue | null>(null)
 
   // 수동 낙전 추가
   const [showAdd, setShowAdd]       = useState(false)
@@ -61,24 +58,23 @@ export default function ForfeitedPage() {
   const [addBusy, setAddBusy]       = useState(false)
   const [addErr, setAddErr]         = useState('')
 
-  async function load() {
-    setLoading(true); setError('')
-    try {
-      // 1. forfeited_bonuses 조회 (테이블명 수정: forfeited_payouts → forfeited_bonuses)
+  // 낙전 목록 — Supabase 직접 조회라 API 라우트가 아니므로 커스텀 fetcher 로 SWR 에 태운다
+  const { data: forfeitedData, isLoading: fLoading, error: fError, mutate: mutateForfeited } =
+    useSWR('forfeited-bonuses', async () => {
       const { data, error: e } = await supabase
         .from('forfeited_bonuses')
         .select('id, report_id, profile_id, amount, reason, created_at')
         .order('created_at', { ascending: false })
       if (e) throw e
 
-      // 2. 프로필 수동 join (FK 구문 의존 없이)
+      // 프로필 수동 join (FK 구문 의존 없이)
       const profileIds = [...new Set((data ?? []).map((r: any) => r.profile_id))]
       const { data: profiles } = profileIds.length
         ? await supabase.from('profiles').select('id, name, node_id, status').in('id', profileIds)
         : { data: [] }
       const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]))
 
-      const mapped: ForfeitedRow[] = (data ?? []).map((r: any) => {
+      return (data ?? []).map((r: any) => {
         const p = profileMap.get(r.profile_id) as any
         return {
           id:              r.id,
@@ -90,32 +86,31 @@ export default function ForfeitedPage() {
           profile_name:    p?.name    ?? '알 수 없음',
           profile_node_id: p?.node_id ?? '',
           profile_status:  p?.status  ?? 'active',
-        }
+        } as ForfeitedRow
       })
-      setRows(mapped)
+    })
 
-      // 집계
-      const map: Record<string, SummaryRow> = {}
-      for (const r of mapped) {
-        if (!map[r.reason]) map[r.reason] = { reason: r.reason, total: 0, count: 0 }
-        map[r.reason].total += r.amount
-        map[r.reason].count++
-      }
-      setSummary(Object.values(map))
+  // 회사 매출 집계 (service-role API — RLS 무관하게 정확 집계)
+  const { data: revData, mutate: mutateRev } = useApi<Revenue>('/api/company-revenue')
 
-      // 회사 매출 집계 (service-role API — RLS 무관하게 정확 집계)
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token ?? ''
-      const rr = await fetch('/api/company-revenue', { headers: { Authorization: `Bearer ${token}` } })
-      if (rr.ok) setRev(await rr.json())
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : (e as any)?.message ?? JSON.stringify(e) ?? '오류')
-    } finally {
-      setLoading(false)
+  const rows    = useMemo(() => forfeitedData ?? [], [forfeitedData])
+  const rev     = revData ?? null
+  const loading = fLoading
+  const error   = fError ? ((fError as Error).message ?? '오류') : ''
+
+  // 사유별 집계
+  const summary = useMemo(() => {
+    const map: Record<string, SummaryRow> = {}
+    for (const r of rows) {
+      if (!map[r.reason]) map[r.reason] = { reason: r.reason, total: 0, count: 0 }
+      map[r.reason].total += r.amount
+      map[r.reason].count++
     }
-  }
+    return Object.values(map)
+  }, [rows])
 
-  useEffect(() => { load() }, [])
+  /** 낙전 추가/삭제 후 목록·매출을 함께 갱신 */
+  const load = () => { mutateForfeited(); mutateRev() }
 
   async function handleAddManual() {
     setAddErr('')

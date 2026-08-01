@@ -1,27 +1,20 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
+import { usePublicApi } from '@/lib/swr'
 
 type Term = { id: string; title: string; body: string; updated_at: string }
 
 export default function TermsPage() {
-  const [terms, setTerms] = useState<Term[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  // 로그인 없이 보는 페이지 → 공개 fetcher (401 이어도 로그인으로 튕기지 않음)
+  const { data, isLoading } = usePublicApi<{ terms?: Term[] }>('/api/terms')
+  const terms = data?.terms ?? []
 
-  useEffect(() => {
-    fetch('/api/terms')
-      .then(r => r.json())
-      .then((json: { terms?: Term[] }) => {
-        const list = json.terms ?? []
-        setTerms(list)
-        setActiveId(list[0]?.id ?? null)
-      })
-      .catch(() => { /* noop */ })
-      .finally(() => setLoading(false))
-  }, [])
-
+  // 선택 전(null)이면 첫 항목을 기본 노출 — 목록 로드 후 별도 동기화가 필요 없다
+  const [pickedId, setPickedId] = useState<string | null>(null)
+  const activeId = pickedId ?? terms[0]?.id ?? null
   const active = terms.find(t => t.id === activeId) ?? null
+  const loading = isLoading
 
   return (
     <main style={{ minHeight: '100vh', background: '#07080a', color: '#e0e6ed', padding: '40px 16px' }}>
@@ -48,7 +41,7 @@ export default function TermsPage() {
               {terms.map(t => {
                 const on = t.id === activeId
                 return (
-                  <button key={t.id} onClick={() => setActiveId(t.id)}
+                  <button key={t.id} onClick={() => setPickedId(t.id)}
                     style={{
                       textAlign: 'left', padding: '10px 14px', borderRadius: 7, cursor: 'pointer',
                       fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: on ? 700 : 500,

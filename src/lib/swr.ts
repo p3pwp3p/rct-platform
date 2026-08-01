@@ -38,3 +38,19 @@ export async function authedFetcher(url: string) {
 export function useApi<T = unknown>(key: string | null, config?: SWRConfiguration<T>) {
   return useSWR<T>(key, authedFetcher, config)
 }
+
+/** 로그인 없이 접근하는 공개 API 용 fetcher (세션 조회·로그인 리다이렉트 없음) */
+export async function publicFetcher(url: string) {
+  const res = await fetch(url)
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json?.error ?? `요청 실패 (${res.status})`)
+  return json
+}
+
+/**
+ * 공개(비로그인) API 라우트용 SWR 훅.
+ * 약관처럼 로그인 전에도 보이는 페이지에서 사용 — 401 이어도 로그인으로 튕기지 않는다.
+ */
+export function usePublicApi<T = unknown>(key: string | null, config?: SWRConfiguration<T>) {
+  return useSWR<T>(key, publicFetcher, config)
+}
