@@ -407,6 +407,7 @@ function PayoutCalcPanel({ reportId, onClose }: { reportId: string; onClose: () 
   const [errType, setErrType]         = useState<'warn' | 'block'>('warn')
   const [forfeited, setForfeited]     = useState<ForfeitedRow[] | null>(null)
   const [forfeitOpen, setForfeitOpen] = useState(false)
+  const [xlsxBusy, setXlsxBusy]       = useState(false)
 
   async function getToken(): Promise<string> {
     const { data: { session } } = await supabase.auth.getSession()
@@ -474,6 +475,34 @@ function PayoutCalcPanel({ reportId, onClose }: { reportId: string; onClose: () 
     } catch { /* 낙전 없어도 무시 */ }
   }
 
+  /**
+   * 수당 "계산만" 해서 엑셀로 내려받기 — DB 저장 없이 바로 가능.
+   * 시트 = 계정별 지급(송금 단위) / 노드별 상세 / 요약
+   */
+  async function downloadCalcXlsx() {
+    setXlsxBusy(true); setErr('')
+    try {
+      const token = await getToken()
+      const res = await fetch('/api/payout-calc-export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reportId }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? '엑셀 내보내기 실패')
+      }
+      const blob = await res.blob()
+      const cd   = res.headers.get('Content-Disposition') ?? ''
+      const name = /filename="([^"]+)"/.exec(cd)?.[1] ?? `payout_calc_${reportId.slice(0, 8)}.xlsx`
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url; a.download = name; a.click()
+      URL.revokeObjectURL(url)
+    } catch (e: any) { setErrType('warn'); setErr(e?.message ?? '엑셀 내보내기 오류') }
+    finally { setXlsxBusy(false) }
+  }
+
   async function downloadCsv() {
     const token = await getToken()
     // Authorization 헤더가 필요한 GET → window.open 불가, fetch 후 Blob 다운로드
@@ -506,6 +535,11 @@ function PayoutCalcPanel({ reportId, onClose }: { reportId: string; onClose: () 
               {step === 'saving' ? '저장 중...' : step === 'done' ? '✓ 저장됨' : 'DB 저장'}
             </button>
           )}
+          {/* 계산만 해서 엑셀로 — DB 저장 없이 언제든 가능 */}
+          <button onClick={downloadCalcXlsx} disabled={xlsxBusy} title="DB 저장 없이 계산만 해서 엑셀(계정별/노드별)로 내려받습니다"
+            style={{ padding: '5px 12px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, cursor: xlsxBusy ? 'wait' : 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.35)', color: '#34d399', opacity: xlsxBusy ? 0.5 : 1 }}>
+            {xlsxBusy ? '계산 중...' : '엑셀 (계산만)'}
+          </button>
           <button onClick={loadSaved} disabled={busy} style={{ padding: '5px 12px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, cursor: busy ? 'wait' : 'pointer', background: 'transparent', border: '1px solid var(--border-secondary)', color: 'var(--text-tertiary)', opacity: busy ? 0.5 : 1 }}>
             {step === 'loading_saved' ? '조회 중...' : '저장 결과 조회'}
           </button>
