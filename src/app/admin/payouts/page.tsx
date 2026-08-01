@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
+import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
 import {
   adminGetProfitReports,
@@ -878,11 +879,14 @@ function downloadCsv(reports: ProfitReportWithItems[]) {
 
 // ── 페이지 ──────────────────────────────────────────────────────────────────
 export default function PayoutsPage() {
-  const [reports, setReports]       = useState<ProfitReportWithItems[]>([])
-  const [logs, setLogs]             = useState<CsvExportLog[]>([])
-  const [loadError, setLoadError]   = useState('')
-  const [loading, setLoading]       = useState(true)
-  const [logsLoading, setLogsLoading] = useState(true)
+  // 보고서·내보내기 로그는 API 라우트가 아닌 lib 함수라 커스텀 fetcher 로 SWR 에 태운다
+  const { data: reportsData, isLoading: loading, error: reportsErr, mutate: mutateReports } =
+    useSWR<ProfitReportWithItems[]>('admin-profit-reports', adminGetProfitReports)
+  const { data: logsData, isLoading: logsLoading, mutate: mutateLogs } =
+    useSWR<CsvExportLog[]>('admin-csv-export-logs', adminGetCsvExportLogs)
+  const reports   = reportsData ?? []
+  const logs      = logsData ?? []
+  const loadError = reportsErr ? ((reportsErr as Error).message ?? '보고서 로딩 실패') : ''
   const [filter, setFilter]         = useState<'all' | 'pending' | 'confirmed' | 'paid' | 'failed'>('all')
   const [selected, setSelected]     = useState<Set<string>>(new Set())
   const [exporting, setExporting]   = useState(false)
@@ -901,21 +905,9 @@ export default function PayoutsPage() {
   const [missingList, setMissingList]       = useState<MissingMember[] | null>(null)
   const [missingLoading, setMissingLoading] = useState(false)
 
-  async function load() {
-    setLoading(true); setLoadError('')
-    try { setReports(await adminGetProfitReports()) }
-    catch (e: any) { setLoadError(e?.message ?? '보고서 로딩 실패') }
-    finally { setLoading(false) }
-  }
-
-  async function loadLogs() {
-    setLogsLoading(true)
-    try { setLogs(await adminGetCsvExportLogs()) }
-    catch (e: any) { console.error(e) }
-    finally { setLogsLoading(false) }
-  }
-
-  useEffect(() => { load(); loadLogs() }, [])
+  /** 변경 후 재검증 */
+  const load     = () => mutateReports()
+  const loadLogs = () => mutateLogs()
 
   const displayed  = filter === 'all' ? reports : reports.filter(r => r.status === filter)
   const confirmed  = reports.filter(r => r.status === 'confirmed')
