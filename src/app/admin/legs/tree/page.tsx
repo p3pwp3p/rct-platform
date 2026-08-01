@@ -3,7 +3,9 @@
  * /admin/legs/tree
  * 트리 뷰 — 후원 (바이너리) + 추천 (N-ary) 탭 통합 (어드민)
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
+import { useApi } from '@/lib/swr'
 import { supabase } from '@/lib/supabase'
 import { adminGetTree } from '@/lib/db-admin'
 import type { TreeNode } from '@/lib/types'
@@ -113,31 +115,23 @@ const REFERRAL_ICON = (
 )
 
 export default function AdminTreePage() {
-  const [tab, setTab]         = useState<Tab>('sponsor')
-  const [tree, setTree]       = useState<NetNode | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState<string | null>(null)
-  const [referralProfileId, setReferralProfileId] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('sponsor')
 
-  useEffect(() => {
-    setLoading(true); setError(null)
-    adminGetTree()
-      .then(raw => setTree(raw ? convertTree(raw) : null))
-      .catch(e => setError(e?.message ?? '로딩 오류'))
-      .then(() => setLoading(false), () => setLoading(false))
-  }, [])
+  // 후원 트리 — API 라우트가 아니라 lib 함수라 커스텀 fetcher 로 SWR 에 태운다
+  const { data: tree, isLoading: loading, error: treeErr } =
+    useSWR<NetNode | null>('admin-tree', async () => {
+      const raw = await adminGetTree()
+      return raw ? convertTree(raw) : null
+    })
+  const error = treeErr ? ((treeErr as Error).message ?? '로딩 오류') : null
 
-  useEffect(() => {
-    if (tab !== 'referral' || referralProfileId) return
-    supabase.auth.getSession().then(({ data: { session } }) =>
-      fetch('/api/admin/search-members?root=true', {
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
-      })
-        .then(r => r.json())
-        .then(json => { const first = json.members?.[0]; if (first) setReferralProfileId(first.id) })
-        .catch(() => {})
-    )
-  }, [tab, referralProfileId])
+  // 추천 트리 루트 — 해당 탭을 열었을 때만 기본 루트 조회(조건부 키).
+  // 검색으로 루트를 고르면 그쪽이 우선한다.
+  const { data: rootData } = useApi<{ members?: { id: string }[] }>(
+    tab === 'referral' ? '/api/admin/search-members?root=true' : null,
+  )
+  const [pickedRootId, setPickedRootId] = useState<string | null>(null)
+  const referralProfileId = pickedRootId ?? rootData?.members?.[0]?.id ?? null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-base)' }}>
@@ -153,12 +147,12 @@ export default function AdminTreePage() {
       </div>
 
       {/* 추천 탭: 검색 바 */}
-      {tab === 'referral' && <SearchBar onSearch={id => setReferralProfileId(id)} />}
+      {tab === 'referral' && <SearchBar onSearch={id => setPickedRootId(id)} />}
 
       {/* ── 콘텐츠: display:none으로 마운트 유지 ── */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, display: tab === 'sponsor' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
-          <BinaryTreeCanvas tree={tree} loading={loading} error={error} />
+          <BinaryTreeCanvas tree={tree ?? null} loading={loading} error={error} />
         </div>
         <div style={{ flex: 1, display: tab === 'referral' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
           <ReferralTreeCanvas profileId={referralProfileId ?? ''} showGenerations={false} />

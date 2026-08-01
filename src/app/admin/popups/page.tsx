@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useApi } from '@/lib/swr'
 
 type Popup = {
   id: string
@@ -53,8 +54,6 @@ const EMPTY_FORM: FormState = {
 }
 
 export default function AdminPopupsPage() {
-  const [rows, setRows] = useState<Popup[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [showForm, setShowForm] = useState(false)
@@ -65,21 +64,14 @@ export default function AdminPopupsPage() {
     return session?.access_token ?? ''
   }, [])
 
-  const load = useCallback(async () => {
-    setLoading(true); setError('')
-    try {
-      const res = await fetch('/api/admin/popups', { headers: { Authorization: `Bearer ${await token()}` } })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? '조회 실패')
-      setRows(json.popups)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '조회 오류')
-    } finally {
-      setLoading(false)
-    }
-  }, [token])
+  const { data, isLoading, error: swrError, mutate } = useApi<{ popups: Popup[] }>('/api/admin/popups')
+  const rows    = data?.popups ?? []
+  const loading = isLoading
+  // 조회 실패는 SWR 에러로, 저장/삭제 실패는 로컬 error 로 — 둘 다 같은 배너에 표시
+  const shownError = error || (swrError ? (swrError as Error).message : '')
 
-  useEffect(() => { load() }, [load])
+  /** 변경 후 목록 재검증 */
+  const load = useCallback(() => mutate(), [mutate])
 
   const openNew = () => { setForm(EMPTY_FORM); setShowForm(true) }
   const openEdit = (p: Popup) => {
@@ -170,8 +162,8 @@ export default function AdminPopupsPage() {
         홈(로그인 전) 화면에 노출되는 공지 팝업입니다. 노출 기간과 on/off를 설정할 수 있습니다.
       </p>
 
-      {error && (
-        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, marginBottom: 16 }}>{error}</div>
+      {shownError && (
+        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, marginBottom: 16 }}>{shownError}</div>
       )}
 
       {/* 목록 */}

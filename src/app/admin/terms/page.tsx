@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useApi } from '@/lib/swr'
 
 type Term = {
   id: string
@@ -26,8 +27,6 @@ function fmtDate(iso: string): string {
 }
 
 export default function AdminTermsPage() {
-  const [rows, setRows] = useState<Term[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [showForm, setShowForm] = useState(false)
@@ -38,21 +37,14 @@ export default function AdminTermsPage() {
     return session?.access_token ?? ''
   }, [])
 
-  const load = useCallback(async () => {
-    setLoading(true); setError('')
-    try {
-      const res = await fetch('/api/admin/terms', { headers: { Authorization: `Bearer ${await token()}` } })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? '조회 실패')
-      setRows(json.terms)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '조회 오류')
-    } finally {
-      setLoading(false)
-    }
-  }, [token])
+  const { data, isLoading, error: swrError, mutate } = useApi<{ terms: Term[] }>('/api/admin/terms')
+  const rows    = data?.terms ?? []
+  const loading = isLoading
+  // 조회 실패는 SWR 에러로, 저장/삭제 실패는 로컬 error 로 — 둘 다 같은 배너에 표시
+  const shownError = error || (swrError ? (swrError as Error).message : '')
 
-  useEffect(() => { load() }, [load])
+  /** 변경 후 목록 재검증 */
+  const load = useCallback(() => mutate(), [mutate])
 
   const openNew = () => { setForm({ ...EMPTY_FORM, sort_order: String(rows.length) }); setShowForm(true) }
   const openEdit = (t: Term) => {
@@ -133,8 +125,8 @@ export default function AdminTermsPage() {
         이용약관·개인정보 처리방침 등 약관 문서를 카테고리별로 등록·수정합니다. 게시된 약관은 회원가입 화면의 약관 링크(/terms)에서 노출됩니다.
       </p>
 
-      {error && (
-        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, marginBottom: 16 }}>{error}</div>
+      {shownError && (
+        <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, marginBottom: 16 }}>{shownError}</div>
       )}
 
       {loading ? (
