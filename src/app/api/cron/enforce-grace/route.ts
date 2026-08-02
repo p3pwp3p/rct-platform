@@ -18,6 +18,12 @@
  *
  * 인증: Vercel Cron 이 보내는 `Authorization: Bearer $CRON_SECRET`.
  *       CRON_SECRET 이 없으면 외부에서 부를 수 없도록 항상 거부한다.
+ *
+ * 스케줄(vercel.json): "17 18 * * *" = UTC 18:17 = KST 03:17, 하루 1회.
+ *   Vercel Hobby 플랜은 cron 을 하루 1회만 허용해서 이렇게 맞춰뒀다.
+ *   Pro 로 올리면 "17 * * * *"(매시) 로 바꾸면 된다 — 유예 만료 후 정지까지의
+ *   지연이 최대 24시간에서 최대 1시간으로 줄어든다.
+ *   (유예기간이 7일이라 하루 1회로도 실무상 문제는 없다)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
