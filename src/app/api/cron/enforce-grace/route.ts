@@ -19,6 +19,11 @@
  * 인증: Vercel Cron 이 보내는 `Authorization: Bearer $CRON_SECRET`.
  *       CRON_SECRET 이 없으면 외부에서 부를 수 없도록 항상 거부한다.
  *
+ * 킬스위치: CRON_ENFORCE_ENABLED='true' 일 때만 실제로 정지시킨다.
+ *   기본값이 "꺼짐"인 이유 — 정식 오픈 전이라 노드 데이터가 정리되지 않은
+ *   상태에서 자동 정지가 돌면 회원 노드가 의도치 않게 멈춘다.
+ *   운영 준비가 끝나면 Vercel 환경변수에 CRON_ENFORCE_ENABLED=true 를 넣을 것.
+ *
  * 스케줄(vercel.json): "17 18 * * *" = UTC 18:17 = KST 03:17, 하루 1회.
  *   Vercel Hobby 플랜은 cron 을 하루 1회만 허용해서 이렇게 맞춰뒀다.
  *   Pro 로 올리면 "17 * * * *"(매시) 로 바꾸면 된다 — 유예 만료 후 정지까지의
@@ -47,6 +52,14 @@ function authorized(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ error: '인증 필요' }, { status: 401 })
+  }
+
+  // 킬스위치 — 켜지 않은 동안엔 조회조차 하지 않고 그대로 반환(부수효과 0)
+  if (process.env.CRON_ENFORCE_ENABLED !== 'true') {
+    return NextResponse.json({
+      ok: true, skipped: true, reason: 'CRON_ENFORCE_ENABLED 미설정 — 자동 정지 비활성',
+      checkedAt: new Date().toISOString(),
+    })
   }
 
   try {
