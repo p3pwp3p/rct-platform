@@ -19,6 +19,7 @@ import { createClient } from '@supabase/supabase-js'
 import { isInternalCall } from '@/lib/internal-auth'
 import { createNotifications } from '@/lib/notify'
 import { logAudit } from '@/lib/audit'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { computeAllowedNodes, planEnforcement } from '@/lib/node-enforcement'
 
 const admin = createClient(
@@ -49,6 +50,10 @@ export async function POST(req: NextRequest) {
   try {
     if (!isInternalCall(req) && !await isAdminToken(req)) {
       return NextResponse.json({ error: '권한 필요' }, { status: 401 })
+    }
+    // 동기화 스크립트가 매시간 정상 호출하므로 넉넉하게 — 폭주만 막는 수준
+    if (!await rateLimit(`import-copiers:${clientIp(req)}`, 30, 60)) {
+      return NextResponse.json(tooMany, { status: 429 })
     }
 
     const body = await req.json().catch(() => ({}))

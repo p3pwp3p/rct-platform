@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { createClient } from '@supabase/supabase-js'
 
 const adminClient = createClient(
@@ -22,6 +23,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await adminClient.auth.getUser(token)
   if (!user || user.app_metadata?.role !== 'admin') {
     return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
+  }
+
+  // 파일 업로드 파싱 — 연타 방지
+  if (!await rateLimit(`parse-binance:${clientIp(req)}`, 20, 60)) {
+    return NextResponse.json(tooMany, { status: 429 })
   }
 
   try {

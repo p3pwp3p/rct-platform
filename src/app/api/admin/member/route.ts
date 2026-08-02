@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { createClient } from '@supabase/supabase-js'
 import { logAudit } from '@/lib/audit'
 
@@ -22,6 +23,9 @@ export async function PATCH(req: NextRequest) {
   try {
     if (!await verifyAdmin(req)) {
       return NextResponse.json({ error: '관리자 권한 필요' }, { status: 403 })
+    }
+    if (!await rateLimit(`admin-member:${clientIp(req)}`, 60, 60)) {
+      return NextResponse.json(tooMany, { status: 429 })
     }
 
     const { id, rank, mt5_account_id, trc20_address, status, status_reason } = await req.json()

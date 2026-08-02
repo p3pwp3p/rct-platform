@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { parseProfitShareCsv, aggregateByCt, splitEven, parsePeriod } from '@/lib/profit-csv'
 import { logAudit } from '@/lib/audit'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
   try {
     const actor = await adminUser(req)
     if (!actor) return NextResponse.json({ error: '관리자 권한 필요' }, { status: 401 })
+
+    // 큰 CSV 파싱 + 보고서 재생성 — 실수로 연타되면 부담이 커서 제한
+    if (!await rateLimit(`import-profit-csv:${clientIp(req)}`, 10, 60)) {
+      return NextResponse.json(tooMany, { status: 429 })
+    }
 
     const { csv, apply = false } = await req.json()
     if (!csv || typeof csv !== 'string') return NextResponse.json({ error: 'csv 필요' }, { status: 400 })

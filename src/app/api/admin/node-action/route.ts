@@ -12,6 +12,7 @@
  * 인증: 관리자 토큰. 감사로그 + 회원 알림 기록.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, clientIp, tooMany } from '@/lib/rate-limit'
 import { createClient } from '@supabase/supabase-js'
 import { logAudit } from '@/lib/audit'
 import { createNotifications } from '@/lib/notify'
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: '인증 필요' }, { status: 401 })
     const { data: u } = await admin.auth.getUser(token)
     if (u.user?.app_metadata?.role !== 'admin') return NextResponse.json({ error: '관리자 권한 필요' }, { status: 401 })
+    if (!await rateLimit(`node-action:${clientIp(req)}`, 60, 60)) {
+      return NextResponse.json(tooMany, { status: 429 })
+    }
 
     const { nodeId, action } = await req.json()
     if (!nodeId || !ACTIONS.includes(action)) return NextResponse.json({ error: '잘못된 요청' }, { status: 400 })
