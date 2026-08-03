@@ -114,7 +114,8 @@ export default function SendPopupPage() {
           {/* 미리보기 */}
           {(title || body) && (
             <div style={{ marginTop: 4, padding: 14, borderRadius: 10, background: 'var(--bg-inset)', border: '1px dashed var(--border-secondary)' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--accent-blue, #4db6ac)', marginBottom: 8 }}>미리보기</div>
+              {/* 한글 라벨엔 mono + 넓은 자간이 들뜬 것처럼 보여서 SUIT 로 */}
+              <div style={{ fontFamily: 'var(--font-main)', fontWeight: 600, fontSize: 11.5, letterSpacing: '-0.01em', color: 'var(--accent-blue, #4db6ac)', marginBottom: 8 }}>미리보기</div>
               <div style={{ fontFamily: 'var(--font-main)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{title || '(제목)'}</div>
               <div style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{body}</div>
             </div>

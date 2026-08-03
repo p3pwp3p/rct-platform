@@ -81,9 +81,10 @@ export default function MemberPopups() {
           padding: '16px 20px', borderBottom: '1px solid var(--border-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
+          {/* 한글 라벨엔 mono + 넓은 자간이 들뜬 것처럼 보여서 SUIT 로 */}
           <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em',
-            textTransform: 'uppercase', color: 'var(--accent-blue, #4db6ac)',
+            fontFamily: 'var(--font-main)', fontWeight: 600, fontSize: 12,
+            letterSpacing: '-0.01em', color: 'var(--accent-blue, #4db6ac)',
           }}>공지</span>
           {remaining > 1 && (
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>
