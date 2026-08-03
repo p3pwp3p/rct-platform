@@ -36,6 +36,7 @@ const NAV = [
     section: 'CONTENT',
     items: [
       { href: '/admin/popups', label: '홈 팝업 관리', icon: 'popup' },
+      { href: '/admin/popups/send', label: '회원 팝업 발송', icon: 'popup' },
       { href: '/admin/terms',  label: '약관 관리',    icon: 'terms' },
     ],
   },

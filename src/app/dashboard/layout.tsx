@@ -10,6 +10,7 @@ import { useModalA11y } from '@/lib/useModalA11y'
 import type { Profile, SponsorInfo } from '@/lib/types'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/NotificationBell'
+import MemberPopups from '@/components/MemberPopups'
 import MemberAlertModal from '@/components/MemberAlertModal'
 
 // ─── 상수 ─────────────────────────────────────────────────────────────────────
@@ -911,6 +912,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Page content */}
           <PageTransition>
             {children}
+            <MemberPopups />
           </PageTransition>
         </div>
       </div>
