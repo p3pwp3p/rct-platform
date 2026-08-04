@@ -66,13 +66,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 한 번의 발송을 묶는 id — 이력 화면에서 "발송 건" 단위로 집계하는 근거
+    const batchId = crypto.randomUUID()
+    const sentAt  = new Date().toISOString()
+
     const rows = [...byAccount.entries()].map(([userId, p]) => ({
       user_id:    userId,
       profile_id: p.profileId,
       type:       'system',
       title:      title.trim(),
       body:       typeof body === 'string' ? body.trim() : '',
-      metadata:   { sentBy: actor.email ?? null, kind: 'admin_popup' },
+      metadata:   { sentBy: actor.email ?? null, kind: 'admin_popup', batchId, sentAt },
     }))
 
     const { error: insErr } = await admin.from('notifications').insert(rows)
@@ -82,6 +86,7 @@ export async function POST(req: NextRequest) {
       actorId: actor.id, actorEmail: actor.email, action: 'admin_popup_send',
       targetType: 'account', targetId: `${rows.length}명`,
       detail: {
+        batchId,
         title: title.trim(),
         recipients: rows.length,
         selectedNodes: profs.length,

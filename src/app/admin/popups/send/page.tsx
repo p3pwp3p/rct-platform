@@ -15,11 +15,23 @@ type Account = {
   id: string; email: string; name: string
   is_admin: boolean; nodes: Node[]
 }
+type Batch = {
+  batchId: string; title: string; body: string
+  sentBy: string; sentAt: string
+  recipients: number; readCount: number; readRate: number
+  rows: { name: string; nodeId: string; readAt: string | null }[]
+}
 
 export default function SendPopupPage() {
   const showToast = useToast()
   const { data, isLoading } = useApi<{ accounts: Account[] }>('/api/admin/accounts')
   const accounts = useMemo(() => data?.accounts ?? [], [data])
+
+  // 발송 이력 — 보낸 뒤 mutate 로 즉시 갱신
+  const { data: histData, isLoading: histLoading, mutate: mutateHist } =
+    useApi<{ batches: Batch[] }>('/api/admin/popup-history')
+  const batches = histData?.batches ?? []
+  const [openBatch, setOpenBatch] = useState<string | null>(null)
 
   const [title, setTitle]   = useState('')
   const [body, setBody]     = useState('')
@@ -74,6 +86,7 @@ export default function SendPopupPage() {
       if (!res.ok) throw new Error(json.error ?? '발송 실패')
       showToast(`${json.sent}명에게 발송했습니다`, 'success')
       setTitle(''); setBody(''); setPicked(new Set())
+      mutateHist()
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : '발송 오류', 'error')
     } finally { setBusy(false) }
@@ -174,6 +187,95 @@ export default function SendPopupPage() {
             })}
           </div>
         </div>
+      </div>
+
+      {/* ── 발송 이력 ── */}
+      <div style={{ marginTop: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
+          <h2 style={{ fontFamily: 'var(--font-main)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>발송 이력</h2>
+          <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>
+            행을 누르면 받은 사람과 확인 여부를 볼 수 있습니다
+          </span>
+        </div>
+
+        {histLoading ? (
+          <div style={{ padding: 28, textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)' }}>불러오는 중...</div>
+        ) : batches.length === 0 ? (
+          <div style={{ padding: 36, textAlign: 'center', fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-tertiary)', border: '1px dashed var(--border-secondary)', borderRadius: 10 }}>
+            아직 발송한 팝업이 없습니다.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {batches.map(b => {
+              const open = openBatch === b.batchId
+              const unread = b.recipients - b.readCount
+              return (
+                <div key={b.batchId} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-primary)', borderRadius: 10, overflow: 'hidden' }}>
+                  <button
+                    onClick={() => setOpenBatch(open ? null : b.batchId)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px',
+                      background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.title}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-main)', fontSize: 11.5, color: 'var(--text-tertiary)' }}>
+                        {new Date(b.sentAt).toLocaleString('ko-KR')} · {b.sentBy}
+                      </div>
+                    </div>
+
+                    {/* 확인율 */}
+                    <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: b.readRate === 100 ? '#34d399' : 'var(--text-primary)' }}>
+                        {b.readCount}/{b.recipients}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                        확인 {b.readRate}%
+                      </div>
+                    </div>
+                    <div style={{ flexShrink: 0, width: 64, height: 4, borderRadius: 2, background: 'var(--bg-inset)', overflow: 'hidden' }}>
+                      <div style={{ width: `${b.readRate}%`, height: '100%', background: b.readRate === 100 ? '#34d399' : 'var(--accent-blue, #4db6ac)' }} />
+                    </div>
+                    <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{open ? '▲' : '▼'}</span>
+                  </button>
+
+                  {open && (
+                    <div style={{ borderTop: '1px solid var(--border-primary)', padding: '12px 16px 14px', background: 'var(--bg-inset)' }}>
+                      {b.body && (
+                        <div style={{ fontFamily: 'var(--font-main)', fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border-secondary)' }}>
+                          {b.body}
+                        </div>
+                      )}
+                      {unread > 0 && (
+                        <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#fbbf24', marginBottom: 8 }}>
+                          아직 확인하지 않은 회원 {unread}명
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {b.rows.map((r, i) => (
+                          <span key={i} title={r.readAt ? `확인: ${new Date(r.readAt).toLocaleString('ko-KR')}` : '미확인'}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999,
+                              fontFamily: 'var(--font-main)', fontSize: 12,
+                              background: r.readAt ? 'rgba(52,211,153,0.1)' : 'var(--bg-surface)',
+                              border: `1px solid ${r.readAt ? 'rgba(52,211,153,0.3)' : 'var(--border-secondary)'}`,
+                              color: r.readAt ? '#34d399' : 'var(--text-tertiary)',
+                            }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>{r.nodeId}</span>
+                            {r.name}
+                            <span>{r.readAt ? '✓' : '·'}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
