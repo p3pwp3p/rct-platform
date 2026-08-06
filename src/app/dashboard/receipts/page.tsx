@@ -249,6 +249,7 @@ export default function ReceiptsPage() {
     monthly?: MonthRow[]
     breakdownByMonth?: Record<string, BreakdownRow[]>
     rowCount?: number
+    preparingCount?: number
   }
   const { data, isLoading, error: swrError, mutate } = useApi<PayoutData>(
     !profileLoading && profileId ? `/api/my-payouts?profileId=${profileId}` : null
@@ -262,6 +263,8 @@ export default function ReceiptsPage() {
   const monthly   = data?.monthly ?? []
   const byMonth   = data?.breakdownByMonth ?? {}
   const rowCount  = data?.rowCount ?? 0
+  // 계산은 끝났지만 아직 관리자 컨펌 전인 정산이 있는지
+  const preparing = data?.preparingCount ?? 0
 
   // 계정 전환 시 선택 월 초기화
   useEffect(() => { setMonth(null) }, [profileId])
@@ -297,6 +300,16 @@ export default function ReceiptsPage() {
 
           {error && (
             <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, fontFamily: 'var(--font-main)', fontSize: 13, color: '#f87171' }}>⚠ {error}</div>
+          )}
+
+          {/* 컨펌 전 정산이 있으면 금액 대신 진행중임을 알린다(문의 감소 목적) */}
+          {!loading && preparing > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fbbf24', flexShrink: 0 }} />
+              <span style={{ fontFamily: 'var(--font-main)', fontSize: 13, color: '#fbbf24' }}>
+                정산 준비중입니다. 확정되면 수령 금액이 표시됩니다.
+              </span>
+            </div>
           )}
 
           {/* 총 수령액 — 히어로 카드 */}

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
+import Link from 'next/link'
 import useSWR from 'swr'
 import { supabase } from '@/lib/supabase'
 import {
@@ -780,12 +781,26 @@ function ReportCard({ report, onRefresh }: { report: ProfitReportWithItems; onRe
 
         {/* 액션 버튼 */}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          {/* 앞으로 진행: pending→confirmed, confirmed→paid */}
-          {(report.status === 'pending' || report.status === 'confirmed') && (
+          {/* pending 은 컨펌 화면을 거친다 — confirmed = 회원 공개라 바로 넘기면 위험 */}
+          {report.status === 'pending' && (
+            <Link href={`/admin/payouts/confirm/${report.id}`} onClick={e => e.stopPropagation()}
+              style={{ padding: '6px 12px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, textDecoration: 'none', background: '#fbbf2420', border: '1px solid #fbbf2455', color: '#fbbf24', fontWeight: 600 }}>
+              지급 컨펌 →
+            </Link>
+          )}
+          {/* confirmed → paid (송금 완료 처리) */}
+          {report.status === 'confirmed' && (
             <button onClick={e => { e.stopPropagation(); advance() }} disabled={busy}
-              style={{ padding: '6px 12px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, cursor: 'pointer', background: report.status === 'pending' ? '#fbbf2420' : '#34d39920', border: `1px solid ${report.status === 'pending' ? '#fbbf24' : '#34d399'}55`, color: report.status === 'pending' ? '#fbbf24' : '#34d399', fontWeight: 600 }}>
-              {report.status === 'pending' ? '확인' : '지급완료'}
+              style={{ padding: '6px 12px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, cursor: 'pointer', background: '#34d39920', border: '1px solid #34d39955', color: '#34d399', fontWeight: 600 }}>
+              지급완료
             </button>
+          )}
+          {/* 컨펌 내역 다시 보기 */}
+          {(report.status === 'confirmed' || report.status === 'paid') && (
+            <Link href={`/admin/payouts/confirm/${report.id}`} onClick={e => e.stopPropagation()}
+              style={{ padding: '6px 10px', borderRadius: 5, fontFamily: 'var(--font-main)', fontSize: 12, textDecoration: 'none', background: 'transparent', border: '1px solid var(--border-secondary)', color: 'var(--text-tertiary)' }}>
+              내역
+            </Link>
           )}
           {/* 전송실패 수동 처리 — confirmed 상태에서만 (confirmed=계산완료 상태에서 실패 가능) */}
           {report.status === 'confirmed' && (
