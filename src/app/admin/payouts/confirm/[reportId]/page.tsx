@@ -46,6 +46,23 @@ const TF_LABEL: Record<string, { text: string; color: string }> = {
   no_wallet: { text: '주소 미등록', color: '#94a3b8' },
 }
 
+type XRow = {
+  account: string; name: string; nodes: string[]
+  reportAmount: number | null; pdfAmount: number | null
+  diff: number | null; status: 'match' | 'mismatch' | 'pdf_only' | 'report_only'
+  pdfPeriod: string | null; pdfFiles: number
+}
+type XSummary = {
+  total: number; match: number; mismatch: number; pdfOnly: number; reportOnly: number
+  reportTotal: number; pdfTotal: number; checkedDiff: number; allClear: boolean
+}
+const X_LABEL: Record<XRow['status'], { text: string; color: string }> = {
+  match:       { text: '일치',        color: '#34d399' },
+  mismatch:    { text: '금액 불일치',  color: '#f87171' },
+  pdf_only:    { text: 'PDF에만 있음', color: '#fbbf24' },
+  report_only: { text: 'PDF 미제출',   color: '#94a3b8' },
+}
+
 const fmt = (n: number) => n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function PayoutConfirmPage({ params }: { params: Promise<{ reportId: string }> }) {
@@ -57,6 +74,48 @@ export default function PayoutConfirmPage({ params }: { params: Promise<{ report
     `/api/admin/payout-transfer?reportId=${reportId}`)
   const [tab, setTab]   = useState<'account' | 'node'>('account')
   const [busy, setBusy] = useState(false)
+
+  // PDF 크로스체크 — 엑셀로 만든 보고서를 거래소 PDF 원본과 대조
+  const [xBusy, setXBusy]   = useState(false)
+  const [xRows, setXRows]   = useState<XRow[] | null>(null)
+  const [xSum, setXSum]     = useState<XSummary | null>(null)
+  const [xErr, setXErr]     = useState('')
+  const [xProgress, setXProgress] = useState('')
+
+  const runCrosscheck = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setXBusy(true); setXErr(''); setXRows(null); setXSum(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token ?? ''
+
+      // PDF 는 한 장씩 파싱 — 실패한 파일은 건너뛰되 몇 개인지 알려준다
+      const parsed: unknown[] = []
+      const failed: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        setXProgress(`PDF 읽는 중 ${i + 1}/${files.length}`)
+        const form = new FormData()
+        form.append('file', files[i])
+        const res = await fetch('/api/parse-pdf', { method: 'POST', body: form, headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) { failed.push(files[i].name); continue }
+        parsed.push(await res.json())
+      }
+      if (parsed.length === 0) throw new Error('읽을 수 있는 PDF 가 없습니다.')
+
+      setXProgress('대조 중...')
+      const res = await fetch('/api/admin/payout-crosscheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reportId, pdfs: parsed }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? '대조 실패')
+      setXRows(json.rows); setXSum(json.summary)
+      if (failed.length) setXErr(`읽지 못한 파일 ${failed.length}건: ${failed.slice(0, 3).join(', ')}${failed.length > 3 ? ' 외' : ''}`)
+    } catch (e: unknown) {
+      setXErr(e instanceof Error ? e.message : '대조 오류')
+    } finally { setXBusy(false); setXProgress('') }
+  }
 
   const act = async (action: 'confirm' | 'unconfirm') => {
     const msg = action === 'confirm'
@@ -167,6 +226,99 @@ export default function PayoutConfirmPage({ params }: { params: Promise<{ report
             </div>
           </div>
         ))}
+      </div>
+
+      {/* PDF 크로스체크 — 컨펌 전에 엑셀 금액이 원본과 맞는지 확인 */}
+      <div style={{ ...card, padding: 16, marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>PDF 크로스체크</span>
+            <div style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)', marginTop: 3 }}>
+              거래소 PDF 를 올리면 엑셀로 만든 금액과 계정번호별로 대조합니다 (여러 장 선택 가능)
+            </div>
+          </div>
+          <label style={{
+            padding: '8px 16px', borderRadius: 7, cursor: xBusy ? 'wait' : 'pointer',
+            background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.35)',
+            color: '#60a5fa', fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600,
+          }}>
+            {xBusy ? (xProgress || '처리 중...') : 'PDF 선택'}
+            <input type="file" accept="application/pdf" multiple disabled={xBusy}
+              onChange={e => { runCrosscheck(e.target.files); e.target.value = '' }}
+              style={{ display: 'none' }} />
+          </label>
+        </div>
+
+        {xErr && (
+          <div style={{ marginTop: 12, padding: '9px 12px', borderRadius: 7, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', fontFamily: 'var(--font-main)', fontSize: 12.5, color: '#fbbf24' }}>
+            {xErr}
+          </div>
+        )}
+
+        {xSum && (
+          <>
+            <div style={{
+              marginTop: 14, padding: '11px 14px', borderRadius: 8,
+              background: xSum.allClear ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)',
+              border: `1px solid ${xSum.allClear ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'}`,
+              fontFamily: 'var(--font-main)', fontSize: 13, fontWeight: 600,
+              color: xSum.allClear ? '#34d399' : '#f87171',
+            }}>
+              {xSum.allClear
+                ? `대조 완료 — 불일치 없음 (검증 ${xSum.match}건)`
+                : `확인 필요 — 불일치 ${xSum.mismatch}건${xSum.pdfOnly > 0 ? `, PDF에만 있는 계정 ${xSum.pdfOnly}건` : ''}`}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 8, marginTop: 12 }}>
+              {[
+                { label: '보고서 합계', value: `$${fmt(xSum.reportTotal)}`, color: 'var(--text-primary)' },
+                { label: 'PDF 합계',    value: `$${fmt(xSum.pdfTotal)}`,    color: 'var(--text-primary)' },
+                { label: '검증분 차액', value: `$${fmt(xSum.checkedDiff)}`, color: Math.abs(xSum.checkedDiff) < 0.01 ? '#34d399' : '#f87171' },
+                { label: 'PDF 미제출',  value: `${xSum.reportOnly}건`,      color: xSum.reportOnly > 0 ? '#94a3b8' : '#34d399' },
+              ].map((k, i) => (
+                <div key={i} style={{ padding: '10px 12px', borderRadius: 7, background: 'var(--bg-inset)' }}>
+                  <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>{k.label}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600, color: k.color }}>{k.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 12, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+                <thead style={{ background: 'var(--bg-inset)' }}>
+                  <tr>
+                    <th style={th}>상태</th>
+                    <th style={th}>계정번호</th>
+                    <th style={th}>이름 / 노드</th>
+                    <th style={{ ...th, textAlign: 'right' }}>보고서</th>
+                    <th style={{ ...th, textAlign: 'right' }}>PDF</th>
+                    <th style={{ ...th, textAlign: 'right' }}>차액</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(xRows ?? []).map((r, i) => {
+                    const L = X_LABEL[r.status]
+                    return (
+                      <tr key={i}>
+                        <td style={{ ...td, color: L.color, fontWeight: 600, fontSize: 12 }}>{L.text}</td>
+                        <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.account}</td>
+                        <td style={{ ...td, fontSize: 12 }}>
+                          {r.name || '—'}
+                          {r.nodes.length > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--text-tertiary)' }}> {r.nodes.join(', ')}</span>}
+                        </td>
+                        <td style={num}>{r.reportAmount == null ? '—' : fmt(r.reportAmount)}</td>
+                        <td style={num}>{r.pdfAmount == null ? '—' : fmt(r.pdfAmount)}</td>
+                        <td style={{ ...num, color: r.diff == null ? 'var(--text-tertiary)' : Math.abs(r.diff) < 0.01 ? 'var(--text-tertiary)' : '#f87171', fontWeight: r.diff && Math.abs(r.diff) >= 0.01 ? 700 : 400 }}>
+                          {r.diff == null ? '—' : fmt(r.diff)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 송금 현황 — 컨펌 후 스냅샷이 생기고 Binance 결과 반영 시 갱신 */}
