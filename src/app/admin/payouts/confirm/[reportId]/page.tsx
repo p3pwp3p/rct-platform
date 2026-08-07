@@ -30,12 +30,31 @@ type Detail = {
   missingWallet: { name: string; nodeIds: string[]; total: number }[]
 }
 
+type Transfer = {
+  id: string; name: string | null; node_ids: string | null; address: string | null
+  amount: number; status: string; reason: string | null; applied_at: string | null
+}
+type TSummary = {
+  total: number; pending: number; success: number; failed: number; noWallet: number
+  amountTotal: number; amountSuccess: number; amountFailed: number
+  amountPending: number; amountNoWallet: number
+}
+const TF_LABEL: Record<string, { text: string; color: string }> = {
+  pending:   { text: '송금 대기', color: '#fbbf24' },
+  success:   { text: '지급 완료', color: '#34d399' },
+  failed:    { text: '송금 실패', color: '#f87171' },
+  no_wallet: { text: '주소 미등록', color: '#94a3b8' },
+}
+
 const fmt = (n: number) => n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function PayoutConfirmPage({ params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = use(params)
   const showToast = useToast()
   const { data, isLoading, error, mutate } = useApi<Detail>(`/api/admin/payout-confirm?reportId=${reportId}`)
+  // 송금 현황(계정별) — 컨펌 시 스냅샷이 생기고, Binance 결과를 반영하면 갱신된다
+  const { data: tf } = useApi<{ transfers: Transfer[]; summary: TSummary | null; available: boolean }>(
+    `/api/admin/payout-transfer?reportId=${reportId}`)
   const [tab, setTab]   = useState<'account' | 'node'>('account')
   const [busy, setBusy] = useState(false)
 
@@ -149,6 +168,57 @@ export default function PayoutConfirmPage({ params }: { params: Promise<{ report
           </div>
         ))}
       </div>
+
+      {/* 송금 현황 — 컨펌 후 스냅샷이 생기고 Binance 결과 반영 시 갱신 */}
+      {tf?.available && tf.summary && tf.summary.total > 0 && (
+        <div style={{ ...card, padding: 16, marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontFamily: 'var(--font-main)', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>송금 현황</span>
+            <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: 'var(--text-tertiary)' }}>
+              계정별로 개별 기록됩니다 — Binance 결과 CSV 를 올리면 갱신됩니다
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            {([
+              ['success',   tf.summary.success,  tf.summary.amountSuccess],
+              ['pending',   tf.summary.pending,  tf.summary.amountPending],
+              ['failed',    tf.summary.failed,   tf.summary.amountFailed],
+              ['no_wallet', tf.summary.noWallet, tf.summary.amountNoWallet],
+            ] as const).filter(([, c]) => c > 0).map(([k, c, amt]) => (
+              <span key={k} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999,
+                fontFamily: 'var(--font-main)', fontSize: 12.5,
+                background: `${TF_LABEL[k].color}14`, border: `1px solid ${TF_LABEL[k].color}44`, color: TF_LABEL[k].color,
+              }}>
+                {TF_LABEL[k].text} {c}건
+                <span style={{ fontFamily: 'var(--font-mono)' }}>${fmt(amt)}</span>
+              </span>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {tf.transfers.map(t => {
+              const L = TF_LABEL[t.status] ?? { text: t.status, color: 'var(--text-tertiary)' }
+              return (
+                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 7, background: 'var(--bg-inset)' }}>
+                  <span style={{ flexShrink: 0, width: 88, fontFamily: 'var(--font-main)', fontSize: 11.5, fontWeight: 700, color: L.color }}>{L.text}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-main)', fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {t.name} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>{t.node_ids}</span>
+                  </span>
+                  {t.reason && <span style={{ fontFamily: 'var(--font-main)', fontSize: 11.5, color: '#f87171' }}>{t.reason}</span>}
+                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    {t.address ? `${t.address.slice(0, 6)}…${t.address.slice(-4)}` : '주소없음'}
+                  </span>
+                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: L.color, minWidth: 80, textAlign: 'right' }}>
+                    ${fmt(Number(t.amount))}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 탭 */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>

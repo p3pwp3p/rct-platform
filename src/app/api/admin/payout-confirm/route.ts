@@ -26,6 +26,15 @@ async function adminUser(req: NextRequest) {
   return data.user?.app_metadata?.role === 'admin' ? data.user : null
 }
 
+/**
+ * 이 보고서의 지급 대상을 계정 단위로 집계.
+ * 송금은 계정당 1건이므로 컨펌 스냅샷·Binance 시트 모두 이 기준을 쓴다.
+ */
+export type PayableAccount = {
+  accountId: string; profileId: string; name: string; nodeIds: string[]
+  address: string | null; amount: number
+}
+
 /** payout_distributions 는 1000행 제한이 있어 전부 받으려면 페이지네이션 필수 */
 async function fetchAllDistributions(reportId: string) {
   const rows: { recipient_id: string; bonus_type: string; amount: number }[] = []
@@ -42,6 +51,38 @@ async function fetchAllDistributions(reportId: string) {
     if (data.length < PAGE) break
   }
   return rows
+}
+
+/** 보고서의 지급 대상을 계정 단위로 집계 (송금 1건 = 계정 1개) */
+export async function buildPayableAccounts(reportId: string): Promise<PayableAccount[]> {
+  const dists = await fetchAllDistributions(reportId)
+  if (!dists.length) return []
+
+  const byNode = new Map<string, number>()
+  for (const d of dists) byNode.set(d.recipient_id, (byNode.get(d.recipient_id) ?? 0) + d.amount)
+
+  const nodeIds = [...byNode.keys()]
+  const { data: profs } = await admin
+    .from('profiles')
+    .select('id, node_id, name, owner_id, trc20_address')
+    .in('id', nodeIds)
+  const pMap = new Map((profs ?? []).map(p => [p.id, p]))
+
+  const acc = new Map<string, PayableAccount>()
+  for (const id of nodeIds) {
+    const p = pMap.get(id)
+    const accountId = p?.owner_id ?? id
+    const cur: PayableAccount = acc.get(accountId) ?? {
+      accountId, profileId: id, name: p?.name ?? '(알 수 없음)',
+      nodeIds: [], address: null, amount: 0,
+    }
+    cur.nodeIds.push(p?.node_id ?? '—')
+    cur.amount += byNode.get(id) ?? 0
+    if (!cur.address && p?.trc20_address) cur.address = p.trc20_address
+    acc.set(accountId, cur)
+  }
+  for (const a of acc.values()) a.nodeIds.sort()
+  return [...acc.values()].sort((x, y) => y.amount - x.amount)
 }
 
 export async function GET(req: NextRequest) {
@@ -177,6 +218,28 @@ export async function POST(req: NextRequest) {
 
       const { error } = await admin.from('profit_reports').update({ status: 'confirmed' }).eq('id', reportId)
       if (error) throw error
+
+      // 지급 대상 스냅샷 — 컨펌 시점의 "누구에게 얼마" 를 고정한다.
+      // 이후 데이터가 바뀌어도 송금·대사는 이 스냅샷 기준으로 movement 하도록.
+      // 테이블이 아직 없더라도(마이그레이션 미실행) 컨펌 자체는 막지 않는다.
+      try {
+        const payables = await buildPayableAccounts(reportId)
+        if (payables.length) {
+          await admin.from('payout_transfers').delete().eq('report_id', reportId)
+          await admin.from('payout_transfers').insert(payables.map(p => ({
+            report_id:  reportId,
+            account_id: p.accountId,
+            profile_id: p.profileId,
+            name:       p.name,
+            node_ids:   p.nodeIds.join(', '),
+            address:    p.address,
+            amount:     Math.round(p.amount * 100) / 100,
+            status:     p.address ? 'pending' : 'no_wallet',
+          })))
+        }
+      } catch (e) {
+        console.error('[payout_transfers snapshot]', e)
+      }
 
       const total = dists.reduce((s, d) => s + d.amount, 0)
       await logAudit({
