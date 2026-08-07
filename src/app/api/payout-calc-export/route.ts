@@ -7,9 +7,11 @@
  * body: { reportId: string }
  *
  * 시트 구성
- *   1) 계정별 지급  — 실제 송금 단위. 한 계정이 가진 모든 노드의 수당을 합산한 금액
- *   2) 노드별 상세  — 노드 하나하나의 수당 (검증/대사용)
- *   3) 요약        — 총계와 낙전 등 한눈에 보는 수치
+ *   1) 계정별 지급    — 실제 송금 단위. 한 계정이 가진 모든 노드의 수당을 합산한 금액
+ *   2) 노드별 상세    — 노드 하나하나의 수당 (검증/대사용)
+ *   3) Binance 송금   — 일괄전송 업로드용 (No./Address/Amount/Currency/Remark)
+ *   4) 송금 제외      — 주소 미등록 등으로 빠진 건 (누락 사고 방지용)
+ *   5) 요약          — 총계·낙전·송금 건수
  *
  * "계정"이란: 노드는 여러 개여도 로그인 계정(auth user)은 하나 — 송금은 계정당 1번.
  */
@@ -309,7 +311,61 @@ export async function POST(req: NextRequest) {
     nodeTotalRow.border = { top: { style: 'double' } }
     styleHeader(ws2)
 
-    // 시트 3 — 요약
+    // 시트 3 — Binance 일괄송금
+    // Binance 일괄전송 업로드용. 결과 CSV 파서가 기대하는 컬럼명과 맞춰둔다
+    // (No./Address/Amount/Currency/Remark). 지갑주소가 없으면 송금이 불가하므로
+    // 제외하되, 아래 "송금 제외" 시트에 남겨 누락을 눈치채게 한다.
+    const USDT_MIN = 0.01   // 소수점 2자리 아래는 송금 불가 — 반올림 후 0 이면 제외
+    const payable = accountRows
+      .map(a => ({ ...a, payAmount: Math.round(a.total * 100) / 100 }))
+      .filter(a => a.trc20 && a.payAmount >= USDT_MIN)
+    const excluded = accountRows
+      .map(a => ({ ...a, payAmount: Math.round(a.total * 100) / 100 }))
+      .filter(a => !(a.trc20 && a.payAmount >= USDT_MIN))
+      .map(a => ({
+        ...a,
+        reason: !a.trc20 ? 'TRC-20 주소 미등록' : '금액이 최소 단위 미만',
+      }))
+
+    const wsB = wb.addWorksheet('Binance 송금')
+    wsB.columns = [
+      { header: 'No.',      key: 'no',       width: 7  },
+      { header: 'Address',  key: 'address',  width: 42 },
+      { header: 'Amount',   key: 'amount',   width: 14, style: { numFmt: '0.00' } },
+      { header: 'Currency', key: 'currency', width: 10 },
+      { header: 'Remark',   key: 'remark',   width: 34 },
+    ]
+    payable.forEach((a, i) => {
+      wsB.addRow({
+        no: i + 1,
+        address: a.trc20,
+        amount: a.payAmount,
+        currency: 'USDT',
+        // 결과 대사용 — 누구에게 보낸 건지 식별
+        remark: `${a.mainName || a.email} ${a.nodeIds.join('/')}`.trim(),
+      })
+    })
+    styleHeader(wsB)
+
+    // 시트 4 — 송금 제외(주소 없음 등). 조용히 빠지면 미지급 사고로 이어져서 명시
+    const wsX = wb.addWorksheet('송금 제외')
+    wsX.columns = [
+      { header: '계정 이메일', key: 'email',    width: 30 },
+      { header: '대표 이름',   key: 'mainName', width: 14 },
+      { header: '보유 노드',   key: 'nodeIds',  width: 30 },
+      { header: '금액',        key: 'amount',   width: 14, style: { numFmt: money } },
+      { header: '제외 사유',   key: 'reason',   width: 24 },
+    ]
+    for (const a of excluded) {
+      wsX.addRow({
+        email: a.email || '(계정 미연결)', mainName: a.mainName,
+        nodeIds: a.nodeIds.join(', '), amount: a.payAmount, reason: a.reason,
+      })
+    }
+    if (excluded.length === 0) wsX.addRow({ email: '(없음 — 전원 송금 가능)' })
+    styleHeader(wsX)
+
+    // 시트 5 — 요약
     const totalBase      = earners.reduce((s, e) => s + e.unpaid_profit, 0)
     const totalReferral  = nodeRows.reduce((s, r) => s + r.referral, 0)
     const totalRank      = nodeRows.reduce((s, r) => s + r.rank_bonus, 0)
@@ -337,6 +393,10 @@ export async function POST(req: NextRequest) {
     addSummary('회사 귀속(적격자 없는 tier)', companyForfeited, true)
     addSummary('지급 대상 계정 수', accountRows.length)
     addSummary('지급 대상 노드 수', nodeRows.length)
+    addSummary('Binance 송금 건수', payable.length)
+    addSummary('Binance 송금 합계', payable.reduce((s, a) => s + a.payAmount, 0), true)
+    addSummary('송금 제외 건수', excluded.length)
+    addSummary('송금 제외 합계', excluded.reduce((s, a) => s + a.payAmount, 0), true)
     addSummary('생성 시각', new Date().toLocaleString('ko-KR'))
     addSummary('비고', '계산 전용 — DB에 저장되지 않음')
     styleHeader(ws3)
