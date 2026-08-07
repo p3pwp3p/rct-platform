@@ -287,45 +287,6 @@ export async function adminDeleteReport(id: string) {
   if (error) throw error
 }
 
-/**
- * Binance 실패 CSV 결과를 처리:
- * - 실패한 주소와 매칭되는 보고서를 'failed' 상태로 변경
- * - 성공한 보고서는 'paid'로 변경
- * Returns { failedCount, paidCount }
- */
-export async function adminApplyBinanceResult(
-  rows: Array<{ address: string; status: 'success' | 'failed'; reason: string }>,
-): Promise<{ failedCount: number; paidCount: number }> {
-  // 현재 confirmed 보고서 + items 로드
-  const reports = await adminGetProfitReports()
-  const confirmed = reports.filter(r => r.status === 'confirmed')
-
-  // 주소 → 보고서 매핑
-  const byAddress = new Map<string, ProfitReportWithItems>()
-  for (const r of confirmed) {
-    const addr = r.items[0]?.trc20_address
-    if (addr) byAddress.set(addr.toLowerCase(), r)
-  }
-
-  let failedCount = 0
-  let paidCount   = 0
-
-  for (const row of rows) {
-    const report = byAddress.get(row.address.toLowerCase())
-    if (!report) continue
-
-    if (row.status === 'failed') {
-      await adminUpdateReportStatus(report.id, 'failed')
-      failedCount++
-    } else {
-      await adminUpdateReportStatus(report.id, 'paid')
-      paidCount++
-    }
-  }
-
-  return { failedCount, paidCount }
-}
-
 /** MT5 계좌가 등록된 회원 중 특정 기간에 보고서를 제출하지 않은 회원 목록 */
 export interface MissingMember {
   id: string

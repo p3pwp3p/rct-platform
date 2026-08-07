@@ -10,7 +10,6 @@ import {
   adminDeleteReport,
   adminSaveCsvExportLog,
   adminGetCsvExportLogs,
-  adminApplyBinanceResult,
   adminGetMissingMembers,
   type ProfitReportWithItems,
   type MissingMember,
@@ -35,7 +34,7 @@ function fmt(n: number) { return n.toFixed(2) }
 
 // ── Binance 결과 모달 ─────────────────────────────────────────────────────────
 function BinanceResultModal({ result, onClose }: {
-  result: { paidCount: number; failedCount: number }
+  result: { paidCount: number; failedCount: number; unmatched?: string[]; reportStatus?: string }
   onClose: () => void
 }) {
   useEffect(() => {
@@ -77,7 +76,19 @@ function BinanceResultModal({ result, onClose }: {
 
         {result.failedCount > 0 && (
           <div style={{ fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.6 }}>
-            실패한 건은 <span style={{ color: '#f87171' }}>전송실패</span> 상태로 보고서 이력에서 확인하세요
+            실패한 건은 <span style={{ color: '#f87171' }}>전송실패</span> 상태로 지급 컨펌 화면에서 확인하세요
+          </div>
+        )}
+
+        {/* 우리 지급 대상에 없던 주소 — 조용히 넘기면 대사가 틀어져서 반드시 노출 */}
+        {result.unmatched && result.unmatched.length > 0 && (
+          <div style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)' }}>
+            <div style={{ fontFamily: 'var(--font-main)', fontSize: 11.5, fontWeight: 600, color: '#fbbf24', marginBottom: 5 }}>
+              매칭되지 않은 주소 {result.unmatched.length}건
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.7, wordBreak: 'break-all' }}>
+              {result.unmatched.slice(0, 5).join(', ')}{result.unmatched.length > 5 ? ` 외 ${result.unmatched.length - 5}건` : ''}
+            </div>
           </div>
         )}
 
@@ -911,7 +922,9 @@ export default function PayoutsPage() {
   const [binanceBusy, setBinanceBusy]   = useState(false)
   const [binanceDrag, setBinanceDrag]   = useState(false)
   const [binanceErr, setBinanceErr]     = useState('')
-  const [binanceResult, setBinanceResult] = useState<{ failedCount: number; paidCount: number } | null>(null)
+  const [binanceResult, setBinanceResult] = useState<{ failedCount: number; paidCount: number; unmatched?: string[]; reportStatus?: string } | null>(null)
+  // 결과를 어느 정산에 반영할지 — 주소만으로는 어느 달인지 알 수 없어 명시적으로 고른다
+  const [binanceReportId, setBinanceReportId] = useState<string>('')
   const binanceRef = useRef<HTMLInputElement>(null)
 
   // 낙전 조회
@@ -926,6 +939,8 @@ export default function PayoutsPage() {
 
   const displayed  = filter === 'all' ? reports : reports.filter(r => r.status === filter)
   const confirmed  = reports.filter(r => r.status === 'confirmed')
+  // Binance 결과를 반영할 수 있는 정산 = 컨펌돼 스냅샷이 있는 것(실패분 재처리 포함)
+  const confirmedReports = reports.filter(r => r.status === 'confirmed' || r.status === 'failed')
 
   const totals = {
     pending:   reports.filter(r => r.status === 'pending').reduce((s,r) => s + r.total_unpaid, 0),
@@ -1185,6 +1200,28 @@ export default function PayoutsPage() {
               <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#34d399' }}>✓ 성공 {binanceRows.filter(r => r.status === 'success').length}건</span>
               <span style={{ fontFamily: 'var(--font-main)', fontSize: 12, color: '#f87171' }}>✗ 실패 {binanceRows.filter(r => r.status === 'failed').length}건</span>
             </div>
+
+            {/* 어느 정산에 반영할지 — 컨펌된(=지급 대상 스냅샷이 있는) 보고서만 선택 가능 */}
+            <div style={{ flexShrink: 0 }}>
+              <label style={{ display: 'block', fontFamily: 'var(--font-main)', fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 5 }}>
+                반영할 정산
+              </label>
+              {confirmedReports.length === 0 ? (
+                <div style={{ fontFamily: 'var(--font-main)', fontSize: 11.5, color: '#fbbf24', padding: '7px 10px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 6 }}>
+                  컨펌된 정산이 없습니다. 먼저 지급 컨펌을 진행해주세요.
+                </div>
+              ) : (
+                <select value={binanceReportId} onChange={e => setBinanceReportId(e.target.value)}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, background: 'var(--bg-inset)', border: '1px solid var(--border-secondary)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', fontSize: 12, outline: 'none' }}>
+                  <option value="">선택하세요</option>
+                  {confirmedReports.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.date_from} ~ {r.date_to}{r.status === 'failed' ? ' (재처리)' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             {binanceRows.some(r => r.status === 'failed') && (
               <div style={{ flex: 1, background: 'var(--bg-inset)', border: '1px solid var(--border-primary)', borderRadius: 7, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ padding: '6px 12px', borderBottom: '1px solid var(--border-primary)', fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 600, color: '#f87171', flexShrink: 0 }}>실패 항목</div>
@@ -1204,8 +1241,26 @@ export default function PayoutsPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 'auto', flexShrink: 0 }}>
               <button onClick={() => { setBinanceRows(null); setBinanceErr('') }}
                 style={{ flex: 1, padding: '7px', borderRadius: 6, fontFamily: 'var(--font-main)', fontSize: 12, cursor: 'pointer', background: 'transparent', border: '1px solid var(--border-secondary)', color: 'var(--text-secondary)' }}>취소</button>
-              <button onClick={async () => { setBinanceBusy(true); try { const r = await adminApplyBinanceResult(binanceRows); setBinanceResult(r); setBinanceRows(null); await load() } catch (err: any) { setBinanceErr(err.message) } finally { setBinanceBusy(false) } }} disabled={binanceBusy}
-                style={{ flex: 2, padding: '7px', borderRadius: 6, fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#f87171', border: 'none', color: '#000', opacity: binanceBusy ? 0.6 : 1 }}>
+              <button
+                onClick={async () => {
+                  if (!binanceReportId) { setBinanceErr('결과를 반영할 정산을 선택해주세요') ; return }
+                  setBinanceBusy(true); setBinanceErr('')
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const res = await fetch('/api/admin/payout-transfer', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+                      body: JSON.stringify({ reportId: binanceReportId, rows: binanceRows }),
+                    })
+                    const j = await res.json()
+                    if (!res.ok) throw new Error(j.error ?? '반영 실패')
+                    setBinanceResult({ paidCount: j.success, failedCount: j.failed, unmatched: j.unmatched, reportStatus: j.reportStatus })
+                    setBinanceRows(null); setBinanceReportId('')
+                    await load()
+                  } catch (err: any) { setBinanceErr(err?.message ?? '오류') } finally { setBinanceBusy(false) }
+                }}
+                disabled={binanceBusy || !binanceReportId}
+                style={{ flex: 2, padding: '7px', borderRadius: 6, fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 600, cursor: (binanceBusy || !binanceReportId) ? 'not-allowed' : 'pointer', background: binanceReportId ? '#f87171' : 'var(--bg-inset)', border: 'none', color: binanceReportId ? '#000' : 'var(--text-tertiary)', opacity: binanceBusy ? 0.6 : 1 }}>
                 {binanceBusy ? '처리 중...' : '결과 반영'}
               </button>
             </div>
